@@ -69,28 +69,38 @@
           <p class="text-[10px] text-slate-500">Se guarda en localStorage. Solo se usa para consultas directas a la API de Gemini.</p>
         </div>
 
-        <!-- GRID DE MÓDULOS -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 w-full pb-10">
-          <div v-for="mod in modules" :key="mod.key" @click="startSubject(mod.key)" class="bg-slate-900 border border-slate-800 hover:border-opacity-60 rounded-xl p-4 shadow-lg transition-all cursor-pointer group flex flex-col justify-between space-y-3" :class="'hover:border-' + mod.color + '-500/40'">
-            <div>
-              <div class="flex justify-between items-center">
-                <span class="text-2xl">{{ mod.icon }}</span>
-                <span class="text-[8px] font-black px-2 py-0.5 rounded uppercase border" :class="'bg-' + mod.color + '-500/10 text-' + mod.color + '-400 border-' + mod.color + '-500/20'">{{ mod.badge }}</span>
-              </div>
-              <h3 class="text-sm font-black text-white mt-2 transition-colors" :class="'group-hover:text-' + mod.color + '-400'">{{ mod.name }}</h3>
-              <p class="text-[10px] text-slate-400 mt-1 leading-relaxed">{{ mod.desc }}</p>
-              <div class="flex flex-wrap gap-1 mt-2">
-                <span v-for="t in mod.topics" :key="t" class="text-[8px] bg-slate-950 text-slate-500 px-1.5 py-0.5 rounded border border-slate-800"># {{ t }}</span>
-              </div>
+        <!-- GRID DE MÓDULOS (agrupados) -->
+        <template v-for="groupName in moduleGroups" :key="groupName">
+          <div class="w-full mt-4 first:mt-0">
+            <div class="flex items-center gap-3 mb-3 px-1">
+              <h3 class="text-xs font-black uppercase tracking-widest" :class="groupName === 'TypeScript' ? 'text-blue-400' : groupName === 'TS Arrays' ? 'text-sky-400' : 'text-slate-400'">{{ groupName }}</h3>
+              <div class="flex-1 h-px bg-slate-800"></div>
+              <span class="text-[9px] text-slate-500 font-bold">{{ getGroupExerciseCount(groupName) }} ejercicios</span>
             </div>
-            <div class="border-t border-slate-800 pt-2">
-              <div class="flex justify-between text-[10px] text-slate-500 mb-1 font-bold"><span>Progreso</span><span>{{ getProgress(mod.key) }}%</span></div>
-              <div class="bg-slate-950 rounded-full h-1.5 overflow-hidden">
-                <div class="h-full rounded-full transition-all" :class="'bg-' + mod.color + '-400'" :style="{ width: getProgress(mod.key) + '%' }"></div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 w-full">
+              <div v-for="mod in getModulesByGroup(groupName)" :key="mod.key" @click="startSubject(mod.key)" class="bg-slate-900 border border-slate-800 hover:border-opacity-60 rounded-xl p-4 shadow-lg transition-all cursor-pointer group flex flex-col justify-between space-y-3" :class="'hover:border-' + mod.color + '-500/40'">
+                <div>
+                  <div class="flex justify-between items-center">
+                    <span class="text-2xl">{{ mod.icon }}</span>
+                    <span class="text-[8px] font-black px-2 py-0.5 rounded uppercase border" :class="'bg-' + mod.color + '-500/10 text-' + mod.color + '-400 border-' + mod.color + '-500/20'">{{ mod.badge }}</span>
+                  </div>
+                  <h3 class="text-sm font-black text-white mt-2 transition-colors" :class="'group-hover:text-' + mod.color + '-400'">{{ mod.name }}</h3>
+                  <p class="text-[10px] text-slate-400 mt-1 leading-relaxed">{{ mod.desc }}</p>
+                  <div class="flex flex-wrap gap-1 mt-2">
+                    <span v-for="t in mod.topics" :key="t" class="text-[8px] bg-slate-950 text-slate-500 px-1.5 py-0.5 rounded border border-slate-800"># {{ t }}</span>
+                  </div>
+                </div>
+                <div class="border-t border-slate-800 pt-2">
+                  <div class="flex justify-between text-[10px] text-slate-500 mb-1 font-bold"><span>Progreso</span><span>{{ getProgress(mod.key) }}%</span></div>
+                  <div class="bg-slate-950 rounded-full h-1.5 overflow-hidden">
+                    <div class="h-full rounded-full transition-all" :class="'bg-' + mod.color + '-400'" :style="{ width: getProgress(mod.key) + '%' }"></div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
-        </div>
+        </template>
+        <div class="pb-10"></div>
       </main>
     </transition>
 
@@ -282,6 +292,22 @@
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.6.0/axios.min.js"></script>
+<!-- TS Modules -->
+<script src="exercises/ts-primitivos.js"></script>
+<script src="exercises/ts-interfaces.js"></script>
+<script src="exercises/ts-types.js"></script>
+<script src="exercises/ts-funciones.js"></script>
+<script src="exercises/ts-generics.js"></script>
+<script src="exercises/ts-enums.js"></script>
+<script src="exercises/ts-discriminated.js"></script>
+<script src="exercises/ts-utility-types.js"></script>
+<script src="exercises/ts-arrays-map.js"></script>
+<script src="exercises/ts-arrays-filter.js"></script>
+<script src="exercises/ts-arrays-reduce.js"></script>
+<script src="exercises/ts-arrays-find.js"></script>
+<script src="exercises/ts-arrays-some-every.js"></script>
+<script src="exercises/ts-arrays-sort.js"></script>
+<script src="exercises/ts-arrays-extras.js"></script>
 <script src="exercises.js"></script>
 <script src="app.js"></script>
 </body>

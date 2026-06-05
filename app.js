@@ -25,6 +25,25 @@ const app = createApp({
     // Module catalog
     const modules = ALL_MODULES;
 
+    // Unique groups preserving order
+    const moduleGroups = computed(() => {
+      const seen = new Set();
+      return ALL_MODULES.filter(m => {
+        const g = m.group || 'Otros';
+        if (seen.has(g)) return false;
+        seen.add(g);
+        return true;
+      }).map(m => m.group || 'Otros');
+    });
+
+    function getModulesByGroup(group) {
+      return ALL_MODULES.filter(m => (m.group || 'Otros') === group);
+    }
+
+    function getGroupExerciseCount(group) {
+      return getModulesByGroup(group).reduce((sum, m) => sum + m.exercises.length, 0);
+    }
+
     // Exercise data refs keyed by module
     const exerciseMap = {};
     ALL_MODULES.forEach(mod => {
@@ -259,6 +278,7 @@ const app = createApp({
     return {
       currentSubject, isMobileMenuOpen, activeIndex, activeTab, toasts,
       userAnswers, localApiKey, modules,
+      moduleGroups, getModulesByGroup, getGroupExerciseCount,
       activeSubjectExercises, activeExercise, activeSubjectProgress,
       currentModuleName, currentModuleColor, processedChallengeCode,
       startSubject, goBackToMenu, selectExercise,
