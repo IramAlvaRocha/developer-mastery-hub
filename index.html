@@ -158,6 +158,9 @@
               <span>📝 Desafío</span>
               <span v-if="!activeExercise.completed" class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
             </button>
+            <button v-if="activeExercise.theory" @click="activeTab = 'theory'" class="px-4 py-3 text-xs font-bold border-b-2 transition-all flex items-center space-x-2 shrink-0" :class="activeTab === 'theory' ? 'border-emerald-400 text-emerald-400 bg-slate-900/20' : 'border-transparent text-slate-400 hover:text-slate-200'">
+              <span>📚 Teoría</span>
+            </button>
             <button @click="activeTab = 'code'" class="px-4 py-3 text-xs font-bold border-b-2 transition-all flex items-center space-x-2 shrink-0" :class="activeTab === 'code' ? 'border-emerald-400 text-emerald-400 bg-slate-900/20' : 'border-transparent text-slate-400 hover:text-slate-200'">
               <span>📖 Mentoría & Solución</span>
             </button>
@@ -195,6 +198,14 @@
                     <button @click="checkChallengeAnswer" class="flex-1 sm:flex-initial text-slate-950 font-black px-4 py-1.5 rounded-lg text-xs uppercase" :class="'bg-' + currentModuleColor + '-500 hover:bg-' + currentModuleColor + '-400'">Verificar</button>
                   </div>
                 </div>
+              </div>
+            </div>
+
+            <!-- TEORÍA -->
+            <div v-if="activeTab === 'theory' && activeExercise.theory" class="space-y-4">
+              <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 shadow-md">
+                <h4 class="text-xs font-bold text-lime-400 mb-3">📚 Fundamentos Teóricos</h4>
+                <div class="text-[11px] md:text-xs text-slate-300 leading-relaxed whitespace-pre-line font-mono bg-slate-950/60 p-4 rounded-lg border border-slate-800 max-h-[420px] overflow-y-auto">{{ activeExercise.theory }}</div>
               </div>
             </div>
 
@@ -309,6 +320,7 @@
 <script src="exercises/ts-arrays-sort.js"></script>
 <script src="exercises/ts-arrays-extras.js"></script>
 <!-- Vacancy-focused modules -->
+<script src="exercises/nodejs.js"></script>
 <script src="exercises/nuxt.js"></script>
 <script src="exercises/vuetify.js"></script>
 <script src="exercises/gcp.js"></script>
