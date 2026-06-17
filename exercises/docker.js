@@ -513,26 +513,11 @@ Ejemplo de la hoja de atajos:
     tags: ["bind mount", "powershell", "dev"],
     fileName: "terminal",
     completed: false,
-    theory: `📚 TEORÍA: Bind Volumes (Vincular Volúmenes locales)
-
-Los Bind Volumes trabajan con rutas absolutas locales del host.
-  • -w /app: Working directory (establece dónde empezará a correr el comando).
-  • -v "$(pwd):/app": Vincula el directorio actual del host con el directorio /app del contenedor.
-En la guía de atajos se definen los comandos multi-línea equivalentes:
-  - Terminal (Linux/Mac con backslash '\\'):
-    docker run -dp 3000:3000 \\
-      -w /app -v "$(pwd):/app" \\
-      node:18-alpine \\
-      sh -c "yarn install && yarn run dev"
-  - PowerShell (Windows con acento grave '`'):
-    docker run -dp 3000:3000 \`
-      -w /app -v "$(pwd):/app" \`
-      node:18-alpine \`
-      sh -c "yarn install && yarn run dev"`,
-    explanationText: "Completa el comando en PowerShell: 'w', '$(pwd):/app' y 'yarn install && yarn run dev'.",
-    codeSnippet: "docker run -dp 3000:3000 `\n    -[INPUT_1] /app -v "[INPUT_2]" `\n    node:18-alpine `\n    sh -c "[INPUT_3]"",
+    theory: "📚 TEORÍA: Bind Volumes (Vincular Volúmenes locales)\n\nLos Bind Volumes trabajan con rutas absolutas locales del host.\n  • -w /app: Working directory (establece dónde empezará a correr el comando).\n  • -v \"$(pwd):/app\": Vincula el directorio actual del host con el directorio /app del contenedor.\nEn la guía de atajos se definen los comandos multi-línea equivalentes:\n  - Terminal (Linux/Mac con backslash \\\\):\n    docker run -dp 3000:3000 \\\\\n      -w /app -v \"$(pwd):/app\" \\\\\n      node:18-alpine \\\\\n      sh -c \"yarn install && yarn run dev\"\n  - PowerShell (Windows con acento grave backtick):\n    docker run -dp 3000:3000 (backtick)\n      -w /app -v \"$(pwd):/app\" (backtick)\n      node:18-alpine (backtick)\n      sh -c \"yarn install && yarn run dev\"",
+    explanationText: "Completa el comando: 'w', 'pwd:/app' y 'yarn install && yarn run dev'.",
+    codeSnippet: "docker run -dp 3000:3000\n    -[INPUT_1] /app -v [INPUT_2]\n    node:18-alpine\n    sh -c [INPUT_3]",
     inputs: { INPUT_1: "w", INPUT_2: "$(pwd):/app", INPUT_3: "yarn install && yarn run dev" },
-    completeCode: "docker run -dp 3000:3000 -w /app -v \"$(pwd):/app\" node:18-alpine sh -c \"yarn install && yarn run dev\""
+    completeCode: "docker run -dp 3000:3000 -w /app -v $(pwd):/app node:18-alpine sh -c \"yarn install && yarn run dev\""
   },
 
   {
