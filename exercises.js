@@ -178,6 +178,7 @@ const ALL_MODULES = [
   { key: 'code-quality', name: 'Calidad de Código', icon: '✨', badge: 'Quality', color: 'violet', group: 'Full Stack', desc: 'ESLint flat config, Prettier, SonarQube, coverage y arquitectura SRP.', topics: ['ESLint', 'SonarQube', 'Prettier', 'SRP'], exercises: CODE_QUALITY_EXERCISES },
   { key: 'git', name: 'Git & DevOps', icon: '🔧', badge: 'DevOps', color: 'slate', group: 'Full Stack', desc: 'Branches, rebase, conflicts, conventional commits y CI/CD.', topics: ['branch', 'rebase', 'actions', 'ESLint'], exercises: GIT_EXERCISES },
   { key: 'git-advanced', name: 'Git Flow & Monorepos', icon: '🌳', badge: 'Git Pro', color: 'stone', group: 'Full Stack', desc: 'Git Flow, Trunk Based, feature flags, Husky, semantic-release y workspaces.', topics: ['git flow', 'trunk', 'monorepo', 'Husky'], exercises: GIT_ADVANCED_EXERCISES },
+  { key: 'docker', name: 'Docker & Kubernetes', icon: '🐳', badge: 'DevOps', color: 'sky', group: 'Full Stack', desc: 'Contenedores, imágenes, volúmenes, redes, Dockerfile, multi-stage build, Compose, BuildX, GitHub Actions y Kubernetes.', topics: ['CLI', 'Dockerfile', 'Compose', 'CI/CD', 'K8s'], exercises: DOCKER_EXERCISES },
 
   // ── TypeScript: Core Types ──
   { key: 'ts-primitivos', name: 'TS: Primitivos', icon: '💙', badge: 'TS Core', color: 'blue', group: 'TypeScript', desc: 'string, number, boolean, null, unknown, never, tuplas y as const.', topics: ['string', 'unknown', 'never', 'as const', 'tuple'], exercises: TS_PRIMITIVOS },
