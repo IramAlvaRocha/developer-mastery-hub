@@ -1,0 +1,219 @@
+@import "tailwindcss";
+
+/* ──────────────────────────────────────────────────────────────────────────
+   Design tokens (inspirados en DESIGN.md): tema oscuro neutro + acento azul.
+   Tailwind v4 genera utilidades de color, radio y sombra a partir de estas
+   variables (color -> bg/text/border, radius -> rounded, shadow -> shadow).
+   ────────────────────────────────────────────────────────────────────────── */
+@theme {
+  --font-sans: "Inter", ui-sans-serif, -apple-system, BlinkMacSystemFont,
+    "Segoe UI", Roboto, sans-serif;
+  --font-mono: "JetBrains Mono", "SF Mono", "Cascadia Code", "Roboto Mono",
+    Menlo, Courier, monospace;
+
+  --color-base: #0d0d0f;
+  --color-surface: #1c1c1c;
+  --color-surface-2: #151516;
+  --color-elevated: #242425;
+  --color-line: #333333;
+  --color-line-soft: #272728;
+  --color-ink: #fafafa;
+  --color-muted: #a3a3a3;
+  --color-faint: #6f6f72;
+
+  --color-brand: #3b82f6;
+  --color-brand-strong: #2563eb;
+  --color-brand-deep: #1d4ed8;
+  --color-danger: #f87171;
+
+  --radius-card: 14px;
+  --radius-input: 10px;
+
+  --shadow-glow: 0 0 20px rgba(59, 130, 246, 0.3);
+  --shadow-glow-soft: 0 0 12px rgba(59, 130, 246, 0.18);
+  --shadow-float: 0 10px 15px -3px rgba(0, 0, 0, 0.35),
+    0 4px 6px -4px rgba(0, 0, 0, 0.3);
+}
+
+/* Safelist de clases de color generadas dinamicamente por modulo. */
+@source inline("{hover:,group-hover:,}{bg,text,border}-{emerald,yellow,green,teal,orange,lime,blue,cyan,rose,purple,amber,pink,violet,slate,stone,sky,indigo}-{400,500}");
+@source inline("{hover:,group-hover:,}{bg,border}-{emerald,yellow,green,teal,orange,lime,blue,cyan,rose,purple,amber,pink,violet,slate,stone,sky,indigo}-500/{10,15,20,40,50}");
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  background-color: var(--color-base);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* ─── Componentes reutilizables del sistema de diseño ─────────────────────── */
+@layer components {
+  .ui-card {
+    border-radius: var(--radius-card);
+    border: 1px solid var(--color-line);
+    background-color: var(--color-surface);
+  }
+
+  .btn-primary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    min-height: 40px;
+    padding: 0 18px;
+    border-radius: var(--radius-input);
+    background-color: var(--color-brand);
+    color: #fff;
+    font-weight: 600;
+    font-size: 13px;
+    line-height: 20px;
+    box-shadow: var(--shadow-glow-soft);
+    transition: background-color 0.15s ease, box-shadow 0.15s ease,
+      transform 0.1s ease;
+  }
+  .btn-primary:hover {
+    background-color: var(--color-brand-strong);
+    box-shadow: var(--shadow-glow);
+  }
+  .btn-primary:active {
+    background-color: var(--color-brand-deep);
+    transform: translateY(1px);
+  }
+  .btn-primary:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+    box-shadow: none;
+  }
+
+  .btn-secondary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    min-height: 40px;
+    padding: 0 16px;
+    border-radius: var(--radius-input);
+    background-color: transparent;
+    border: 1px solid var(--color-line);
+    color: var(--color-ink);
+    font-weight: 500;
+    font-size: 13px;
+    line-height: 20px;
+    transition: border-color 0.15s ease, background-color 0.15s ease,
+      color 0.15s ease;
+  }
+  .btn-secondary:hover {
+    border-color: var(--color-brand);
+    color: #fff;
+  }
+  .btn-secondary:active {
+    background-color: rgba(59, 130, 246, 0.1);
+  }
+  .btn-secondary:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+  }
+
+  .btn-ghost {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    padding: 6px 12px;
+    border-radius: 8px;
+    background-color: transparent;
+    color: var(--color-muted);
+    font-weight: 600;
+    font-size: 13px;
+    transition: background-color 0.15s ease, color 0.15s ease;
+  }
+  .btn-ghost:hover {
+    background-color: rgba(255, 255, 255, 0.07);
+    color: #fff;
+  }
+
+  .icon-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 9999px;
+    color: var(--color-ink);
+    transition: background-color 0.15s ease;
+  }
+  .icon-btn:hover {
+    background-color: rgba(255, 255, 255, 0.08);
+  }
+
+  .input-field {
+    width: 100%;
+    min-height: 44px;
+    border-radius: var(--radius-input);
+    border: 1px solid var(--color-line);
+    background-color: rgba(28, 28, 28, 0.4);
+    color: var(--color-ink);
+    padding: 0 14px;
+    font-size: 14px;
+    line-height: 20px;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  }
+  .input-field::placeholder {
+    color: var(--color-muted);
+  }
+  .input-field:focus {
+    outline: none;
+    border-color: var(--color-brand);
+    box-shadow: 0 0 0 1px var(--color-brand), 0 0 20px rgba(59, 130, 246, 0.2);
+  }
+}
+
+/* ─── Animaciones ─────────────────────────────────────────────────────────── */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.animate-fade-in {
+  animation: fadeInUp 0.28s ease both;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #3a3a3c;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #4a4a4d;
+}
+
+.shimmer-loading {
+  background: linear-gradient(90deg, #1c1c1c 25%, #2a2a2a 50%, #1c1c1c 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}

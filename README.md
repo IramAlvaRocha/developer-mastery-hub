@@ -1,44 +1,66 @@
 # Developer Mastery Hub 🎓
 
-Plataforma interactiva de preparación para entrevistas de **Desarrollador Full Stack Senior**, construida con Vue 3 (CDN) + Tailwind CSS.
+Plataforma interactiva de preparación para entrevistas de **Desarrollador Full Stack Senior**, construida con **Astro 5 + React 19 (islas) + Tailwind CSS 4**.
 
-## Módulos de Estudio (100+ ejercicios)
+## Buenas Prácticas (NUEVO — en orden de construcción back → front)
 
-| Módulo | Ejercicios | Temas Clave |
-|--------|-----------|-------------|
-| ⚡ Vue 3 Composition API | 10 | ref, computed, watch, emits, props, composables, slots |
-| 🍍 Pinia State Management | 8 | defineStore, getters, actions, storeToRefs, $subscribe |
-| 🔥 Firebase Platform | 10 | Auth, Firestore, Cloud Functions, Security Rules, App Check |
-| 💙 TypeScript Core | 10 | interfaces, generics, utility types, enums, array methods |
-| 🗄️ SQL Server Pro | 10 | JOINS, funciones, índices, triggers, vistas, RLS, DDM |
-| 🧪 Vitest & Testing | 8 | aserciones, mocks, VTU, lifecycle, module mocking, snapshots |
-| 🔑 Security: OAuth2 & JWT | 10 | JWT, RS256, PKCE, CORS, CSP, HTTPS, Firebase Rules, XSS |
-| 🌐 Axios & Fetch API | 15 | GET, POST, interceptors, AbortController, progress, create |
-| 🟢 Node.js Backend | 8 | Express, middleware, Router, dotenv, fs, error handling |
-| 🎭 E2E: Cypress & Playwright | 6 | visit, intercept, fill, route, mocking de red |
-| 🔧 Git & DevOps | 8 | branches, rebase, conventional commits, GitHub Actions, ESLint |
+Dos módulos secuenciados como "Paso N", basados en un proyecto real (`ProductosCrud`) y su `AGENTS.md`:
+
+| Módulo | Pasos | Temas Clave |
+|--------|-------|-------------|
+| 🟣 .NET Backend Best Practices | 22 | Clean Architecture, DDD, CQRS (MediatR), Result Pattern, Value Objects, Domain Events, EF Core (Query Filters, RowVersion), FluentValidation, Exception Middleware, JWT, permisos por claims, Rate Limiting |
+| ⚛️ React Frontend Best Practices | 22 | Estructura feature-based, env/alias, contrato `ApiResponse<T>`, Axios + interceptores (401/429), `TokenManager` en memoria, `unwrap`/`ApiError`, `ApiService` base, TanStack Query (keys, `useQuery`/`useMutation`), `AuthContext`, rutas protegidas, React Hook Form + Zod, Zustand, React Compiler |
+
+Cada paso del back tiene su contraparte en el front (ej. `ApiResponse` en C# ↔ interface en TS, Rate Limiting ↔ retry de 429).
+
+## Catálogo completo (migrado a Astro)
+
+| Grupo | Módulos |
+|-------|---------|
+| Full Stack | Vue 3, Pinia, Nuxt 3, Vuetify 3, Firebase, Node.js, GCP, SQL Server, Axios/Fetch, Security (OAuth2/JWT), Vitest, E2E, Calidad de Código, Git & DevOps, Git Flow/Monorepos, Docker & K8s |
+| TypeScript | Primitivos, Interfaces, Types & Unions, Funciones, Generics, Enums, Discriminated Unions, Utility Types |
+| TS Arrays | map, filter, reduce, find, some/every, sort, extras |
 
 ## Funcionalidades
 
-- **Desafíos de código**: Completa los espacios en blanco en snippets reales
-- **Mentoría con Gemini IA**: Análisis técnico y pistas contextuales por ejercicio
-- **Chatbot de IA**: Preguntas libres sobre el módulo activo
-- **Progreso persistente**: Guardado automático en localStorage
-- **100% client-side**: Sin servidor, abre el HTML directo en el navegador
+- **Desafíos de código con inputs inline**: rellena campos `[INPUT_N]` directamente sobre el snippet (reemplaza los antiguos comentarios `/*respuesta*/`).
+- **Secuencia por pasos**: los módulos de buenas prácticas se recorren como "Paso 1 → Paso 22".
+- **Mentoría con Gemini IA**: análisis técnico y pistas contextuales por ejercicio.
+- **Chatbot de IA**: preguntas libres sobre el módulo activo.
+- **Progreso persistente**: guardado automático en `localStorage`.
 
 ## Cómo Usar
 
-1. Abre `index.html` en tu navegador
-2. (Opcional) Configura tu API Key de Gemini para las funciones de IA
-3. Selecciona un módulo y completa los ejercicios
-4. Tu progreso se guarda automáticamente
+```bash
+npm install      # instala dependencias
+npm run dev      # servidor de desarrollo (http://localhost:4321)
+npm run build    # build estático a /dist
+npm run preview  # previsualiza el build
+```
+
+(Opcional) Configura tu API Key de Gemini en el menú para habilitar las funciones de IA.
 
 ## Stack Tecnológico
 
-- **Vue 3** (CDN — Composition API)
-- **Tailwind CSS** (CDN)
+- **Astro 5** (output estático, islas de React)
+- **React 19** (`@astrojs/react`)
+- **Tailwind CSS 4** (`@tailwindcss/vite`)
+- **TypeScript** (strict, alias `@/*`)
 - **Gemini AI API** (opcional, para mentoría)
-- **Axios** (CDN)
+
+## Estructura
+
+```
+src/
+  components/   # islas React (MasteryHub, ExerciseWorkspace, ChallengeCode, ...)
+  data/
+    index.ts    # ALL_MODULES + MODULE_GROUPS
+    modules/    # un archivo .ts por módulo de ejercicios
+  layouts/      # Base.astro
+  lib/          # types, gemini, useProgress, useToasts
+  pages/        # index.astro
+  styles/       # global.css (Tailwind + safelist de colores)
+```
 
 ## Licencia
 
