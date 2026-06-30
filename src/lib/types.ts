@@ -2,6 +2,8 @@
 // Tipos del catalogo de ejercicios
 // ──────────────────────────────────────────────────────────────────────────
 
+import type { ExpectedAnswer } from "./answers";
+
 export interface Exercise {
   id: number;
   title: string;
@@ -21,8 +23,8 @@ export interface Exercise {
   explanationText: string;
   /** Codigo con placeholders [INPUT_1], [INPUT_2]... que se renderizan como inputs inline. */
   codeSnippet: string;
-  /** Mapa INPUT_N -> respuesta esperada. */
-  inputs: Record<string, string>;
+  /** Mapa INPUT_N -> respuesta(s) esperada(s). Un string o varias alternativas validas. */
+  inputs: Record<string, ExpectedAnswer>;
   /** Resumen/codigo de referencia mostrado en la tab de solucion. */
   completeCode: string;
 }

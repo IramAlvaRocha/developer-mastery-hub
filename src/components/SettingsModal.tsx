@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   getApiKey,
   saveApiKey,
@@ -14,13 +14,24 @@ interface Props {
   open: boolean;
   onClose: () => void;
   onToast: (type: "success" | "error" | "info", message: string) => void;
+  /** Devuelve un JSON con todo el progreso (para descargar). */
+  onExportProgress: () => string;
+  /** Importa un JSON de progreso. Devuelve true si era valido. */
+  onImportProgress: (raw: string) => boolean;
 }
 
-export default function SettingsModal({ open, onClose, onToast }: Props) {
+export default function SettingsModal({
+  open,
+  onClose,
+  onToast,
+  onExportProgress,
+  onImportProgress,
+}: Props) {
   const [provider, setProvider] = useState<AiProvider>("gemini");
   const [apiKey, setApiKey] = useState("");
   const [model, setModel] = useState("");
   const [showKey, setShowKey] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Sincroniza los valores guardados cada vez que se abre.
   useEffect(() => {
@@ -61,6 +72,42 @@ export default function SettingsModal({ open, onClose, onToast }: Props) {
     saveApiKey("", provider);
     setApiKey("");
     onToast("info", "Clave de API eliminada.");
+  }
+
+  function handleExportProgress() {
+    try {
+      const data = onExportProgress();
+      const blob = new Blob([data], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `mastery-hub-progreso-${new Date().toISOString().slice(0, 10)}.json`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      onToast("success", "Progreso exportado.");
+    } catch {
+      onToast("error", "No se pudo exportar el progreso.");
+    }
+  }
+
+  function handleImportFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = ""; // permite reimportar el mismo archivo
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const ok = onImportProgress(String(reader.result ?? ""));
+      onToast(
+        ok ? "success" : "error",
+        ok
+          ? "Progreso importado y fusionado."
+          : "Archivo inválido: no se pudo importar.",
+      );
+    };
+    reader.onerror = () => onToast("error", "No se pudo leer el archivo.");
+    reader.readAsText(file);
   }
 
   const config = PROVIDERS[provider];
@@ -198,6 +245,41 @@ export default function SettingsModal({ open, onClose, onToast }: Props) {
               Déjalo vacío para usar{" "}
               <span className="font-mono">{config.defaultModel}</span>.
             </p>
+          </div>
+
+          {/* Backup del progreso */}
+          <div className="space-y-1.5 border-t border-line pt-4">
+            <span className="text-[13px] font-semibold text-ink">
+              Progreso (backup)
+            </span>
+            <p className="text-[11px] leading-relaxed text-faint">
+              Tu progreso vive solo en este navegador. Expórtalo para respaldarlo
+              o llevarlo a otro dispositivo. Al importar se fusiona con el actual.
+            </p>
+            <div className="flex gap-2 pt-1">
+              <button
+                type="button"
+                onClick={handleExportProgress}
+                className="btn-secondary flex-1"
+              >
+                ⬇️ Exportar
+              </button>
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="btn-secondary flex-1"
+              >
+                ⬆️ Importar
+              </button>
+            </div>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="application/json,.json"
+              onChange={handleImportFile}
+              className="hidden"
+              aria-hidden
+            />
           </div>
 
           <div className="flex items-center justify-between gap-2 pt-1">

@@ -24,8 +24,15 @@ export default function MasteryHub() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
-  const { isCompleted, markComplete, getPercent, lastVisited, setLastVisited } =
-    useProgress(MODULE_KEYS);
+  const {
+    isCompleted,
+    markComplete,
+    getPercent,
+    lastVisited,
+    setLastVisited,
+    exportProgress,
+    importProgress,
+  } = useProgress(MODULE_KEYS);
   const { toasts, showToast, dismissToast } = useToasts();
 
   const currentModule = useMemo(
@@ -283,6 +290,8 @@ export default function MasteryHub() {
         open={isSettingsOpen}
         onClose={() => setIsSettingsOpen(false)}
         onToast={showToast}
+        onExportProgress={exportProgress}
+        onImportProgress={importProgress}
       />
       <Toasts toasts={toasts} onDismiss={dismissToast} />
     </div>

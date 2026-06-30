@@ -6,10 +6,15 @@ import {
   type ReactNode,
 } from "react";
 
+import type { ExpectedAnswer } from "@/lib/answers";
+import { primaryAnswer } from "@/lib/answers";
+
 interface Props {
   codeSnippet: string;
-  inputs: Record<string, string>;
+  inputs: Record<string, ExpectedAnswer>;
   userAnswers: Record<string, string>;
+  /** Huecos marcados como incorrectos tras la ultima verificacion. */
+  incorrectKeys?: Set<string>;
   fileName?: string;
   onAnswerChange: (key: string, value: string) => void;
   onVerify: () => void;
@@ -101,6 +106,7 @@ function InlineAnswerInput({
   expected,
   placeholder,
   filled,
+  invalid,
   onChange,
   onVerify,
   ariaLabel,
@@ -109,6 +115,7 @@ function InlineAnswerInput({
   expected: string;
   placeholder: string;
   filled: boolean;
+  invalid: boolean;
   onChange: (v: string) => void;
   onVerify: () => void;
   ariaLabel: string;
@@ -146,14 +153,17 @@ function InlineAnswerInput({
           width: widthPx ? `${Math.max(widthPx, minPx)}px` : `${minPx}px`,
           maxWidth: "100%",
         }}
-        className={`box-border inline-block overflow-x-auto rounded-md border px-1.5 py-0.5 align-baseline font-mono text-[11px] caret-brand transition-[width,border-color,background-color] focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/30 md:text-xs ${
-          filled
-            ? "border-brand/40 bg-brand/10 text-brand"
-            : "border-line bg-[#1a1a1c] text-ink"
+        className={`box-border inline-block overflow-x-auto rounded-md border px-1.5 py-0.5 align-baseline font-mono text-[11px] caret-brand transition-[width,border-color,background-color] focus:outline-none focus:ring-2 md:text-xs ${
+          invalid
+            ? "border-rose-500/70 bg-rose-500/10 text-rose-300 focus:border-rose-500 focus:ring-rose-500/30"
+            : filled
+              ? "border-brand/40 bg-brand/10 text-brand focus:border-brand focus:ring-brand/30"
+              : "border-line bg-[#1a1a1c] text-ink focus:border-brand focus:ring-brand/30"
         }`}
         placeholder={placeholder}
         autoComplete="off"
         spellCheck={false}
+        aria-invalid={invalid}
         aria-label={ariaLabel}
       />
     </span>
@@ -164,6 +174,7 @@ export default function ChallengeCode({
   codeSnippet,
   inputs,
   userAnswers,
+  incorrectKeys,
   fileName,
   onAnswerChange,
   onVerify,
@@ -174,7 +185,7 @@ export default function ChallengeCode({
 
   function renderInput(num: string, lineIdx: number) {
     const key = `INPUT_${num}`;
-    const expected = inputs[key] ?? "";
+    const expected = primaryAnswer(inputs[key] ?? "");
     const value = userAnswers[key] ?? "";
     return (
       <InlineAnswerInput
@@ -183,6 +194,7 @@ export default function ChallengeCode({
         expected={expected}
         placeholder={`#${num}`}
         filled={value.trim().length > 0}
+        invalid={incorrectKeys?.has(key) ?? false}
         onChange={(v) => onAnswerChange(key, v)}
         onVerify={onVerify}
         ariaLabel={`Espacio ${num}`}

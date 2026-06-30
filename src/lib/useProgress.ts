@@ -93,6 +93,65 @@ export function useProgress(moduleKeys: string[]) {
     [progress],
   );
 
+  // ── Backup: exportar / importar progreso (JSON) ─────────────────────────
+  const exportProgress = useCallback((): string => {
+    return JSON.stringify(
+      {
+        app: "developer-mastery-hub",
+        version: 1,
+        exportedAt: new Date().toISOString(),
+        progress,
+        lastVisited,
+      },
+      null,
+      2,
+    );
+  }, [progress, lastVisited]);
+
+  /**
+   * Importa un backup. Fusiona (union) los ids completados por modulo para no
+   * perder el progreso existente. Devuelve true si el archivo era valido.
+   */
+  const importProgress = useCallback((raw: string): boolean => {
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(raw);
+    } catch {
+      return false;
+    }
+    const incoming = (parsed as { progress?: unknown })?.progress;
+    if (!incoming || typeof incoming !== "object") return false;
+
+    setProgress((prev) => {
+      const merged: ProgressMap = { ...prev };
+      for (const [key, value] of Object.entries(incoming as ProgressMap)) {
+        if (!Array.isArray(value)) continue;
+        const ids = value.filter(
+          (n): n is number => typeof n === "number" && Number.isFinite(n),
+        );
+        const union = Array.from(new Set([...(merged[key] ?? []), ...ids]));
+        merged[key] = union;
+        try {
+          localStorage.setItem(PREFIX + key, JSON.stringify(union));
+        } catch {
+          /* storage no disponible */
+        }
+      }
+      return merged;
+    });
+
+    const last = (parsed as { lastVisited?: LastVisited }).lastVisited;
+    if (last && typeof last.key === "string" && typeof last.index === "number") {
+      setLastVisitedState(last);
+      try {
+        localStorage.setItem(LAST_KEY, JSON.stringify(last));
+      } catch {
+        /* storage no disponible */
+      }
+    }
+    return true;
+  }, []);
+
   return {
     progress,
     isCompleted,
@@ -100,5 +159,7 @@ export function useProgress(moduleKeys: string[]) {
     getPercent,
     lastVisited,
     setLastVisited,
+    exportProgress,
+    importProgress,
   };
 }

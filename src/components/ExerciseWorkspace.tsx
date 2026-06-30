@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import type { Exercise } from "@/lib/types";
+import { isAnswerCorrect } from "@/lib/answers";
 import ChallengeCode from "./ChallengeCode";
 import TheoryTab from "./TheoryTab";
 import MentorTab from "./MentorTab";
@@ -37,6 +38,7 @@ export default function ExerciseWorkspace({
     exercise.theory ? "theory" : "challenge",
   );
   const [userAnswers, setUserAnswers] = useState<Record<string, string>>({});
+  const [incorrectKeys, setIncorrectKeys] = useState<Set<string>>(new Set());
   const [solved, setSolved] = useState(alreadyCompleted);
   const [celebrate, setCelebrate] = useState(false);
 
@@ -51,39 +53,53 @@ export default function ExerciseWorkspace({
 
   function handleAnswerChange(key: string, value: string) {
     setUserAnswers((prev) => ({ ...prev, [key]: value }));
+    // Al editar, limpia la marca de error de ese hueco.
+    setIncorrectKeys((prev) => {
+      if (!prev.has(key)) return prev;
+      const next = new Set(prev);
+      next.delete(key);
+      return next;
+    });
   }
 
   function resetChallenge() {
     setUserAnswers({});
+    setIncorrectKeys(new Set());
   }
 
   function verify() {
     const answers = exercise.inputs || {};
-    let correct = true;
+    const wrong = new Set<string>();
     let missing = false;
 
     for (const key of Object.keys(answers)) {
-      const expected = String(answers[key]).toLowerCase().trim();
-      const userVal = String(userAnswers[key] ?? "")
-        .toLowerCase()
-        .trim();
-      if (!userVal) missing = true;
-      if (userVal !== expected) correct = false;
+      const userVal = (userAnswers[key] ?? "").trim();
+      if (!userVal) {
+        missing = true;
+        continue;
+      }
+      if (!isAnswerCorrect(answers[key], userVal)) wrong.add(key);
     }
 
     if (missing) {
       onToast("info", "Completa todos los campos antes de verificar.");
       return;
     }
-    if (correct) {
+    if (wrong.size === 0) {
       const isNew = !solved;
+      setIncorrectKeys(new Set());
       setSolved(true);
       onComplete(exercise.id);
       onToast("success", `¡Correcto! "${exercise.title}" completado.`);
       if (isNew) setCelebrate(true);
       setActiveTab("code");
     } else {
-      onToast("error", "Incorrecto. Revisa la sintaxis y los metodos.");
+      setIncorrectKeys(wrong);
+      const n = wrong.size;
+      onToast(
+        "error",
+        `Revisa ${n} ${n === 1 ? "campo marcado" : "campos marcados"} en rojo.`,
+      );
     }
   }
 
@@ -219,6 +235,7 @@ export default function ExerciseWorkspace({
                       codeSnippet={exercise.codeSnippet}
                       inputs={exercise.inputs}
                       userAnswers={userAnswers}
+                      incorrectKeys={incorrectKeys}
                       fileName={exercise.fileName}
                       onAnswerChange={handleAnswerChange}
                       onVerify={verify}
