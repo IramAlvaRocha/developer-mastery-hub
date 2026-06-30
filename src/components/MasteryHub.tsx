@@ -1,8 +1,14 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ALL_MODULES, MODULE_GROUPS } from "@/data";
 import { runViewTransition } from "@/lib/viewTransition";
 import { useProgress } from "@/lib/useProgress";
 import { useToasts } from "@/lib/useToasts";
+import {
+  buildSearch,
+  buildShareUrl,
+  readUrlLocation,
+  type UrlLocation,
+} from "@/lib/urlLocation";
 import ModuleMenu from "./ModuleMenu";
 import ExerciseSidebar from "./ExerciseSidebar";
 import ExerciseWorkspace from "./ExerciseWorkspace";
@@ -78,6 +84,72 @@ export default function MasteryHub() {
     }
   }, [currentSubject, activeIndex, currentModule, setLastVisited]);
 
+  // Aplica la ubicación codificada en la URL al estado de React.
+  // El id del ejercicio se mapea a su índice dentro del módulo.
+  const applyUrlToState = useCallback(() => {
+    const { module, exerciseId } = readUrlLocation();
+    const mod = module ? ALL_MODULES.find((m) => m.key === module) : undefined;
+    if (!mod) {
+      setCurrentSubject("menu");
+      setActiveIndex(0);
+      return;
+    }
+    let index = 0;
+    if (exerciseId != null) {
+      const found = mod.exercises.findIndex((ex) => ex.id === exerciseId);
+      if (found >= 0) index = found;
+    }
+    setCurrentSubject(mod.key);
+    setActiveIndex(index);
+  }, []);
+
+  // Hidrata desde la URL al montar (deep-link / link compartido) y reacciona a
+  // atrás/adelante del navegador.
+  useEffect(() => {
+    applyUrlToState();
+    window.addEventListener("popstate", applyUrlToState);
+    return () => window.removeEventListener("popstate", applyUrlToState);
+  }, [applyUrlToState]);
+
+  // Refleja la ubicación actual en la URL cuando el usuario navega.
+  // - Se omite la primera ejecución (montaje): el estado aún no fue hidratado
+  //   desde la URL, así que escribir aquí borraría un deep-link recién abierto.
+  // - El guard (search !== actual) evita entradas duplicadas en el historial
+  //   tanto al hidratar como al responder a popstate (la URL ya coincide).
+  const skipFirstUrlWrite = useRef(true);
+  useEffect(() => {
+    if (skipFirstUrlWrite.current) {
+      skipFirstUrlWrite.current = false;
+      return;
+    }
+    const loc: UrlLocation =
+      currentSubject === "menu"
+        ? { module: null, exerciseId: null }
+        : { module: currentSubject, exerciseId: activeExercise?.id ?? null };
+    const nextSearch = buildSearch(loc);
+    if (nextSearch !== window.location.search) {
+      window.history.pushState(
+        null,
+        "",
+        `${window.location.pathname}${nextSearch}`,
+      );
+    }
+  }, [currentSubject, activeExercise?.id]);
+
+  const shareCurrent = useCallback(async () => {
+    if (!currentModule || !activeExercise) return;
+    const url = buildShareUrl({
+      module: currentModule.key,
+      exerciseId: activeExercise.id,
+    });
+    try {
+      await navigator.clipboard.writeText(url);
+      showToast("success", "🔗 Enlace del ejercicio copiado");
+    } catch {
+      showToast("info", url);
+    }
+  }, [currentModule, activeExercise, showToast]);
+
   return (
     <div className="relative flex h-full flex-col overflow-hidden">
       {/* Header */}
@@ -124,6 +196,16 @@ export default function MasteryHub() {
           {inModule && (
             <button onClick={goBackToMenu} className="btn-secondary">
               ← Menú
+            </button>
+          )}
+          {inModule && (
+            <button
+              onClick={shareCurrent}
+              className="icon-btn border border-line"
+              aria-label="Compartir ejercicio"
+              title="Compartir ejercicio"
+            >
+              🔗
             </button>
           )}
           <button
