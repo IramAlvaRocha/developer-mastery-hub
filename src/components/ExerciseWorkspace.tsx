@@ -104,9 +104,18 @@ export default function ExerciseWorkspace({
 
   const instruction = buildInstruction(exercise);
 
+  const positionPercent = total > 0 ? ((index + 1) / total) * 100 : 0;
+
   return (
     <main className="relative flex flex-1 flex-col overflow-hidden bg-canvas">
       {celebrate && <Celebration color={color} />}
+      {/* Progreso de posición dentro del módulo */}
+      <div className="h-0.5 w-full shrink-0 bg-surface-2">
+        <div
+          className={`h-full transition-all duration-500 ease-out bg-${color}-500`}
+          style={{ width: `${positionPercent}%` }}
+        ></div>
+      </div>
       {/* Contenido scrolleable */}
       <div className="flex-1 overflow-y-auto">
         <div className="animate-fade-in mx-auto w-full max-w-3xl space-y-5 p-4 pb-28 md:p-6 md:pb-6">
@@ -249,6 +258,15 @@ export default function ExerciseWorkspace({
                 ✓ Completado
               </span>
             )}
+            <span className="hidden items-center gap-1 text-[11px] text-faint lg:flex">
+              <kbd className="rounded border border-line bg-surface-2 px-1.5 py-0.5 font-sans text-[10px] font-semibold text-muted">
+                ←
+              </kbd>
+              <kbd className="rounded border border-line bg-surface-2 px-1.5 py-0.5 font-sans text-[10px] font-semibold text-muted">
+                →
+              </kbd>
+              navegar
+            </span>
           </div>
 
           <div className="flex items-center gap-2">

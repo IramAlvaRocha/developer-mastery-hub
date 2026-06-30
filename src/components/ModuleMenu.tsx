@@ -352,6 +352,102 @@ export default function ModuleMenu({
   );
 }
 
+function ResumeCard({
+  icon,
+  color,
+  moduleName,
+  exerciseTitle,
+  stepLabel,
+  total,
+  percent,
+  onResume,
+}: {
+  icon: string;
+  color: string;
+  moduleName: string;
+  exerciseTitle: string;
+  stepLabel: string;
+  total: number;
+  percent: number;
+  onResume: () => void;
+}) {
+  const width = useAnimatedWidth(percent);
+  return (
+    <div className="animate-fade-in mx-auto mt-6 w-full max-w-3xl">
+      <div
+        className={`group relative overflow-hidden rounded-card border bg-surface p-4 sm:p-5 border-${color}-500/30`}
+      >
+        <div
+          className={`pointer-events-none absolute -right-16 -top-16 h-44 w-44 rounded-full blur-3xl bg-${color}-500/10`}
+        ></div>
+        <div className="relative flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex min-w-0 items-center gap-3.5">
+            <span
+              className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-[12px] text-2xl bg-${color}-500/10`}
+            >
+              {icon}
+            </span>
+            <div className="min-w-0">
+              <p
+                className={`text-[10px] font-bold uppercase tracking-wider text-${color}-400`}
+              >
+                ▸ Continúa donde lo dejaste
+              </p>
+              <h3 className="mt-0.5 truncate text-[15px] font-bold tracking-tight text-ink">
+                {exerciseTitle}
+              </h3>
+              <p className="mt-0.5 truncate text-xs text-muted">
+                {moduleName} · {stepLabel}
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={onResume}
+            className="btn-primary shrink-0 self-start sm:self-auto"
+          >
+            Continuar →
+          </button>
+        </div>
+        <div className="relative mt-4">
+          <div className="mb-1.5 flex justify-between text-[11px] font-semibold">
+            <span className="text-muted">{total} ejercicios</span>
+            <span className={`text-${color}-400`}>{percent}% completado</span>
+          </div>
+          <div className="h-1.5 overflow-hidden rounded-full bg-surface-2">
+            <div
+              className={`h-full rounded-full transition-all duration-700 ease-out bg-${color}-500`}
+              style={{ width: `${width}%` }}
+            ></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function StatusChip({
+  active,
+  onClick,
+  children,
+}: {
+  active: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className={`rounded-full border px-3 py-1 text-[11px] font-semibold transition-colors ${
+        active
+          ? "border-brand/40 bg-brand/10 text-brand"
+          : "border-line bg-surface text-muted hover:border-brand/30 hover:text-ink"
+      }`}
+    >
+      {children}
+    </button>
+  );
+}
+
 function GroupCard({
   index,
   group,
@@ -369,6 +465,7 @@ function GroupCard({
 }) {
   const meta = GROUP_META[group] ?? { icon: "📦", color: "slate", desc: "" };
   const c = meta.color;
+  const done = progress >= 100;
   const width = useAnimatedWidth(progress);
   return (
     <button
@@ -379,7 +476,11 @@ function GroupCard({
           viewTransitionName: groupVtName(group),
         } as React.CSSProperties
       }
-      className={`animate-stagger group flex h-full flex-col justify-between gap-4 rounded-card border border-line bg-surface p-5 text-left transition-all hover:-translate-y-0.5 hover:border-${c}-500/50`}
+      className={`animate-stagger group flex h-full flex-col justify-between gap-4 rounded-card border bg-surface p-5 text-left transition-all hover:-translate-y-0.5 ${
+        done
+          ? "border-emerald-500/40 hover:border-emerald-500/60"
+          : `border-line hover:border-${c}-500/50`
+      }`}
     >
       <div>
         <div className="flex items-center justify-between">
@@ -388,11 +489,17 @@ function GroupCard({
           >
             {meta.icon}
           </span>
-          <span
-            className={`rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide bg-${c}-500/10 text-${c}-400 border-${c}-500/20`}
-          >
-            {moduleCount} módulos
-          </span>
+          {done ? (
+            <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-emerald-400">
+              ✓ Completado
+            </span>
+          ) : (
+            <span
+              className={`rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide bg-${c}-500/10 text-${c}-400 border-${c}-500/20`}
+            >
+              {moduleCount} módulos
+            </span>
+          )}
         </div>
         <h3
           className={`mt-3 text-base font-bold tracking-tight text-ink transition-colors group-hover:text-${c}-400`}

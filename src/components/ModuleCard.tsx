@@ -10,6 +10,7 @@ interface Props {
 
 export default function ModuleCard({ module, progress, index = 0, onStart }: Props) {
   const c = module.color;
+  const done = progress >= 100;
   const [width, setWidth] = useState(0);
   useEffect(() => {
     const id = requestAnimationFrame(() => setWidth(progress));
@@ -19,7 +20,11 @@ export default function ModuleCard({ module, progress, index = 0, onStart }: Pro
     <button
       onClick={() => onStart(module.key)}
       style={{ "--i": index } as React.CSSProperties}
-      className={`animate-stagger group flex h-full flex-col justify-between gap-4 rounded-card border border-line bg-surface p-5 text-left transition-all hover:-translate-y-0.5 hover:border-${c}-500/50`}
+      className={`animate-stagger group flex h-full flex-col justify-between gap-4 rounded-card border bg-surface p-5 text-left transition-all hover:-translate-y-0.5 ${
+        done
+          ? "border-emerald-500/40 hover:border-emerald-500/60"
+          : `border-line hover:border-${c}-500/50`
+      }`}
     >
       <div>
         <div className="flex items-center justify-between">
@@ -28,11 +33,17 @@ export default function ModuleCard({ module, progress, index = 0, onStart }: Pro
           >
             {module.icon}
           </span>
-          <span
-            className={`rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide bg-${c}-500/10 text-${c}-400 border-${c}-500/20`}
-          >
-            {module.badge}
-          </span>
+          {done ? (
+            <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-emerald-400">
+              ✓ Completado
+            </span>
+          ) : (
+            <span
+              className={`rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide bg-${c}-500/10 text-${c}-400 border-${c}-500/20`}
+            >
+              {module.badge}
+            </span>
+          )}
         </div>
         <h3
           className={`mt-3 text-[15px] font-bold tracking-tight text-ink transition-colors group-hover:text-${c}-400`}
