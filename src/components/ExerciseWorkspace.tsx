@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import type { Exercise } from "@/lib/types";
 import { isAnswerCorrect } from "@/lib/answers";
+import { moduleColorStyle } from "@/lib/moduleColors";
+import { usePrefersReducedMotion } from "@/lib/useReducedMotion";
 import ChallengeCode from "./ChallengeCode";
 import TheoryTab from "./TheoryTab";
 import MentorTab from "./MentorTab";
@@ -121,15 +123,17 @@ export default function ExerciseWorkspace({
   const instruction = buildInstruction(exercise);
 
   const positionPercent = total > 0 ? ((index + 1) / total) * 100 : 0;
+  const colorStyle = moduleColorStyle(color);
+  const reduceMotion = usePrefersReducedMotion();
 
   return (
     <main className="relative flex flex-1 flex-col overflow-hidden bg-canvas">
-      {celebrate && <Celebration color={color} />}
+      {celebrate && <Celebration color={color} reduceMotion={reduceMotion} />}
       {/* Progreso de posición dentro del módulo */}
-      <div className="h-0.5 w-full shrink-0 bg-surface-2">
+      <div className="h-0.5 w-full shrink-0 bg-surface-2" style={colorStyle}>
         <div
-          className={`h-full transition-all duration-500 ease-out bg-${color}-500`}
-          style={{ width: `${positionPercent}%` }}
+          className="mod-progress motion-safe-transition h-full"
+          style={{ width: `${positionPercent}%`, borderRadius: 0 }}
         ></div>
       </div>
       {/* Contenido scrolleable */}
@@ -203,7 +207,8 @@ export default function ExerciseWorkspace({
             {activeTab === "challenge" && (
               <div className="space-y-4">
                 <div
-                  className={`ui-card flex items-start gap-3 p-4 border-l-2 border-${color}-500`}
+                  style={colorStyle}
+                  className="ui-card mod-task-border flex items-start gap-3 border-l-2 p-4"
                 >
                   <span className="mt-0.5 shrink-0 text-base">🎯</span>
                   <div>
@@ -330,7 +335,14 @@ const CONFETTI_COLORS = [
 ];
 
 /** Overlay efímero de celebración: check con rebote + lluvia de confeti. */
-function Celebration({ color }: { color: string }) {
+function Celebration({
+  color,
+  reduceMotion,
+}: {
+  color: string;
+  reduceMotion: boolean;
+}) {
+  const colorStyle = moduleColorStyle(color);
   const pieces = useMemo(
     () =>
       Array.from({ length: 18 }, (_, i) => ({
@@ -345,8 +357,24 @@ function Celebration({ color }: { color: string }) {
     [],
   );
 
+  if (reduceMotion) {
+    return (
+      <div
+        style={colorStyle}
+        className="pointer-events-none absolute inset-0 z-50 flex items-center justify-center"
+      >
+        <div className="mod-celebrate flex h-20 w-20 items-center justify-center rounded-full text-4xl shadow-glow">
+          ✓
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="pointer-events-none absolute inset-0 z-50 flex items-center justify-center overflow-hidden">
+    <div
+      style={colorStyle}
+      className="pointer-events-none absolute inset-0 z-50 flex items-center justify-center overflow-hidden"
+    >
       {/* Confeti */}
       <div className="absolute inset-x-0 top-1/3 mx-auto h-0 w-full max-w-md">
         {pieces.map((p) => (
@@ -367,9 +395,7 @@ function Celebration({ color }: { color: string }) {
         ))}
       </div>
       {/* Check con rebote */}
-      <div
-        className={`animate-pop flex h-20 w-20 items-center justify-center rounded-full text-4xl shadow-glow bg-${color}-500/20 text-${color}-400`}
-      >
+      <div className="mod-celebrate animate-pop flex h-20 w-20 items-center justify-center rounded-full text-4xl shadow-glow">
         ✓
       </div>
     </div>

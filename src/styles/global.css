@@ -35,9 +35,74 @@
     0 4px 6px -4px rgba(0, 0, 0, 0.3);
 }
 
-/* Safelist de clases de color generadas dinamicamente por modulo. */
-@source inline("{hover:,group-hover:,}{bg,text,border}-{emerald,yellow,green,teal,orange,lime,blue,cyan,rose,purple,amber,pink,violet,slate,stone,sky,indigo}-{400,500}");
-@source inline("{hover:,group-hover:,}{bg,border}-{emerald,yellow,green,teal,orange,lime,blue,cyan,rose,purple,amber,pink,violet,slate,stone,sky,indigo}-500/{10,15,20,40,50}");
+/* ─── Colores de modulo (CSS vars: --module-rgb, --module-rgb-light) ───────
+   Aplicar moduleColorStyle(color) en el contenedor; evita clases Tailwind
+   interpoladas (bg-${color}-500) y el safelist dinamico. */
+@layer utilities {
+  .mod-icon-bg {
+    background-color: rgb(var(--module-rgb) / 0.1);
+  }
+  .mod-badge {
+    background-color: rgb(var(--module-rgb) / 0.1);
+    color: rgb(var(--module-rgb-light));
+    border-color: rgb(var(--module-rgb) / 0.2);
+  }
+  .mod-text {
+    color: rgb(var(--module-rgb-light));
+  }
+  .mod-bg {
+    background-color: rgb(var(--module-rgb));
+  }
+  .mod-bg-15 {
+    background-color: rgb(var(--module-rgb) / 0.15);
+  }
+  .mod-bg-20 {
+    background-color: rgb(var(--module-rgb) / 0.2);
+  }
+  .mod-border {
+    border-color: rgb(var(--module-rgb));
+  }
+  .mod-border-40 {
+    border-color: rgb(var(--module-rgb) / 0.4);
+  }
+  .mod-border-l {
+    border-left-color: rgb(var(--module-rgb));
+  }
+  .mod-glow {
+    background-color: rgb(var(--module-rgb) / 0.1);
+  }
+  .mod-progress {
+    height: 100%;
+    border-radius: 9999px;
+    background-color: rgb(var(--module-rgb));
+    transition: width 0.7s ease-out;
+  }
+  .group:hover .mod-title-hover {
+    color: rgb(var(--module-rgb-light));
+  }
+  .group.mod-card-hover:hover {
+    border-color: rgb(var(--module-rgb) / 0.5);
+  }
+  .mod-chip-active {
+    background-color: rgb(var(--module-rgb) / 0.15);
+    color: rgb(var(--module-rgb-light));
+    border-color: rgb(var(--module-rgb) / 0.4);
+  }
+  .mod-sidebar-active {
+    border-left-color: rgb(var(--module-rgb));
+  }
+  .mod-sidebar-item-active {
+    background-color: rgb(var(--module-rgb) / 0.15);
+    color: rgb(var(--module-rgb-light));
+  }
+  .mod-task-border {
+    border-left-color: rgb(var(--module-rgb));
+  }
+  .mod-celebrate {
+    background-color: rgb(var(--module-rgb) / 0.2);
+    color: rgb(var(--module-rgb-light));
+  }
+}
 
 html,
 body {
@@ -249,13 +314,27 @@ body {
 }
 
 /* Accesibilidad: si el usuario prefiere menos movimiento, desactivamos
-   animaciones y transiciones de vista. */
+   animaciones, transiciones decorativas y efectos de elevacion. */
 @media (prefers-reduced-motion: reduce) {
   .animate-fade-in,
   .animate-stagger,
   .animate-pop,
-  .confetti-piece {
+  .confetti-piece,
+  .shimmer-loading {
     animation: none !important;
+  }
+  .shimmer-loading {
+    background: #2a2a2a;
+    background-size: auto;
+  }
+  .mod-progress {
+    transition: none !important;
+  }
+  .motion-safe-transition {
+    transition: none !important;
+  }
+  .motion-safe-lift:hover {
+    transform: none !important;
   }
   ::view-transition-group(*),
   ::view-transition-old(*),

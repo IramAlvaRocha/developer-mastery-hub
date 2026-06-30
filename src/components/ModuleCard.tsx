@@ -1,5 +1,6 @@
-import { useEffect, useState } from "react";
 import type { Module } from "@/lib/types";
+import { moduleColorStyle } from "@/lib/moduleColors";
+import { useAnimatedWidth } from "@/lib/useReducedMotion";
 
 interface Props {
   module: Module;
@@ -9,28 +10,22 @@ interface Props {
 }
 
 export default function ModuleCard({ module, progress, index = 0, onStart }: Props) {
-  const c = module.color;
   const done = progress >= 100;
-  const [width, setWidth] = useState(0);
-  useEffect(() => {
-    const id = requestAnimationFrame(() => setWidth(progress));
-    return () => cancelAnimationFrame(id);
-  }, [progress]);
+  const width = useAnimatedWidth(progress);
+
   return (
     <button
       onClick={() => onStart(module.key)}
-      style={{ "--i": index } as React.CSSProperties}
-      className={`animate-stagger group flex h-full flex-col justify-between gap-4 rounded-card border bg-surface p-5 text-left transition-all hover:-translate-y-0.5 ${
+      style={{ "--i": index, ...moduleColorStyle(module.color) } as React.CSSProperties}
+      className={`animate-stagger group mod-card-hover flex h-full flex-col justify-between gap-4 rounded-card border bg-surface p-5 text-left motion-safe-transition motion-safe-lift transition-all hover:-translate-y-0.5 ${
         done
           ? "border-emerald-500/40 hover:border-emerald-500/60"
-          : `border-line hover:border-${c}-500/50`
+          : "border-line"
       }`}
     >
       <div>
         <div className="flex items-center justify-between">
-          <span
-            className={`flex h-10 w-10 items-center justify-center rounded-[10px] text-xl bg-${c}-500/10`}
-          >
+          <span className="mod-icon-bg flex h-10 w-10 items-center justify-center rounded-input text-xl">
             {module.icon}
           </span>
           {done ? (
@@ -38,16 +33,12 @@ export default function ModuleCard({ module, progress, index = 0, onStart }: Pro
               ✓ Completado
             </span>
           ) : (
-            <span
-              className={`rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide bg-${c}-500/10 text-${c}-400 border-${c}-500/20`}
-            >
+            <span className="mod-badge rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide">
               {module.badge}
             </span>
           )}
         </div>
-        <h3
-          className={`mt-3 text-[15px] font-bold tracking-tight text-ink transition-colors group-hover:text-${c}-400`}
-        >
+        <h3 className="mod-title-hover mt-3 text-[15px] font-bold tracking-tight text-ink transition-colors">
           {module.name}
         </h3>
         <p className="mt-1.5 text-xs leading-relaxed text-muted">
@@ -69,15 +60,12 @@ export default function ModuleCard({ module, progress, index = 0, onStart }: Pro
           <span className="text-muted">
             {module.exercises.length} ejercicios
           </span>
-          <span className={progress > 0 ? `text-${c}-400` : "text-faint"}>
+          <span className={progress > 0 ? "mod-text" : "text-faint"}>
             {progress}%
           </span>
         </div>
         <div className="h-1.5 overflow-hidden rounded-full bg-surface-2">
-          <div
-            className={`h-full rounded-full transition-all duration-700 ease-out bg-${c}-500`}
-            style={{ width: `${width}%` }}
-          ></div>
+          <div className="mod-progress" style={{ width: `${width}%` }}></div>
         </div>
       </div>
     </button>

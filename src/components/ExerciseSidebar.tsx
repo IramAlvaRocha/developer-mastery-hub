@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import type { Exercise } from "@/lib/types";
+import { moduleColorStyle } from "@/lib/moduleColors";
 
 interface Props {
   moduleName: string;
@@ -28,14 +29,13 @@ export default function ExerciseSidebar({
 }: Props) {
   const [sortMode, setSortMode] = useState<SortMode>("default");
   const [starFilter, setStarFilter] = useState<number | null>(null);
+  const colorStyle = moduleColorStyle(color);
 
-  // Niveles de dificultad presentes en el modulo (para los chips de filtro).
   const starLevels = useMemo(
     () => Array.from(new Set(exercises.map((e) => e.stars))).sort((a, b) => a - b),
     [exercises],
   );
 
-  // Conserva el indice original para que la navegacion (prev/next) siga intacta.
   const items = useMemo(() => {
     let list = exercises.map((ex, index) => ({ ex, index }));
     if (starFilter != null) list = list.filter((it) => it.ex.stars === starFilter);
@@ -61,7 +61,7 @@ export default function ExerciseSidebar({
 
   return (
     <aside
-      className={`fixed inset-y-0 left-0 z-40 flex h-full w-72 shrink-0 flex-col border-r border-line bg-surface transition-transform duration-300 md:static ${
+      className={`fixed inset-y-0 left-0 z-40 flex h-full w-72 shrink-0 flex-col border-r border-line bg-surface motion-safe-transition transition-transform duration-300 md:static ${
         isOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
       }`}
     >
@@ -83,24 +83,23 @@ export default function ExerciseSidebar({
         </button>
       </div>
 
-      <div className="shrink-0 border-b border-line p-4">
+      <div className="shrink-0 border-b border-line p-4" style={colorStyle}>
         <div className="mb-2 flex justify-between text-[11px] font-semibold text-muted">
           <span>Completadas</span>
-          <span className={`text-${color}-400`}>{progress}%</span>
+          <span className="mod-text">{progress}%</span>
         </div>
         <div className="h-1.5 overflow-hidden rounded-full bg-surface-2">
           <div
-            className={`h-full rounded-full transition-all duration-700 ease-out bg-${color}-500`}
+            className="mod-progress motion-safe-transition"
             style={{ width: `${progress}%` }}
           ></div>
         </div>
       </div>
 
-      {/* Filtro y orden por dificultad */}
-      <div className="shrink-0 space-y-2 border-b border-line px-3 py-3">
+      <div className="shrink-0 space-y-2 border-b border-line px-3 py-3" style={colorStyle}>
         <button
           onClick={cycleSort}
-          className="flex w-full items-center justify-between rounded-[10px] border border-line bg-surface-2 px-3 py-2 text-[11px] font-semibold text-muted transition-colors hover:text-ink"
+          className="flex w-full items-center justify-between rounded-input border border-line bg-surface-2 px-3 py-2 text-[11px] font-semibold text-muted transition-colors hover:text-ink"
           title="Cambiar orden por dificultad"
         >
           <span className="flex items-center gap-1.5">
@@ -113,7 +112,6 @@ export default function ExerciseSidebar({
         <div className="flex flex-wrap gap-1.5">
           <FilterChip
             active={starFilter == null}
-            color={color}
             onClick={() => setStarFilter(null)}
           >
             Todos
@@ -122,7 +120,6 @@ export default function ExerciseSidebar({
             <FilterChip
               key={lvl}
               active={starFilter === lvl}
-              color={color}
               onClick={() => setStarFilter((s) => (s === lvl ? null : lvl))}
             >
               {"★".repeat(lvl)}
@@ -131,7 +128,7 @@ export default function ExerciseSidebar({
         </div>
       </div>
 
-      <nav className="flex-grow space-y-1 overflow-y-auto p-2.5">
+      <nav className="flex-grow space-y-1 overflow-y-auto p-2.5" style={colorStyle}>
         {items.map(({ ex, index }) => {
           const active = activeIndex === index;
           const done = isCompleted(ex.id);
@@ -140,9 +137,9 @@ export default function ExerciseSidebar({
             <button
               key={ex.id}
               onClick={() => onSelect(index)}
-              className={`group flex w-full items-center gap-2.5 rounded-[10px] px-3 py-2.5 text-left transition-all ${
+              className={`group flex w-full items-center gap-2.5 rounded-input px-3 py-2.5 text-left motion-safe-transition transition-all ${
                 active
-                  ? `border-l-2 bg-elevated text-ink border-${color}-500`
+                  ? "mod-sidebar-active border-l-2 bg-elevated text-ink"
                   : "border-l-2 border-transparent text-muted hover:bg-surface-2 hover:text-ink"
               }`}
             >
@@ -151,7 +148,7 @@ export default function ExerciseSidebar({
                   done
                     ? "bg-emerald-500/15 text-emerald-400"
                     : active
-                      ? `bg-${color}-500/15 text-${color}-400`
+                      ? "mod-sidebar-item-active"
                       : "bg-surface-2 text-faint"
                 }`}
               >
@@ -181,21 +178,19 @@ export default function ExerciseSidebar({
 
 function FilterChip({
   active,
-  color,
   onClick,
   children,
 }: {
   active: boolean;
-  color: string;
   onClick: () => void;
   children: React.ReactNode;
 }) {
   return (
     <button
       onClick={onClick}
-      className={`rounded-full border px-2.5 py-1 text-[10px] font-bold tracking-wide transition-colors ${
+      className={`rounded-full border px-2.5 py-1 text-[10px] font-bold tracking-wide motion-safe-transition transition-colors ${
         active
-          ? `bg-${color}-500/15 text-${color}-400 border-${color}-500/40`
+          ? "mod-chip-active border"
           : "border-line bg-surface-2 text-faint hover:text-muted"
       }`}
     >

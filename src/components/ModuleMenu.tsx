@@ -1,6 +1,8 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import type { Module } from "@/lib/types";
 import type { LastVisited } from "@/lib/useProgress";
+import { moduleColorStyle } from "@/lib/moduleColors";
+import { useAnimatedWidth, useCountUp } from "@/lib/useReducedMotion";
 import { runViewTransition } from "@/lib/viewTransition";
 import ModuleCard from "./ModuleCard";
 
@@ -375,22 +377,17 @@ function ResumeCard({
   return (
     <div className="animate-fade-in mx-auto mt-6 w-full max-w-3xl">
       <div
-        className={`group relative overflow-hidden rounded-card border bg-surface p-4 sm:p-5 border-${color}-500/40`}
+        style={moduleColorStyle(color)}
+        className="group relative overflow-hidden rounded-card border mod-border-40 bg-surface p-4 sm:p-5"
       >
-        <div
-          className={`pointer-events-none absolute -right-16 -top-16 h-44 w-44 rounded-full blur-3xl bg-${color}-500/10`}
-        ></div>
+        <div className="mod-glow pointer-events-none absolute -right-16 -top-16 h-44 w-44 rounded-full blur-3xl"></div>
         <div className="relative flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex min-w-0 items-center gap-3.5">
-            <span
-              className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-[12px] text-2xl bg-${color}-500/10`}
-            >
+            <span className="mod-icon-bg flex h-12 w-12 shrink-0 items-center justify-center rounded-[12px] text-2xl">
               {icon}
             </span>
             <div className="min-w-0">
-              <p
-                className={`text-[10px] font-bold uppercase tracking-wider text-${color}-400`}
-              >
+              <p className="mod-text text-[10px] font-bold uppercase tracking-wider">
                 ▸ Continúa donde lo dejaste
               </p>
               <h3 className="mt-0.5 truncate text-[15px] font-bold tracking-tight text-ink">
@@ -411,13 +408,10 @@ function ResumeCard({
         <div className="relative mt-4">
           <div className="mb-1.5 flex justify-between text-[11px] font-semibold">
             <span className="text-muted">{total} ejercicios</span>
-            <span className={`text-${color}-400`}>{percent}% completado</span>
+            <span className="mod-text">{percent}% completado</span>
           </div>
           <div className="h-1.5 overflow-hidden rounded-full bg-surface-2">
-            <div
-              className={`h-full rounded-full transition-all duration-700 ease-out bg-${color}-500`}
-              style={{ width: `${width}%` }}
-            ></div>
+            <div className="mod-progress" style={{ width: `${width}%` }}></div>
           </div>
         </div>
       </div>
@@ -474,19 +468,18 @@ function GroupCard({
         {
           "--i": index,
           viewTransitionName: groupVtName(group),
+          ...moduleColorStyle(c),
         } as React.CSSProperties
       }
-      className={`animate-stagger group flex h-full flex-col justify-between gap-4 rounded-card border bg-surface p-5 text-left transition-all hover:-translate-y-0.5 ${
+      className={`animate-stagger group mod-card-hover flex h-full flex-col justify-between gap-4 rounded-card border bg-surface p-5 text-left motion-safe-transition motion-safe-lift transition-all hover:-translate-y-0.5 ${
         done
           ? "border-emerald-500/40 hover:border-emerald-500/60"
-          : `border-line hover:border-${c}-500/50`
+          : "border-line"
       }`}
     >
       <div>
         <div className="flex items-center justify-between">
-          <span
-            className={`flex h-11 w-11 items-center justify-center rounded-[12px] text-2xl bg-${c}-500/10`}
-          >
+          <span className="mod-icon-bg flex h-11 w-11 items-center justify-center rounded-[12px] text-2xl">
             {meta.icon}
           </span>
           {done ? (
@@ -494,16 +487,12 @@ function GroupCard({
               ✓ Completado
             </span>
           ) : (
-            <span
-              className={`rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide bg-${c}-500/10 text-${c}-400 border-${c}-500/20`}
-            >
+            <span className="mod-badge rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide">
               {moduleCount} módulos
             </span>
           )}
         </div>
-        <h3
-          className={`mt-3 text-base font-bold tracking-tight text-ink transition-colors group-hover:text-${c}-400`}
-        >
+        <h3 className="mod-title-hover mt-3 text-base font-bold tracking-tight text-ink transition-colors">
           {group}
         </h3>
         <p className="mt-1.5 text-xs leading-relaxed text-muted">{meta.desc}</p>
@@ -511,47 +500,16 @@ function GroupCard({
       <div className="border-t border-line-soft pt-3">
         <div className="mb-1.5 flex justify-between text-[11px] font-semibold">
           <span className="text-muted">{exerciseCount} ejercicios</span>
-          <span className={progress > 0 ? `text-${c}-400` : "text-faint"}>
+          <span className={progress > 0 ? "mod-text" : "text-faint"}>
             {progress}%
           </span>
         </div>
         <div className="h-1.5 overflow-hidden rounded-full bg-surface-2">
-          <div
-            className={`h-full rounded-full transition-all duration-700 ease-out bg-${c}-500`}
-            style={{ width: `${width}%` }}
-          ></div>
+          <div className="mod-progress" style={{ width: `${width}%` }}></div>
         </div>
       </div>
     </button>
   );
-}
-
-/** Anima el ancho desde 0 hasta el valor objetivo al montar/cambiar. */
-function useAnimatedWidth(target: number): number {
-  const [w, setW] = useState(0);
-  useEffect(() => {
-    const id = requestAnimationFrame(() => setW(target));
-    return () => cancelAnimationFrame(id);
-  }, [target]);
-  return w;
-}
-
-/** Conteo animado de 0 al valor objetivo (ease-out cubic). */
-function useCountUp(target: number, duration = 800): number {
-  const [val, setVal] = useState(0);
-  useEffect(() => {
-    let raf = 0;
-    const start = performance.now();
-    const tick = (now: number) => {
-      const p = Math.min(1, (now - start) / duration);
-      const eased = 1 - Math.pow(1 - p, 3);
-      setVal(Math.round(target * eased));
-      if (p < 1) raf = requestAnimationFrame(tick);
-    };
-    raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
-  }, [target, duration]);
-  return val;
 }
 
 function Stat({
