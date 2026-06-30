@@ -1,5 +1,6 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { ALL_MODULES, MODULE_GROUPS } from "@/data";
+import { runViewTransition } from "@/lib/viewTransition";
 import { useProgress } from "@/lib/useProgress";
 import { useToasts } from "@/lib/useToasts";
 import ModuleMenu from "./ModuleMenu";
@@ -7,6 +8,7 @@ import ExerciseSidebar from "./ExerciseSidebar";
 import ExerciseWorkspace from "./ExerciseWorkspace";
 import AiChat from "./AiChat";
 import Toasts from "./Toasts";
+import SettingsModal from "./SettingsModal";
 
 const MODULE_KEYS = ALL_MODULES.map((m) => m.key);
 
@@ -14,8 +16,10 @@ export default function MasteryHub() {
   const [currentSubject, setCurrentSubject] = useState<string>("menu");
   const [activeIndex, setActiveIndex] = useState(0);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
-  const { isCompleted, markComplete, getPercent } = useProgress(MODULE_KEYS);
+  const { isCompleted, markComplete, getPercent, lastVisited, setLastVisited } =
+    useProgress(MODULE_KEYS);
   const { toasts, showToast, dismissToast } = useToasts();
 
   const currentModule = useMemo(
@@ -37,15 +41,19 @@ export default function MasteryHub() {
     );
   }, [currentModule, activeExercise]);
 
-  function startSubject(key: string) {
-    setCurrentSubject(key);
-    setActiveIndex(0);
-    setIsMobileMenuOpen(false);
+  function startSubject(key: string, index = 0) {
+    runViewTransition(() => {
+      setCurrentSubject(key);
+      setActiveIndex(index);
+      setIsMobileMenuOpen(false);
+    });
   }
 
   function goBackToMenu() {
-    setCurrentSubject("menu");
-    setIsMobileMenuOpen(false);
+    runViewTransition(() => {
+      setCurrentSubject("menu");
+      setIsMobileMenuOpen(false);
+    });
   }
 
   function selectExercise(index: number) {
@@ -62,6 +70,13 @@ export default function MasteryHub() {
   }, []);
 
   const inModule = currentSubject !== "menu" && currentModule && activeExercise;
+
+  // Recuerda el último ejercicio abierto para "Continuar donde lo dejaste".
+  useEffect(() => {
+    if (currentSubject !== "menu" && currentModule) {
+      setLastVisited(currentModule.key, activeIndex);
+    }
+  }, [currentSubject, activeIndex, currentModule, setLastVisited]);
 
   return (
     <div className="relative flex h-full flex-col overflow-hidden">
@@ -81,7 +96,7 @@ export default function MasteryHub() {
                 Developer Mastery Hub
               </h1>
               <p className="text-[11px] font-medium text-muted">
-                .NET + React · patrones, calidad y Gemini IA
+                .NET + React · patrones, calidad y mentoría IA
               </p>
             </div>
           </button>
@@ -111,6 +126,14 @@ export default function MasteryHub() {
               ← Menú
             </button>
           )}
+          <button
+            onClick={() => setIsSettingsOpen(true)}
+            className="icon-btn border border-line"
+            aria-label="Configuración"
+            title="Configuración"
+          >
+            ⚙️
+          </button>
           {inModule && (
             <button
               onClick={() => setIsMobileMenuOpen((v) => !v)}
@@ -130,6 +153,8 @@ export default function MasteryHub() {
             groups={MODULE_GROUPS}
             getPercent={getPercent}
             onStart={startSubject}
+            onResume={(key, index) => startSubject(key, index)}
+            lastVisited={lastVisited}
             onToast={showToast}
           />
         ) : (
@@ -172,6 +197,11 @@ export default function MasteryHub() {
       </div>
 
       {inModule && <AiChat systemPrompt={systemPrompt} />}
+      <SettingsModal
+        open={isSettingsOpen}
+        onClose={() => setIsSettingsOpen(false)}
+        onToast={showToast}
+      />
       <Toasts toasts={toasts} onDismiss={dismissToast} />
     </div>
   );

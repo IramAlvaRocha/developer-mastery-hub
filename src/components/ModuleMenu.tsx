@@ -1,6 +1,7 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { Module } from "@/lib/types";
-import { getApiKey, saveApiKey } from "@/lib/gemini";
+import type { LastVisited } from "@/lib/useProgress";
+import { runViewTransition } from "@/lib/viewTransition";
 import ModuleCard from "./ModuleCard";
 
 interface Props {
@@ -8,7 +9,72 @@ interface Props {
   groups: string[];
   getPercent: (key: string, total: number) => number;
   onStart: (key: string) => void;
+  onResume: (key: string, index: number) => void;
+  lastVisited: LastVisited | null;
   onToast: (type: "success" | "error" | "info", message: string) => void;
+}
+
+type StatusFilter = "all" | "progress" | "new" | "done";
+
+/** Metadatos visuales por categoria principal (con fallback al primer modulo). */
+const GROUP_META: Record<string, { icon: string; color: string; desc: string }> =
+  {
+    "Buenas Practicas": {
+      icon: "🏆",
+      color: "purple",
+      desc: "Patrones senior de .NET (backend) y React (frontend), en orden de construcción.",
+    },
+    Frontend: {
+      icon: "⚡",
+      color: "emerald",
+      desc: "Ecosistema Vue: Composition API, Pinia, Nuxt y Vuetify.",
+    },
+    "Backend & Datos": {
+      icon: "🟢",
+      color: "lime",
+      desc: "APIs REST con Node.js y bases de datos con SQL Server.",
+    },
+    "Cloud & Serverless": {
+      icon: "☁️",
+      color: "blue",
+      desc: "Google Cloud Platform y Firebase: funciones, IAM y servicios gestionados.",
+    },
+    "DevOps & Git": {
+      icon: "🐳",
+      color: "sky",
+      desc: "Git, Git Flow, monorepos, Docker, Kubernetes y CI/CD.",
+    },
+    "APIs & Seguridad": {
+      icon: "🔑",
+      color: "rose",
+      desc: "Axios/Fetch, OAuth2, JWT, CORS, CSP y defensa XSS.",
+    },
+    "Testing & Calidad": {
+      icon: "🧪",
+      color: "amber",
+      desc: "Vitest, E2E (Cypress/Playwright), ESLint, SonarQube y coverage.",
+    },
+    TypeScript: {
+      icon: "💙",
+      color: "indigo",
+      desc: "Primitivos, interfaces, types, funciones, generics, enums y utility types.",
+    },
+    "TS Arrays": {
+      icon: "🔄",
+      color: "cyan",
+      desc: "Dominio de map, filter, reduce, find, some/every, sort y extras.",
+    },
+  };
+
+/** Nombre estable para la View Transition compartida (tarjeta -> encabezado). */
+function groupVtName(group: string): string {
+  return (
+    "vt-cat-" +
+    group
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-|-$/g, "")
+  );
 }
 
 export default function ModuleMenu({
@@ -16,18 +82,37 @@ export default function ModuleMenu({
   groups,
   getPercent,
   onStart,
-  onToast,
+  onResume,
+  lastVisited,
 }: Props) {
-  const [apiKey, setApiKey] = useState(getApiKey());
-  const [showKey, setShowKey] = useState(false);
   const [query, setQuery] = useState("");
-
-  function handleSaveKey() {
-    saveApiKey(apiKey);
-    onToast("success", "Clave de API guardada en localStorage.");
-  }
+  const [selectedGroup, setSelectedGroup] = useState<string | null>(null);
+  const [status, setStatus] = useState<StatusFilter>("all");
 
   const q = query.trim().toLowerCase();
+  const searching = q.length > 0;
+
+  /** Estado de avance de un módulo: sin empezar / en curso / completado. */
+  function moduleStatus(m: Module): Exclude<StatusFilter, "all"> {
+    const p = getPercent(m.key, m.exercises.length);
+    if (p >= 100) return "done";
+    if (p > 0) return "progress";
+    return "new";
+  }
+
+  // Módulo a reanudar: el último visitado que aún no esté al 100%.
+  const resume = useMemo(() => {
+    if (!lastVisited) return null;
+    const mod = modules.find((m) => m.key === lastVisited.key);
+    if (!mod) return null;
+    const percent = getPercent(mod.key, mod.exercises.length);
+    if (percent >= 100) return null;
+    const index = Math.min(lastVisited.index, mod.exercises.length - 1);
+    const ex = mod.exercises[index];
+    if (!ex) return null;
+    return { mod, index, ex, percent };
+  }, [lastVisited, modules, getPercent]);
+
   const filtered = useMemo(() => {
     if (!q) return modules;
     return modules.filter((m) =>
@@ -50,8 +135,44 @@ export default function ModuleMenu({
     const overall = totalExercises
       ? Math.round(weighted / totalExercises)
       : 0;
-    return { totalModules: modules.length, totalExercises, overall };
-  }, [modules, getPercent]);
+    return {
+      totalModules: modules.length,
+      totalExercises,
+      overall,
+      totalGroups: groups.length,
+    };
+  }, [modules, getPercent, groups.length]);
+
+  function groupProgress(mods: Module[]) {
+    const total = mods.reduce((s, m) => s + m.exercises.length, 0);
+    if (!total) return 0;
+    const weighted = mods.reduce(
+      (s, m) => s + getPercent(m.key, m.exercises.length) * m.exercises.length,
+      0,
+    );
+    return Math.round(weighted / total);
+  }
+
+  function openGroup(group: string) {
+    runViewTransition(() => setSelectedGroup(group));
+  }
+
+  function backToGroups() {
+    runViewTransition(() => setSelectedGroup(null));
+  }
+
+  // Modulos a mostrar segun el estado de navegacion.
+  const baseModules = searching
+    ? filtered
+    : selectedGroup
+      ? modules.filter((m) => (m.group || "Otros") === selectedGroup)
+      : [];
+  const visibleModules =
+    status === "all"
+      ? baseModules
+      : baseModules.filter((m) => moduleStatus(m) === status);
+
+  const showGroupGrid = !searching && !selectedGroup;
 
   return (
     <main className="mx-auto flex w-full max-w-7xl flex-1 flex-col overflow-y-auto px-4 py-8 md:px-8">
@@ -64,22 +185,40 @@ export default function ModuleMenu({
           Ruta de Especialización
         </h2>
         <p className="mx-auto max-w-2xl text-sm leading-relaxed text-muted">
-          Buenas prácticas de .NET (backend) y React (frontend), más el catálogo
-          completo de TypeScript, testing, seguridad, calidad y DevOps. Empieza
-          por <span className="font-semibold text-ink">Buenas Prácticas</span>:
-          primero el back, luego el front.
+          Elige una categoría para ver sus módulos. Buenas prácticas de .NET
+          (backend) y React (frontend), más TypeScript, testing, seguridad,
+          calidad y DevOps.
         </p>
       </div>
 
+      {/* Continuar donde lo dejaste */}
+      {resume && showGroupGrid && (
+        <ResumeCard
+          icon={resume.mod.icon}
+          color={resume.mod.color}
+          moduleName={resume.mod.name}
+          exerciseTitle={resume.ex.title}
+          stepLabel={
+            resume.ex.step != null
+              ? `Paso ${resume.ex.step}`
+              : `Ejercicio ${resume.index + 1}`
+          }
+          total={resume.mod.exercises.length}
+          percent={resume.percent}
+          onResume={() => onResume(resume.mod.key, resume.index)}
+        />
+      )}
+
       {/* Stats */}
-      <div className="mx-auto mt-6 grid w-full max-w-xl grid-cols-3 gap-3">
+      <div className="mx-auto mt-6 grid w-full max-w-2xl grid-cols-4 gap-3">
+        <Stat value={stats.totalGroups} label="Categorías" />
         <Stat value={stats.totalModules} label="Módulos" />
         <Stat value={stats.totalExercises} label="Ejercicios" />
-        <Stat value={`${stats.overall}%`} label="Progreso" accent />
+        <Stat value={stats.overall} suffix="%" label="Progreso" accent />
       </div>
 
-      {/* Buscador + API key */}
-      <div className="mx-auto mt-6 w-full max-w-3xl space-y-3">
+      {/* Buscador */}
+      <div className="mx-auto mt-6 w-full max-w-3xl">
         <div className="relative">
           <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-muted">
             🔍
@@ -92,109 +231,241 @@ export default function ModuleMenu({
             className="input-field pl-11"
           />
         </div>
+      </div>
 
-        <details className="ui-card group">
-          <summary className="flex cursor-pointer list-none items-center justify-between px-4 py-3 text-[13px] font-semibold text-ink">
-            <span className="flex items-center gap-2">
-              <span>⚙️</span> Clave de API de Gemini (opcional)
-            </span>
-            <span className="text-muted transition-transform group-open:rotate-180">
-              ⌄
-            </span>
-          </summary>
-          <div className="space-y-2 border-t border-line px-4 py-3">
-            <div className="flex flex-col gap-2 sm:flex-row">
-              <div className="relative flex-grow">
-                <input
-                  value={apiKey}
-                  onChange={(e) => setApiKey(e.target.value)}
-                  type={showKey ? "text" : "password"}
-                  placeholder="Pega tu Gemini API Key (AIzaSy...)"
-                  className="input-field pr-10 font-mono text-xs"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowKey((v) => !v)}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted hover:text-ink"
-                >
-                  {showKey ? "🙈" : "👁️"}
-                </button>
-              </div>
-              <button onClick={handleSaveKey} className="btn-primary">
-                Guardar
+      {/* ── Nivel 1: Categorías principales ── */}
+      {showGroupGrid && (
+        <div className="mt-8 grid w-full grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {groups.map((group, i) => {
+            const groupModules = modules.filter(
+              (m) => (m.group || "Otros") === group,
+            );
+            if (groupModules.length === 0) return null;
+            const exercises = groupModules.reduce(
+              (sum, m) => sum + m.exercises.length,
+              0,
+            );
+            return (
+              <GroupCard
+                key={group}
+                index={i}
+                group={group}
+                moduleCount={groupModules.length}
+                exerciseCount={exercises}
+                progress={groupProgress(groupModules)}
+                onSelect={() => openGroup(group)}
+              />
+            );
+          })}
+        </div>
+      )}
+
+      {/* ── Nivel 2: Subcategorías (módulos del grupo) o resultados de búsqueda ── */}
+      {!showGroupGrid && (
+        <div className="mt-8">
+          <div className="mb-4 flex items-center gap-3">
+            {!searching && (
+              <button
+                onClick={backToGroups}
+                className="btn-secondary shrink-0"
+              >
+                ← Categorías
               </button>
-            </div>
-            <p className="text-[11px] text-faint">
-              Se guarda en localStorage. Solo se usa para consultas directas a la
-              API de Gemini.
-            </p>
+            )}
+            <h3
+              className="text-sm font-bold tracking-tight text-ink"
+              style={
+                !searching && selectedGroup
+                  ? { viewTransitionName: groupVtName(selectedGroup) }
+                  : undefined
+              }
+            >
+              {searching ? `Resultados para “${query}”` : selectedGroup}
+            </h3>
+            <div className="h-px flex-1 bg-line"></div>
+            <span className="shrink-0 text-[11px] font-semibold text-faint">
+              {visibleModules.length} módulos
+            </span>
           </div>
-        </details>
-      </div>
 
-      {/* Grupos */}
-      <div className="mt-8 space-y-8">
-        {groups.map((group) => {
-          const groupModules = filtered.filter(
-            (m) => (m.group || "Otros") === group,
-          );
-          if (groupModules.length === 0) return null;
-          const count = groupModules.reduce(
-            (sum, m) => sum + m.exercises.length,
-            0,
-          );
-          return (
-            <div key={group} className="w-full">
-              <div className="mb-4 flex items-center gap-3">
-                <h3 className="text-xs font-bold uppercase tracking-widest text-muted">
-                  {group}
-                </h3>
-                <div className="h-px flex-1 bg-line"></div>
-                <span className="text-[11px] font-semibold text-faint">
-                  {count} ejercicios
-                </span>
-              </div>
-              <div className="grid w-full grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                {groupModules.map((mod) => (
-                  <ModuleCard
-                    key={mod.key}
-                    module={mod}
-                    progress={getPercent(mod.key, mod.exercises.length)}
-                    onStart={onStart}
-                  />
-                ))}
-              </div>
-            </div>
-          );
-        })}
-
-        {filtered.length === 0 && (
-          <div className="py-16 text-center text-sm text-muted">
-            No hay módulos que coincidan con{" "}
-            <span className="font-semibold text-ink">“{query}”</span>.
+          {/* Filtros por estado de avance */}
+          <div className="mb-5 flex flex-wrap items-center gap-1.5">
+            <StatusChip active={status === "all"} onClick={() => setStatus("all")}>
+              Todos
+            </StatusChip>
+            <StatusChip
+              active={status === "progress"}
+              onClick={() => setStatus("progress")}
+            >
+              ▸ En curso
+            </StatusChip>
+            <StatusChip active={status === "new"} onClick={() => setStatus("new")}>
+              ○ Sin empezar
+            </StatusChip>
+            <StatusChip
+              active={status === "done"}
+              onClick={() => setStatus("done")}
+            >
+              ✓ Completados
+            </StatusChip>
           </div>
-        )}
-      </div>
+
+          {visibleModules.length > 0 ? (
+            <div className="grid w-full grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              {visibleModules.map((mod, i) => (
+                <ModuleCard
+                  key={mod.key}
+                  index={i}
+                  module={mod}
+                  progress={getPercent(mod.key, mod.exercises.length)}
+                  onStart={onStart}
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="py-16 text-center text-sm text-muted">
+              {searching ? (
+                <>
+                  No hay módulos que coincidan con{" "}
+                  <span className="font-semibold text-ink">“{query}”</span>.
+                </>
+              ) : status !== "all" ? (
+                <>
+                  No hay módulos en este estado.{" "}
+                  <button
+                    onClick={() => setStatus("all")}
+                    className="font-semibold text-brand hover:text-brand-strong"
+                  >
+                    Ver todos
+                  </button>
+                </>
+              ) : (
+                "No hay módulos disponibles."
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
       <div className="pb-10"></div>
     </main>
   );
 }
 
+function GroupCard({
+  index,
+  group,
+  moduleCount,
+  exerciseCount,
+  progress,
+  onSelect,
+}: {
+  index: number;
+  group: string;
+  moduleCount: number;
+  exerciseCount: number;
+  progress: number;
+  onSelect: () => void;
+}) {
+  const meta = GROUP_META[group] ?? { icon: "📦", color: "slate", desc: "" };
+  const c = meta.color;
+  const width = useAnimatedWidth(progress);
+  return (
+    <button
+      onClick={onSelect}
+      style={
+        {
+          "--i": index,
+          viewTransitionName: groupVtName(group),
+        } as React.CSSProperties
+      }
+      className={`animate-stagger group flex h-full flex-col justify-between gap-4 rounded-card border border-line bg-surface p-5 text-left transition-all hover:-translate-y-0.5 hover:border-${c}-500/50`}
+    >
+      <div>
+        <div className="flex items-center justify-between">
+          <span
+            className={`flex h-11 w-11 items-center justify-center rounded-[12px] text-2xl bg-${c}-500/10`}
+          >
+            {meta.icon}
+          </span>
+          <span
+            className={`rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide bg-${c}-500/10 text-${c}-400 border-${c}-500/20`}
+          >
+            {moduleCount} módulos
+          </span>
+        </div>
+        <h3
+          className={`mt-3 text-base font-bold tracking-tight text-ink transition-colors group-hover:text-${c}-400`}
+        >
+          {group}
+        </h3>
+        <p className="mt-1.5 text-xs leading-relaxed text-muted">{meta.desc}</p>
+      </div>
+      <div className="border-t border-line-soft pt-3">
+        <div className="mb-1.5 flex justify-between text-[11px] font-semibold">
+          <span className="text-muted">{exerciseCount} ejercicios</span>
+          <span className={progress > 0 ? `text-${c}-400` : "text-faint"}>
+            {progress}%
+          </span>
+        </div>
+        <div className="h-1.5 overflow-hidden rounded-full bg-surface-2">
+          <div
+            className={`h-full rounded-full transition-all duration-700 ease-out bg-${c}-500`}
+            style={{ width: `${width}%` }}
+          ></div>
+        </div>
+      </div>
+    </button>
+  );
+}
+
+/** Anima el ancho desde 0 hasta el valor objetivo al montar/cambiar. */
+function useAnimatedWidth(target: number): number {
+  const [w, setW] = useState(0);
+  useEffect(() => {
+    const id = requestAnimationFrame(() => setW(target));
+    return () => cancelAnimationFrame(id);
+  }, [target]);
+  return w;
+}
+
+/** Conteo animado de 0 al valor objetivo (ease-out cubic). */
+function useCountUp(target: number, duration = 800): number {
+  const [val, setVal] = useState(0);
+  useEffect(() => {
+    let raf = 0;
+    const start = performance.now();
+    const tick = (now: number) => {
+      const p = Math.min(1, (now - start) / duration);
+      const eased = 1 - Math.pow(1 - p, 3);
+      setVal(Math.round(target * eased));
+      if (p < 1) raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [target, duration]);
+  return val;
+}
+
 function Stat({
   value,
+  suffix,
   label,
   accent,
 }: {
-  value: string | number;
+  value: number;
+  suffix?: string;
   label: string;
   accent?: boolean;
 }) {
+  const animated = useCountUp(value);
   return (
     <div className="ui-card flex flex-col items-center justify-center py-3">
       <span
         className={`text-xl font-bold ${accent ? "text-brand" : "text-ink"}`}
       >
-        {value}
+        {animated}
+        {suffix}
       </span>
       <span className="text-[11px] font-medium uppercase tracking-wide text-faint">
         {label}

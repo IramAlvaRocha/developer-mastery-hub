@@ -6,8 +6,16 @@ import { useCallback, useEffect, useState } from "react";
 // ──────────────────────────────────────────────────────────────────────────
 
 const PREFIX = "mastery_hub_";
+const LAST_KEY = "mastery_hub_last";
 
 type ProgressMap = Record<string, number[]>;
+
+/** Último ejercicio abierto (para "Continuar donde lo dejaste"). */
+export interface LastVisited {
+  key: string;
+  index: number;
+  at: number;
+}
 
 function readAll(keys: string[]): ProgressMap {
   const map: ProgressMap = {};
@@ -23,12 +31,37 @@ function readAll(keys: string[]): ProgressMap {
   return map;
 }
 
+function readLast(): LastVisited | null {
+  if (typeof localStorage === "undefined") return null;
+  try {
+    const raw = localStorage.getItem(LAST_KEY);
+    return raw ? (JSON.parse(raw) as LastVisited) : null;
+  } catch {
+    return null;
+  }
+}
+
 export function useProgress(moduleKeys: string[]) {
   const [progress, setProgress] = useState<ProgressMap>({});
+  const [lastVisited, setLastVisitedState] = useState<LastVisited | null>(null);
 
   useEffect(() => {
     setProgress(readAll(moduleKeys));
+    setLastVisited(readLast());
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const setLastVisited = useCallback((key: string, index: number) => {
+    setLastVisitedState((prev) => {
+      if (prev && prev.key === key && prev.index === index) return prev;
+      const next: LastVisited = { key, index, at: Date.now() };
+      try {
+        localStorage.setItem(LAST_KEY, JSON.stringify(next));
+      } catch {
+        /* storage no disponible */
+      }
+      return next;
+    });
   }, []);
 
   const isCompleted = useCallback(
@@ -60,5 +93,12 @@ export function useProgress(moduleKeys: string[]) {
     [progress],
   );
 
-  return { progress, isCompleted, markComplete, getPercent };
+  return {
+    progress,
+    isCompleted,
+    markComplete,
+    getPercent,
+    lastVisited,
+    setLastVisited,
+  };
 }

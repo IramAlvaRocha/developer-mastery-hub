@@ -1,6 +1,6 @@
 import { useState } from "react";
 import type { Exercise } from "@/lib/types";
-import { callGemini } from "@/lib/gemini";
+import { callAi } from "@/lib/gemini";
 
 interface Props {
   exercise: Exercise;
@@ -8,6 +8,15 @@ interface Props {
   color: string;
   systemPrompt: string;
   onToast: (type: "success" | "error" | "info", message: string) => void;
+}
+
+/** Divide completeCode en viñetas (por línea o por separador |). */
+function splitCompleteCode(text: string): string[] {
+  return text
+    .split(/\n/)
+    .flatMap((line) => line.split(/\s*\|\s*/))
+    .map((s) => s.trim())
+    .filter(Boolean);
 }
 
 export default function MentorTab({
@@ -19,6 +28,7 @@ export default function MentorTab({
 }: Props) {
   const [explanation, setExplanation] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const referenceItems = splitCompleteCode(exercise.completeCode);
 
   async function getExplanation() {
     if (isLoading) return;
@@ -26,7 +36,7 @@ export default function MentorTab({
     setExplanation("");
     try {
       const prompt = `Explica con nivel de arquitecto senior este codigo/concepto:\nModulo: ${moduleName}\nEjercicio: ${exercise.title}\n\n${exercise.completeCode || exercise.codeSnippet}\n\nIncluye buenas practicas y conexion con .NET/C# o React si aplica.`;
-      const text = await callGemini(prompt, systemPrompt);
+      const text = await callAi(prompt, systemPrompt);
       setExplanation(text);
       onToast("success", "✨ Analisis generado.");
     } catch (err) {
@@ -50,14 +60,14 @@ export default function MentorTab({
         </div>
 
         <div className="space-y-3 rounded-[10px] border border-line bg-surface-2 p-4">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between gap-2">
             <span className="text-[13px] font-bold text-brand">
-              ✨ Mentoría Gemini IA
+              ✨ Mentoría IA
             </span>
             <button
               onClick={getExplanation}
               disabled={isLoading}
-              className="btn-secondary"
+              className="btn-secondary shrink-0"
             >
               {isLoading ? "Procesando…" : "✨ Analizar"}
             </button>
@@ -83,9 +93,21 @@ export default function MentorTab({
             Código de referencia
           </p>
           <div className="max-h-60 overflow-y-auto rounded-[10px] border border-line bg-[#0f0f10] p-3.5 font-mono text-[11px] text-[#d4d4d4]">
-            <pre className="whitespace-pre-wrap">
-              <code>{exercise.completeCode}</code>
-            </pre>
+            <ul className="space-y-2.5">
+              {referenceItems.map((item, i) => (
+                <li key={i} className="flex gap-2.5 leading-relaxed">
+                  <span
+                    className={`mt-0.5 shrink-0 font-bold text-${color}-400`}
+                    aria-hidden
+                  >
+                    •
+                  </span>
+                  <code className="min-w-0 flex-1 break-words whitespace-pre-wrap">
+                    {item}
+                  </code>
+                </li>
+              ))}
+            </ul>
           </div>
         </div>
       </div>

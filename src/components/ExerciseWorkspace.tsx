@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { Exercise } from "@/lib/types";
 import ChallengeCode from "./ChallengeCode";
 import TheoryTab from "./TheoryTab";
@@ -33,12 +33,21 @@ export default function ExerciseWorkspace({
   onComplete,
   onToast,
 }: Props) {
-  const [activeTab, setActiveTab] = useState<Tab>("challenge");
+  const [activeTab, setActiveTab] = useState<Tab>(
+    exercise.theory ? "theory" : "challenge",
+  );
   const [userAnswers, setUserAnswers] = useState<Record<string, string>>({});
   const [solved, setSolved] = useState(alreadyCompleted);
+  const [celebrate, setCelebrate] = useState(false);
 
   const isFirst = index === 0;
   const isLast = index === total - 1;
+
+  useEffect(() => {
+    if (!celebrate) return;
+    const t = setTimeout(() => setCelebrate(false), 1500);
+    return () => clearTimeout(t);
+  }, [celebrate]);
 
   function handleAnswerChange(key: string, value: string) {
     setUserAnswers((prev) => ({ ...prev, [key]: value }));
@@ -67,9 +76,11 @@ export default function ExerciseWorkspace({
       return;
     }
     if (correct) {
+      const isNew = !solved;
       setSolved(true);
       onComplete(exercise.id);
       onToast("success", `¡Correcto! "${exercise.title}" completado.`);
+      if (isNew) setCelebrate(true);
       setActiveTab("code");
     } else {
       onToast("error", "Incorrecto. Revisa la sintaxis y los metodos.");
@@ -91,11 +102,14 @@ export default function ExerciseWorkspace({
   const label =
     exercise.step != null ? `Paso ${exercise.step}` : `Nivel ${exercise.stars}`;
 
+  const instruction = buildInstruction(exercise);
+
   return (
-    <main className="relative flex flex-1 flex-col overflow-hidden bg-base">
+    <main className="relative flex flex-1 flex-col overflow-hidden bg-canvas">
+      {celebrate && <Celebration color={color} />}
       {/* Contenido scrolleable */}
       <div className="flex-1 overflow-y-auto">
-        <div className="animate-fade-in mx-auto w-full max-w-3xl space-y-5 p-4 md:p-6">
+        <div className="animate-fade-in mx-auto w-full max-w-3xl space-y-5 p-4 pb-28 md:p-6 md:pb-6">
           {/* Tarjeta del ejercicio */}
           <section className="ui-card p-5">
             <div className="mb-2.5 flex items-center justify-between">
@@ -132,8 +146,16 @@ export default function ExerciseWorkspace({
             </div>
           </section>
 
-          {/* Tabs */}
+          {/* Tabs: teoría primero, luego desafío */}
           <div className="flex gap-1 overflow-x-auto border-b border-line">
+            {exercise.theory && (
+              <TabButton
+                active={activeTab === "theory"}
+                onClick={() => setActiveTab("theory")}
+              >
+                📚 Teoría
+              </TabButton>
+            )}
             <TabButton
               active={activeTab === "challenge"}
               onClick={() => setActiveTab("challenge")}
@@ -143,14 +165,6 @@ export default function ExerciseWorkspace({
                 <span className="ml-1 inline-block h-1.5 w-1.5 rounded-full bg-brand"></span>
               )}
             </TabButton>
-            {exercise.theory && (
-              <TabButton
-                active={activeTab === "theory"}
-                onClick={() => setActiveTab("theory")}
-              >
-                📚 Teoría
-              </TabButton>
-            )}
             <TabButton
               active={activeTab === "code"}
               onClick={() => setActiveTab("code")}
@@ -163,12 +177,31 @@ export default function ExerciseWorkspace({
           <div className="min-h-[220px]">
             {activeTab === "challenge" && (
               <div className="space-y-4">
+                <div
+                  className={`ui-card flex items-start gap-3 p-4 border-l-2 border-${color}-500`}
+                >
+                  <span className="mt-0.5 shrink-0 text-base">🎯</span>
+                  <div>
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-faint">
+                      Tu tarea
+                    </p>
+                    <p className="mt-0.5 text-[13px] leading-relaxed text-ink">
+                      {instruction}
+                    </p>
+                  </div>
+                </div>
                 <div className="ui-card overflow-hidden">
-                  <div className="flex items-center justify-between border-b border-line bg-surface-2 px-4 py-2">
-                    <span className="font-mono text-[11px] text-muted">
+                  <div className="flex flex-col gap-1.5 border-b border-line bg-surface-2 px-4 py-2.5 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
+                    <span
+                      className="min-w-0 truncate font-mono text-[11px] text-muted"
+                      title={exercise.fileName}
+                    >
                       📄 {exercise.fileName}
                     </span>
-                    <span className="rounded-full bg-elevated px-2.5 py-0.5 text-[10px] font-semibold text-muted">
+                    <span
+                      className="shrink-0 self-start truncate rounded-full bg-elevated px-2.5 py-0.5 text-[10px] font-semibold text-muted sm:max-w-[45%] sm:self-auto"
+                      title={moduleName}
+                    >
                       {moduleName}
                     </span>
                   </div>
@@ -177,20 +210,11 @@ export default function ExerciseWorkspace({
                       codeSnippet={exercise.codeSnippet}
                       inputs={exercise.inputs}
                       userAnswers={userAnswers}
+                      fileName={exercise.fileName}
                       onAnswerChange={handleAnswerChange}
                       onVerify={verify}
                     />
                   </div>
-                </div>
-                <div className="ui-card flex items-center gap-3 p-4">
-                  <span
-                    className={`inline-block h-2 w-2 shrink-0 rounded-full bg-${color}-500`}
-                  ></span>
-                  <p className="text-[13px] text-muted">
-                    Rellena los espacios resaltados y pulsa{" "}
-                    <span className="font-semibold text-ink">Verificar</span>{" "}
-                    para registrar tu avance.
-                  </p>
                 </div>
               </div>
             )}
@@ -261,6 +285,62 @@ export default function ExerciseWorkspace({
   );
 }
 
+const CONFETTI_COLORS = [
+  "#3b82f6",
+  "#10b981",
+  "#f59e0b",
+  "#ec4899",
+  "#8b5cf6",
+  "#22d3ee",
+];
+
+/** Overlay efímero de celebración: check con rebote + lluvia de confeti. */
+function Celebration({ color }: { color: string }) {
+  const pieces = useMemo(
+    () =>
+      Array.from({ length: 18 }, (_, i) => ({
+        id: i,
+        dx: `${Math.round((Math.random() - 0.5) * 320)}px`,
+        dy: `${Math.round(80 + Math.random() * 160)}px`,
+        rot: `${Math.round((Math.random() - 0.5) * 720)}deg`,
+        delay: `${Math.round(Math.random() * 120)}ms`,
+        left: `${Math.round(Math.random() * 100)}%`,
+        color: CONFETTI_COLORS[i % CONFETTI_COLORS.length],
+      })),
+    [],
+  );
+
+  return (
+    <div className="pointer-events-none absolute inset-0 z-50 flex items-center justify-center overflow-hidden">
+      {/* Confeti */}
+      <div className="absolute inset-x-0 top-1/3 mx-auto h-0 w-full max-w-md">
+        {pieces.map((p) => (
+          <span
+            key={p.id}
+            className="confetti-piece"
+            style={
+              {
+                left: p.left,
+                backgroundColor: p.color,
+                "--dx": p.dx,
+                "--dy": p.dy,
+                "--rot": p.rot,
+                "--delay": p.delay,
+              } as React.CSSProperties
+            }
+          />
+        ))}
+      </div>
+      {/* Check con rebote */}
+      <div
+        className={`animate-pop flex h-20 w-20 items-center justify-center rounded-full text-4xl shadow-glow bg-${color}-500/20 text-${color}-400`}
+      >
+        ✓
+      </div>
+    </div>
+  );
+}
+
 function TabButton({
   active,
   onClick,
@@ -282,4 +362,29 @@ function TabButton({
       {children}
     </button>
   );
+}
+
+/** Indicación concreta de la tarea, específica por ejercicio. */
+function buildInstruction(exercise: Exercise): string {
+  if (exercise.instruction) return exercise.instruction;
+
+  const count = Object.keys(exercise.inputs).length;
+  const file = exercise.fileName.toLowerCase();
+  const isTree =
+    /\.(sln|txt)$/.test(file) ||
+    file.includes("estructura") ||
+    /ARQUITECTURA|ESTRUCTURA/i.test(exercise.category);
+
+  if (isTree) {
+    return `Completa el nombre de cada carpeta según las responsabilidades y archivos que le corresponden (${count} por resolver).`;
+  }
+
+  // Pasa el objetivo a minúscula inicial para encadenarlo de forma natural.
+  const obj = exercise.objective.trim();
+  const goal = obj ? obj.charAt(0).toLowerCase() + obj.slice(1) : "";
+  const espacios = count === 1 ? "el espacio resaltado" : `los ${count} espacios resaltados`;
+
+  return goal
+    ? `Completa ${espacios} para ${goal}.`
+    : `Completa ${espacios} y pulsa Verificar.`;
 }

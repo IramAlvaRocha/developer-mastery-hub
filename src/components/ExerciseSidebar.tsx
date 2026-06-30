@@ -1,3 +1,4 @@
+import { useMemo, useState } from "react";
 import type { Exercise } from "@/lib/types";
 
 interface Props {
@@ -12,6 +13,8 @@ interface Props {
   onClose: () => void;
 }
 
+type SortMode = "default" | "asc" | "desc";
+
 export default function ExerciseSidebar({
   moduleName,
   color,
@@ -23,6 +26,39 @@ export default function ExerciseSidebar({
   onSelect,
   onClose,
 }: Props) {
+  const [sortMode, setSortMode] = useState<SortMode>("default");
+  const [starFilter, setStarFilter] = useState<number | null>(null);
+
+  // Niveles de dificultad presentes en el modulo (para los chips de filtro).
+  const starLevels = useMemo(
+    () => Array.from(new Set(exercises.map((e) => e.stars))).sort((a, b) => a - b),
+    [exercises],
+  );
+
+  // Conserva el indice original para que la navegacion (prev/next) siga intacta.
+  const items = useMemo(() => {
+    let list = exercises.map((ex, index) => ({ ex, index }));
+    if (starFilter != null) list = list.filter((it) => it.ex.stars === starFilter);
+    if (sortMode === "asc")
+      list = [...list].sort((a, b) => a.ex.stars - b.ex.stars);
+    if (sortMode === "desc")
+      list = [...list].sort((a, b) => b.ex.stars - a.ex.stars);
+    return list;
+  }, [exercises, starFilter, sortMode]);
+
+  function cycleSort() {
+    setSortMode((m) =>
+      m === "default" ? "asc" : m === "asc" ? "desc" : "default",
+    );
+  }
+
+  const sortLabel =
+    sortMode === "asc"
+      ? "★ ascendente"
+      : sortMode === "desc"
+        ? "★ descendente"
+        : "Orden original";
+
   return (
     <aside
       className={`fixed inset-y-0 left-0 z-40 flex h-full w-72 shrink-0 flex-col border-r border-line bg-surface transition-transform duration-300 md:static ${
@@ -54,14 +90,49 @@ export default function ExerciseSidebar({
         </div>
         <div className="h-1.5 overflow-hidden rounded-full bg-surface-2">
           <div
-            className={`h-full rounded-full transition-all duration-300 bg-${color}-500`}
+            className={`h-full rounded-full transition-all duration-700 ease-out bg-${color}-500`}
             style={{ width: `${progress}%` }}
           ></div>
         </div>
       </div>
 
+      {/* Filtro y orden por dificultad */}
+      <div className="shrink-0 space-y-2 border-b border-line px-3 py-3">
+        <button
+          onClick={cycleSort}
+          className="flex w-full items-center justify-between rounded-[10px] border border-line bg-surface-2 px-3 py-2 text-[11px] font-semibold text-muted transition-colors hover:text-ink"
+          title="Cambiar orden por dificultad"
+        >
+          <span className="flex items-center gap-1.5">
+            <span className="text-faint">⇅</span> {sortLabel}
+          </span>
+          <span className="text-faint">
+            {sortMode === "asc" ? "↑" : sortMode === "desc" ? "↓" : "•"}
+          </span>
+        </button>
+        <div className="flex flex-wrap gap-1.5">
+          <FilterChip
+            active={starFilter == null}
+            color={color}
+            onClick={() => setStarFilter(null)}
+          >
+            Todos
+          </FilterChip>
+          {starLevels.map((lvl) => (
+            <FilterChip
+              key={lvl}
+              active={starFilter === lvl}
+              color={color}
+              onClick={() => setStarFilter((s) => (s === lvl ? null : lvl))}
+            >
+              {"★".repeat(lvl)}
+            </FilterChip>
+          ))}
+        </div>
+      </div>
+
       <nav className="flex-grow space-y-1 overflow-y-auto p-2.5">
-        {exercises.map((ex, index) => {
+        {items.map(({ ex, index }) => {
           const active = activeIndex === index;
           const done = isCompleted(ex.id);
           const label = ex.step != null ? `Paso ${ex.step}` : `Nv.${ex.stars}`;
@@ -97,7 +168,38 @@ export default function ExerciseSidebar({
             </button>
           );
         })}
+
+        {items.length === 0 && (
+          <p className="px-3 py-6 text-center text-[12px] text-faint">
+            No hay ejercicios con esa dificultad.
+          </p>
+        )}
       </nav>
     </aside>
+  );
+}
+
+function FilterChip({
+  active,
+  color,
+  onClick,
+  children,
+}: {
+  active: boolean;
+  color: string;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className={`rounded-full border px-2.5 py-1 text-[10px] font-bold tracking-wide transition-colors ${
+        active
+          ? `bg-${color}-500/15 text-${color}-400 border-${color}-500/40`
+          : "border-line bg-surface-2 text-faint hover:text-muted"
+      }`}
+    >
+      {children}
+    </button>
   );
 }

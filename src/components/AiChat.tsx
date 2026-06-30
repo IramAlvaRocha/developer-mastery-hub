@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { callGemini } from "@/lib/gemini";
+import { callAi, getProviderLabel } from "@/lib/gemini";
 
 interface ChatMessage {
   id: string;
@@ -22,7 +22,12 @@ export default function AiChat({ systemPrompt }: Props) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [providerLabel, setProviderLabel] = useState("IA");
   const scrollerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (isOpen) setProviderLabel(getProviderLabel());
+  }, [isOpen]);
 
   useEffect(() => {
     const el = scrollerRef.current;
@@ -41,7 +46,7 @@ export default function AiChat({ systemPrompt }: Props) {
     setIsLoading(true);
 
     try {
-      const reply = await callGemini(trimmed, systemPrompt);
+      const reply = await callAi(trimmed, systemPrompt);
       setMessages((prev) => [
         ...prev,
         { id: `${Date.now() + 1}`, sender: "ai", text: reply },
@@ -58,9 +63,9 @@ export default function AiChat({ systemPrompt }: Props) {
   }
 
   return (
-    <div className="pointer-events-none fixed bottom-20 right-4 z-50 flex flex-col items-end md:bottom-24">
+    <div className="pointer-events-none fixed bottom-[4.75rem] right-3 z-40 flex flex-col items-end sm:bottom-24 sm:right-4">
       {isOpen && (
-        <div className="pointer-events-auto mb-3 flex h-[420px] w-80 flex-col overflow-hidden rounded-card border border-line bg-surface shadow-float md:w-96">
+        <div className="pointer-events-auto mb-2 flex h-[min(420px,calc(100dvh-8rem))] w-[min(20rem,calc(100vw-1.5rem))] flex-col overflow-hidden rounded-card border border-line bg-surface shadow-float sm:mb-3 sm:h-[420px] sm:w-96">
           <div className="flex shrink-0 items-center justify-between border-b border-line bg-surface-2 px-4 py-3">
             <div className="flex items-center gap-2.5">
               <span className="flex h-8 w-8 items-center justify-center rounded-[10px] bg-brand/15 text-base">
@@ -68,7 +73,7 @@ export default function AiChat({ systemPrompt }: Props) {
               </span>
               <div>
                 <h4 className="text-[13px] font-bold text-ink">
-                  Mentor IA · Gemini
+                  Mentor IA · {providerLabel}
                 </h4>
                 <p className="text-[10px] text-muted">
                   Conceptos de desarrollo avanzado
@@ -86,7 +91,7 @@ export default function AiChat({ systemPrompt }: Props) {
 
           <div
             ref={scrollerRef}
-            className="flex-grow space-y-3 overflow-y-auto bg-base p-3"
+            className="flex-grow space-y-3 overflow-y-auto bg-canvas p-3"
           >
             {messages.length === 0 && (
               <div className="flex h-full flex-col items-center justify-center p-4 text-center">
@@ -112,7 +117,7 @@ export default function AiChat({ systemPrompt }: Props) {
                   }`}
                 >
                   <span className="mb-0.5 block text-[9px] font-bold uppercase tracking-wide opacity-70">
-                    {msg.sender === "user" ? "Tú" : "Gemini"}
+                    {msg.sender === "user" ? "Tú" : "IA"}
                   </span>
                   <p>{msg.text}</p>
                 </div>
@@ -122,7 +127,7 @@ export default function AiChat({ systemPrompt }: Props) {
               <div className="flex justify-start">
                 <div className="w-[70%] space-y-2 rounded-[12px] border border-line bg-surface p-2.5">
                   <span className="block text-[9px] font-bold uppercase opacity-70">
-                    Gemini
+                    IA
                   </span>
                   <div className="shimmer-loading h-2.5 w-3/4 rounded"></div>
                   <div className="shimmer-loading h-2.5 w-full rounded"></div>
@@ -170,10 +175,13 @@ export default function AiChat({ systemPrompt }: Props) {
 
       <button
         onClick={() => setIsOpen((v) => !v)}
-        className="pointer-events-auto flex items-center gap-2 rounded-full bg-brand px-4 py-3 text-xs font-semibold uppercase tracking-wider text-white shadow-glow transition-transform hover:scale-105 active:scale-95"
+        className="pointer-events-auto flex items-center gap-2 rounded-full bg-brand p-3 text-white shadow-glow transition-transform hover:scale-105 active:scale-95 sm:px-4 sm:py-3"
+        aria-label="Abrir Mentor IA"
       >
-        <span>✨</span>
-        <span>Mentor IA</span>
+        <span className="text-base sm:text-sm">✨</span>
+        <span className="hidden text-xs font-semibold uppercase tracking-wider sm:inline">
+          Mentor IA
+        </span>
       </button>
     </div>
   );

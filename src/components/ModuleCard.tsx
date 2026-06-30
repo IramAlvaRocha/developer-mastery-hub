@@ -1,17 +1,25 @@
+import { useEffect, useState } from "react";
 import type { Module } from "@/lib/types";
 
 interface Props {
   module: Module;
   progress: number;
+  index?: number;
   onStart: (key: string) => void;
 }
 
-export default function ModuleCard({ module, progress, onStart }: Props) {
+export default function ModuleCard({ module, progress, index = 0, onStart }: Props) {
   const c = module.color;
+  const [width, setWidth] = useState(0);
+  useEffect(() => {
+    const id = requestAnimationFrame(() => setWidth(progress));
+    return () => cancelAnimationFrame(id);
+  }, [progress]);
   return (
     <button
       onClick={() => onStart(module.key)}
-      className={`group flex h-full flex-col justify-between gap-4 rounded-card border border-line bg-surface p-5 text-left transition-all hover:-translate-y-0.5 hover:border-${c}-500/50`}
+      style={{ "--i": index } as React.CSSProperties}
+      className={`animate-stagger group flex h-full flex-col justify-between gap-4 rounded-card border border-line bg-surface p-5 text-left transition-all hover:-translate-y-0.5 hover:border-${c}-500/50`}
     >
       <div>
         <div className="flex items-center justify-between">
@@ -56,8 +64,8 @@ export default function ModuleCard({ module, progress, onStart }: Props) {
         </div>
         <div className="h-1.5 overflow-hidden rounded-full bg-surface-2">
           <div
-            className={`h-full rounded-full transition-all bg-${c}-500`}
-            style={{ width: `${progress}%` }}
+            className={`h-full rounded-full transition-all duration-700 ease-out bg-${c}-500`}
+            style={{ width: `${width}%` }}
           ></div>
         </div>
       </div>

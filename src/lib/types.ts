@@ -14,6 +14,8 @@ export interface Exercise {
   tags: string[];
   fileName: string;
   completed?: boolean;
+  /** Indicacion concreta de la tarea (se muestra encima del codigo). Si falta, se genera una. */
+  instruction?: string;
   /** Texto teorico opcional (tab "Teoria"). */
   theory?: string;
   explanationText: string;

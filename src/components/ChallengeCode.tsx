@@ -1,60 +1,247 @@
-import { Fragment } from "react";
+import {
+  Fragment,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 
 interface Props {
   codeSnippet: string;
   inputs: Record<string, string>;
   userAnswers: Record<string, string>;
+  fileName?: string;
   onAnswerChange: (key: string, value: string) => void;
   onVerify: () => void;
 }
 
-// Divide el codigo en segmentos de texto y placeholders [INPUT_N].
-// El capture group hace que split() intercale los numeros de cada hueco.
 const SPLIT_RE = /\[INPUT_(\d+)\]/g;
+
+// ──────────────────────────────────────────────────────────────────────────
+// Resaltado de sintaxis ligero (respeta los inputs inline del ejercicio).
+// ──────────────────────────────────────────────────────────────────────────
+type Lang = "csharp" | "typescript" | "css" | "tree";
+
+function detectLang(fileName?: string): Lang {
+  const f = (fileName ?? "").toLowerCase();
+  if (f.endsWith(".sln") || f.endsWith(".txt") || f.includes("estructura"))
+    return "tree";
+  if (f.endsWith(".cs")) return "csharp";
+  if (f.endsWith(".css")) return "css";
+  return "typescript";
+}
+
+const KEYWORDS = new Set([
+  // modificadores / declaraciones
+  "public", "private", "protected", "internal", "sealed", "abstract",
+  "partial", "static", "readonly", "const", "var", "let", "new", "override",
+  "virtual", "async", "await", "get", "set", "init", "class", "interface",
+  "record", "struct", "enum", "type", "function", "namespace", "using",
+  "import", "export", "from", "extends", "implements", "this", "base",
+  // control de flujo
+  "return", "throw", "if", "else", "switch", "case", "default", "for",
+  "foreach", "while", "do", "break", "continue", "yield", "as", "is",
+  "typeof", "keyof", "in", "of", "void",
+  // literales
+  "true", "false", "null", "undefined",
+]);
+
+const BUILTIN_TYPES = new Set([
+  "string", "int", "long", "short", "decimal", "double", "float", "bool",
+  "boolean", "number", "object", "char", "byte", "any", "unknown", "never",
+]);
+
+const TOKEN_RE =
+  /(\/\/[^\n]*)|(\/\*[\s\S]*?\*\/)|("(?:\\.|[^"\\])*")|('(?:\\.|[^'\\])*')|(`(?:\\.|[^`\\])*`)|(\b\d[\d_]*(?:\.\d+)?\b)|([A-Za-z_$][\w$]*)|(\s+)|([^\s])/g;
+
+function tokenize(text: string, lang: Lang, keyBase: string): ReactNode[] {
+  if (!text) return [];
+  const nodes: ReactNode[] = [];
+  let i = 0;
+  let m: RegExpExecArray | null;
+  TOKEN_RE.lastIndex = 0;
+  while ((m = TOKEN_RE.exec(text)) !== null) {
+    const full = m[0];
+    const [, lineComment, blockComment, dq, sq, tpl, num, ident] = m;
+    let cls = "";
+    if (lineComment || blockComment) cls = "italic text-slate-500";
+    else if (dq || sq || tpl) cls = "text-amber-300";
+    else if (num) cls = "text-orange-300";
+    else if (ident && lang !== "tree") {
+      if (KEYWORDS.has(ident)) cls = "text-sky-400";
+      else if (BUILTIN_TYPES.has(ident) || /^[A-Z]/.test(ident))
+        cls = "text-teal-300";
+    }
+    const key = `${keyBase}-${i++}`;
+    nodes.push(
+      cls ? (
+        <span key={key} className={cls}>
+          {full}
+        </span>
+      ) : (
+        <Fragment key={key}>{full}</Fragment>
+      ),
+    );
+  }
+  return nodes;
+}
+
+/** Clasifica una línea de un árbol de carpetas (folder / file / none). */
+function lineKind(reconstructed: string): "folder" | "file" | "none" {
+  const noComment = reconstructed.replace(/\/\/.*$/, "").trimEnd();
+  if (!noComment.trim()) return "none";
+  if (noComment.endsWith("/")) return "folder";
+  if (/\.[A-Za-z0-9]+$/.test(noComment)) return "file";
+  return "none";
+}
+
+/** Input inline que crece según el texto escrito (medido con un span espejo). */
+function InlineAnswerInput({
+  value,
+  expected,
+  placeholder,
+  filled,
+  onChange,
+  onVerify,
+  ariaLabel,
+}: {
+  value: string;
+  expected: string;
+  placeholder: string;
+  filled: boolean;
+  onChange: (v: string) => void;
+  onVerify: () => void;
+  ariaLabel: string;
+}) {
+  const mirrorRef = useRef<HTMLSpanElement>(null);
+  const [widthPx, setWidthPx] = useState<number | null>(null);
+
+  const measureText = value.length > 0 ? value : expected || placeholder;
+
+  useLayoutEffect(() => {
+    const el = mirrorRef.current;
+    if (!el) return;
+    setWidthPx(el.offsetWidth + 12);
+  }, [measureText]);
+
+  const minPx = Math.max(expected.length, value.length, 4) * 7.5 + 20;
+
+  return (
+    <span className="relative inline-block max-w-full align-baseline">
+      <span
+        ref={mirrorRef}
+        aria-hidden
+        className="pointer-events-none invisible absolute left-0 top-0 whitespace-pre px-1.5 font-mono text-[11px] md:text-xs"
+      >
+        {measureText}
+      </span>
+      <input
+        type="text"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") onVerify();
+        }}
+        style={{
+          width: widthPx ? `${Math.max(widthPx, minPx)}px` : `${minPx}px`,
+          maxWidth: "100%",
+        }}
+        className={`box-border inline-block overflow-x-auto rounded-md border px-1.5 py-0.5 align-baseline font-mono text-[11px] caret-brand transition-[width,border-color,background-color] focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/30 md:text-xs ${
+          filled
+            ? "border-brand/40 bg-brand/10 text-brand"
+            : "border-line bg-[#1a1a1c] text-ink"
+        }`}
+        placeholder={placeholder}
+        autoComplete="off"
+        spellCheck={false}
+        aria-label={ariaLabel}
+      />
+    </span>
+  );
+}
 
 export default function ChallengeCode({
   codeSnippet,
   inputs,
   userAnswers,
+  fileName,
   onAnswerChange,
   onVerify,
 }: Props) {
-  const parts = codeSnippet.split(SPLIT_RE);
+  const lang = detectLang(fileName);
+  const tree = lang === "tree";
+  const lines = codeSnippet.split("\n");
+
+  function renderInput(num: string, lineIdx: number) {
+    const key = `INPUT_${num}`;
+    const expected = inputs[key] ?? "";
+    const value = userAnswers[key] ?? "";
+    return (
+      <InlineAnswerInput
+        key={`l${lineIdx}-in${num}`}
+        value={value}
+        expected={expected}
+        placeholder={`#${num}`}
+        filled={value.trim().length > 0}
+        onChange={(v) => onAnswerChange(key, v)}
+        onVerify={onVerify}
+        ariaLabel={`Espacio ${num}`}
+      />
+    );
+  }
 
   return (
     <pre className="whitespace-pre-wrap break-words font-mono text-[11px] leading-relaxed text-[#d4d4d4] md:text-xs">
       <code>
-        {parts.map((part, index) => {
-          // Los indices impares son los numeros capturados del placeholder.
-          if (index % 2 === 1) {
-            const key = `INPUT_${part}`;
-            const expected = inputs[key] ?? "";
-            const value = userAnswers[key] ?? "";
-            const filled = value.trim().length > 0;
-            const width = Math.max(expected.length, value.length, 4) + 1;
-            return (
-              <input
-                key={`gap-${index}`}
-                type="text"
-                value={value}
-                onChange={(e) => onAnswerChange(key, e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") onVerify();
-                }}
-                style={{ width: `${width}ch` }}
-                className={`mx-0.5 inline-block rounded-md border px-1.5 py-0 align-baseline font-mono text-[11px] caret-brand transition-colors focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/30 ${
-                  filled
-                    ? "border-brand/40 bg-brand/10 text-brand"
-                    : "border-line bg-[#1a1a1c] text-ink"
-                }`}
-                placeholder={`#${part}`}
-                autoComplete="off"
-                spellCheck={false}
-                aria-label={`Espacio ${part}`}
-              />
-            );
-          }
-          return <Fragment key={`txt-${index}`}>{part}</Fragment>;
+        {lines.map((line, lineIdx) => {
+          const segs = line.split(SPLIT_RE);
+          // Reconstrucción (inputs -> 'x') para clasificar la línea del árbol.
+          const reconstructed = segs
+            .map((s, i) => (i % 2 === 1 ? "x" : s))
+            .join("");
+          const kind = tree ? lineKind(reconstructed) : "none";
+          const icon =
+            kind === "folder" ? "📁" : kind === "file" ? "📄" : null;
+
+          let iconPlaced = false;
+          const lineNodes: ReactNode[] = [];
+
+          segs.forEach((seg, i) => {
+            if (i % 2 === 1) {
+              lineNodes.push(renderInput(seg, lineIdx));
+              return;
+            }
+            // Colocar el icono tras la indentación del primer segmento de texto.
+            if (icon && !iconPlaced) {
+              const mt = seg.match(/^(\s*)([\s\S]*)$/);
+              const indent = mt?.[1] ?? "";
+              const rest = mt?.[2] ?? seg;
+              if (indent)
+                lineNodes.push(
+                  <Fragment key={`l${lineIdx}-ind`}>{indent}</Fragment>,
+                );
+              lineNodes.push(
+                <span
+                  key={`l${lineIdx}-icon`}
+                  className="mr-1 select-none"
+                  aria-hidden
+                >
+                  {icon}
+                </span>,
+              );
+              iconPlaced = true;
+              lineNodes.push(...tokenize(rest, lang, `l${lineIdx}-s${i}`));
+            } else {
+              lineNodes.push(...tokenize(seg, lang, `l${lineIdx}-s${i}`));
+            }
+          });
+
+          return (
+            <Fragment key={`line-${lineIdx}`}>
+              {lineNodes}
+              {lineIdx < lines.length - 1 ? "\n" : null}
+            </Fragment>
+          );
         })}
       </code>
     </pre>
