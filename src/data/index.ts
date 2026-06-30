@@ -21,6 +21,7 @@ import { NUXT_EXERCISES } from "./modules/nuxt";
 import { VUETIFY_EXERCISES } from "./modules/vuetify";
 import { GCP_EXERCISES } from "./modules/gcp";
 import { GIT_ADVANCED_EXERCISES } from "./modules/git-advanced";
+import { BASH_EXERCISES } from "./modules/bash";
 import { CODE_QUALITY_EXERCISES } from "./modules/code-quality";
 import { DOCKER_EXERCISES } from "./modules/docker";
 import { TS_PRIMITIVOS } from "./modules/ts-primitivos";
@@ -180,6 +181,17 @@ export const ALL_MODULES: Module[] = [
     desc: "Git Flow, Trunk Based, feature flags, Husky, semantic-release y workspaces.",
     topics: ["git flow", "trunk", "monorepo", "Husky"],
     exercises: GIT_ADVANCED_EXERCISES,
+  },
+  {
+    key: "bash",
+    name: "Bash & Terminal",
+    icon: "🖥️",
+    badge: "Shell/CLI",
+    color: "green",
+    group: "DevOps & Git",
+    desc: "Comandos del día a día, grep/sed/awk, pipes, procesos, vim y git (ramas, conflictos, rebase, reflog) con ejercicios progresivos e integradores.",
+    topics: ["grep/sed/awk", "pipes", "vim", "git conflicts", "reflog"],
+    exercises: BASH_EXERCISES,
   },
   {
     key: "docker",

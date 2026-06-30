@@ -6,8 +6,9 @@ import { usePrefersReducedMotion } from "@/lib/useReducedMotion";
 import ChallengeCode from "./ChallengeCode";
 import TheoryTab from "./TheoryTab";
 import MentorTab from "./MentorTab";
+import SimulatedTerminal from "./SimulatedTerminal";
 
-type Tab = "challenge" | "theory" | "code";
+type Tab = "theory" | "terminal" | "challenge" | "code";
 
 interface Props {
   exercise: Exercise;
@@ -37,7 +38,7 @@ export default function ExerciseWorkspace({
   onToast,
 }: Props) {
   const [activeTab, setActiveTab] = useState<Tab>(
-    exercise.theory ? "theory" : "challenge",
+    exercise.theory ? "theory" : exercise.simulation ? "terminal" : "challenge",
   );
   const [userAnswers, setUserAnswers] = useState<Record<string, string>>({});
   const [incorrectKeys, setIncorrectKeys] = useState<Set<string>>(new Set());
@@ -185,6 +186,14 @@ export default function ExerciseWorkspace({
                 📚 Teoría
               </TabButton>
             )}
+            {exercise.simulation && (
+              <TabButton
+                active={activeTab === "terminal"}
+                onClick={() => setActiveTab("terminal")}
+              >
+                🖥️ Terminal
+              </TabButton>
+            )}
             <TabButton
               active={activeTab === "challenge"}
               onClick={() => setActiveTab("challenge")}
@@ -252,6 +261,13 @@ export default function ExerciseWorkspace({
 
             {activeTab === "theory" && exercise.theory && (
               <TheoryTab theory={exercise.theory} />
+            )}
+
+            {activeTab === "terminal" && exercise.simulation && (
+              <SimulatedTerminal
+                scenario={exercise.simulation}
+                resetKey={`${exercise.id}-${exercise.category}`}
+              />
             )}
 
             {activeTab === "code" && (

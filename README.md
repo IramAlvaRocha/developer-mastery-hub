@@ -21,7 +21,7 @@ Cada paso del back tiene su contraparte en el front (ej. `ApiResponse` en C# ↔
 | Frontend | Vue 3, Pinia, Nuxt 3, Vuetify 3 |
 | Backend & Datos | Node.js, SQL Server |
 | Cloud & Serverless | Google Cloud Platform, Firebase |
-| DevOps & Git | Git & DevOps, Git Flow/Monorepos, Docker & K8s |
+| DevOps & Git | Git & DevOps, Git Flow/Monorepos, Bash & Terminal, Docker & K8s |
 | APIs & Seguridad | Axios/Fetch, Security (OAuth2/JWT) |
 | Testing & Calidad | Vitest, E2E (Cypress/Playwright), Calidad de Código |
 | TypeScript | Primitivos, Interfaces, Types & Unions, Funciones, Generics, Enums, Discriminated Unions, Utility Types |
@@ -30,6 +30,8 @@ Cada paso del back tiene su contraparte en el front (ej. `ApiResponse` en C# ↔
 ## Funcionalidades
 
 - **Desafíos de código con inputs inline**: rellena campos `[INPUT_N]` directamente sobre el snippet (reemplaza los antiguos comentarios `/*respuesta*/`).
+- **Terminal simulada (Bash)**: practica comandos en un shell con filesystem en memoria antes de completar el desafío.
+- **Teoría por ejercicio (Bash)**: referencia de comandos y pistas contextuales para no quedarte bloqueado.
 - **Secuencia por pasos**: los módulos de buenas prácticas se recorren como "Paso 1 → Paso 22".
 - **Mentoría con Gemini IA**: análisis técnico y pistas contextuales por ejercicio.
 - **Chatbot de IA**: preguntas libres sobre el módulo activo.

@@ -25,10 +25,21 @@ const SPLIT_RE = /\[INPUT_(\d+)\]/g;
 // ──────────────────────────────────────────────────────────────────────────
 // Resaltado de sintaxis ligero (respeta los inputs inline del ejercicio).
 // ──────────────────────────────────────────────────────────────────────────
-type Lang = "csharp" | "typescript" | "css" | "tree";
+type Lang = "csharp" | "typescript" | "css" | "tree" | "bash";
 
 function detectLang(fileName?: string): Lang {
   const f = (fileName ?? "").toLowerCase();
+  // Shell/terminal primero: cubre fileName "terminal", scripts y editores de consola.
+  if (
+    f === "terminal" ||
+    f.endsWith(".sh") ||
+    f.includes("bash") ||
+    f.includes("zsh") ||
+    f.includes("shell") ||
+    f.includes("vim") ||
+    f.includes("conflicto")
+  )
+    return "bash";
   if (f.endsWith(".sln") || f.endsWith(".txt") || f.includes("estructura"))
     return "tree";
   if (f.endsWith(".cs")) return "csharp";
@@ -59,7 +70,64 @@ const BUILTIN_TYPES = new Set([
 const TOKEN_RE =
   /(\/\/[^\n]*)|(\/\*[\s\S]*?\*\/)|("(?:\\.|[^"\\])*")|('(?:\\.|[^'\\])*')|(`(?:\\.|[^`\\])*`)|(\b\d[\d_]*(?:\.\d+)?\b)|([A-Za-z_$][\w$]*)|(\s+)|([^\s])/g;
 
+// Comandos y palabras clave de shell resaltados en los ejercicios de bash.
+const BASH_BUILTINS = new Set([
+  // navegacion / archivos
+  "ls", "cd", "pwd", "mkdir", "rmdir", "touch", "cp", "mv", "rm", "ln", "cat",
+  "less", "more", "head", "tail", "tree", "stat", "file", "basename", "dirname",
+  // busqueda / filtros
+  "find", "grep", "egrep", "fgrep", "awk", "sed", "cut", "sort", "uniq", "wc",
+  "tr", "tee", "xargs", "diff", "comm",
+  // permisos / procesos / sistema
+  "chmod", "chown", "chgrp", "ps", "kill", "killall", "top", "htop", "lsof",
+  "netstat", "ss", "df", "du", "free", "uptime", "nohup", "jobs", "fg", "bg",
+  // entorno / red / paquetes
+  "export", "alias", "unalias", "echo", "printf", "env", "source", "history",
+  "clear", "which", "whereis", "man", "sudo", "curl", "wget", "ssh", "scp",
+  "rsync", "tar", "gzip", "zip", "unzip", "apt", "yum", "brew", "systemctl",
+  // herramientas dev habituales
+  "git", "vim", "vi", "nano", "npm", "npx", "yarn", "pnpm", "node", "python",
+  "pip", "make", "docker", "kubectl",
+  // palabras clave de shell
+  "if", "then", "else", "elif", "fi", "for", "while", "do", "done", "case",
+  "esac", "function", "return", "in", "select", "until", "local", "read",
+]);
+
+const BASH_TOKEN_RE =
+  /(#[^\n]*)|("(?:\\.|[^"\\])*")|('(?:\\.|[^'\\])*')|(\$\{[^}]*\}|\$[A-Za-z_]\w*|\$[?#@*!0-9-])|(\b\d[\d_]*\b)|(--?[A-Za-z0-9][\w-]*)|([A-Za-z_][\w-]*)|(\s+)|([^\s])/g;
+
+/** Resaltado especifico para shell: comentarios #, strings, $VARs, flags y comandos. */
+function tokenizeBash(text: string, keyBase: string): ReactNode[] {
+  if (!text) return [];
+  const nodes: ReactNode[] = [];
+  let i = 0;
+  let m: RegExpExecArray | null;
+  BASH_TOKEN_RE.lastIndex = 0;
+  while ((m = BASH_TOKEN_RE.exec(text)) !== null) {
+    const full = m[0];
+    const [, comment, dq, sq, variable, num, flag, ident] = m;
+    let cls = "";
+    if (comment) cls = "italic text-slate-500";
+    else if (dq || sq) cls = "text-amber-300";
+    else if (variable) cls = "text-teal-300";
+    else if (num || flag) cls = "text-orange-300";
+    else if (ident && BASH_BUILTINS.has(ident)) cls = "text-sky-400";
+    const key = `${keyBase}-${i++}`;
+    nodes.push(
+      cls ? (
+        <span key={key} className={cls}>
+          {full}
+        </span>
+      ) : (
+        <Fragment key={key}>{full}</Fragment>
+      ),
+    );
+  }
+  return nodes;
+}
+
 function tokenize(text: string, lang: Lang, keyBase: string): ReactNode[] {
+  if (lang === "bash") return tokenizeBash(text, keyBase);
   if (!text) return [];
   const nodes: ReactNode[] = [];
   let i = 0;

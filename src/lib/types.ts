@@ -4,6 +4,13 @@
 
 import type { ExpectedAnswer } from "./answers";
 
+/** Escenario de la terminal simulada (solo módulo Bash). */
+export interface ShellScenario {
+  preset: "home" | "logs" | "project" | "git-repo";
+  cwd?: string;
+  welcome?: string;
+}
+
 export interface Exercise {
   id: number;
   title: string;
@@ -27,6 +34,8 @@ export interface Exercise {
   inputs: Record<string, ExpectedAnswer>;
   /** Resumen/codigo de referencia mostrado en la tab de solucion. */
   completeCode: string;
+  /** Terminal simulada opcional (ejercicios Bash). */
+  simulation?: ShellScenario;
 }
 
 export interface Module {
