@@ -375,7 +375,7 @@ function ResumeCard({
   return (
     <div className="animate-fade-in mx-auto mt-6 w-full max-w-3xl">
       <div
-        className={`group relative overflow-hidden rounded-card border bg-surface p-4 sm:p-5 border-${color}-500/30`}
+        className={`group relative overflow-hidden rounded-card border bg-surface p-4 sm:p-5 border-${color}-500/40`}
       >
         <div
           className={`pointer-events-none absolute -right-16 -top-16 h-44 w-44 rounded-full blur-3xl bg-${color}-500/10`}

@@ -47,7 +47,7 @@ export function useProgress(moduleKeys: string[]) {
 
   useEffect(() => {
     setProgress(readAll(moduleKeys));
-    setLastVisited(readLast());
+    setLastVisitedState(readLast());
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
