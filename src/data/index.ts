@@ -24,21 +24,23 @@ import { GIT_ADVANCED_EXERCISES } from "./modules/git-advanced";
 import { BASH_EXERCISES } from "./modules/bash";
 import { CODE_QUALITY_EXERCISES } from "./modules/code-quality";
 import { DOCKER_EXERCISES } from "./modules/docker";
-import { TS_PRIMITIVOS } from "./modules/ts-primitivos";
-import { TS_INTERFACES } from "./modules/ts-interfaces";
-import { TS_TYPES } from "./modules/ts-types";
-import { TS_FUNCIONES } from "./modules/ts-funciones";
-import { TS_GENERICS } from "./modules/ts-generics";
-import { TS_ENUMS } from "./modules/ts-enums";
-import { TS_DISCRIMINATED } from "./modules/ts-discriminated";
-import { TS_UTILITY_TYPES } from "./modules/ts-utility-types";
-import { TS_ARRAYS_MAP } from "./modules/ts-arrays-map";
-import { TS_ARRAYS_FILTER } from "./modules/ts-arrays-filter";
-import { TS_ARRAYS_REDUCE } from "./modules/ts-arrays-reduce";
-import { TS_ARRAYS_FIND } from "./modules/ts-arrays-find";
-import { TS_ARRAYS_SOME_EVERY } from "./modules/ts-arrays-some-every";
-import { TS_ARRAYS_SORT } from "./modules/ts-arrays-sort";
-import { TS_ARRAYS_EXTRAS } from "./modules/ts-arrays-extras";
+import {
+  TS_PRIMITIVOS_ENRICHED as TS_PRIMITIVOS,
+  TS_INTERFACES_ENRICHED as TS_INTERFACES,
+  TS_TYPES_ENRICHED as TS_TYPES,
+  TS_FUNCIONES_ENRICHED as TS_FUNCIONES,
+  TS_GENERICS_ENRICHED as TS_GENERICS,
+  TS_ENUMS_ENRICHED as TS_ENUMS,
+  TS_DISCRIMINATED_ENRICHED as TS_DISCRIMINATED,
+  TS_UTILITY_TYPES_ENRICHED as TS_UTILITY_TYPES,
+  TS_ARRAYS_MAP_ENRICHED as TS_ARRAYS_MAP,
+  TS_ARRAYS_FILTER_ENRICHED as TS_ARRAYS_FILTER,
+  TS_ARRAYS_REDUCE_ENRICHED as TS_ARRAYS_REDUCE,
+  TS_ARRAYS_FIND_ENRICHED as TS_ARRAYS_FIND,
+  TS_ARRAYS_SOME_EVERY_ENRICHED as TS_ARRAYS_SOME_EVERY,
+  TS_ARRAYS_SORT_ENRICHED as TS_ARRAYS_SORT,
+  TS_ARRAYS_EXTRAS_ENRICHED as TS_ARRAYS_EXTRAS,
+} from "./enrichment";
 
 export const ALL_MODULES: Module[] = [
   // ─── BUENAS PRACTICAS (orden back -> front) ───────────────────────────────
@@ -272,7 +274,7 @@ export const ALL_MODULES: Module[] = [
     badge: "TS Core",
     color: "blue",
     group: "TypeScript",
-    desc: "string, number, boolean, null, unknown, never, tuplas y as const.",
+    desc: "string, number, boolean, null, unknown, never, tuplas y as const. Con teoría y ejemplos cotidianos.",
     topics: ["string", "unknown", "never", "as const", "tuple"],
     exercises: TS_PRIMITIVOS,
   },
@@ -283,7 +285,7 @@ export const ALL_MODULES: Module[] = [
     badge: "TS Core",
     color: "blue",
     group: "TypeScript",
-    desc: "Contratos, extends, merging, generic interfaces y fluent API.",
+    desc: "Contratos, extends, merging, generic interfaces y fluent API. Con teoría y ejemplos cotidianos.",
     topics: ["interface", "extends", "readonly", "implements"],
     exercises: TS_INTERFACES,
   },
@@ -294,7 +296,7 @@ export const ALL_MODULES: Module[] = [
     badge: "TS Core",
     color: "blue",
     group: "TypeScript",
-    desc: "Unions, intersections, guards, conditional types y satisfies.",
+    desc: "Unions, intersections, guards, conditional types y satisfies. Con teoría y ejemplos cotidianos.",
     topics: ["union", "intersection", "guard", "mapped", "infer"],
     exercises: TS_TYPES,
   },
@@ -305,7 +307,7 @@ export const ALL_MODULES: Module[] = [
     badge: "TS Core",
     color: "blue",
     group: "TypeScript",
-    desc: "Retornos, overloads, callbacks, type predicates y asserts.",
+    desc: "Retornos, overloads, callbacks, type predicates y asserts. Con teoría y ejemplos cotidianos.",
     topics: ["return type", "overload", "is", "asserts", "pipe"],
     exercises: TS_FUNCIONES,
   },
@@ -316,7 +318,7 @@ export const ALL_MODULES: Module[] = [
     badge: "TS Advanced",
     color: "indigo",
     group: "TypeScript",
-    desc: "Constraints, keyof, Repository<T>, mapped types y builders.",
+    desc: "Constraints, keyof, Repository<T>, mapped types y builders. Con teoría y ejemplos cotidianos.",
     topics: ["<T>", "extends", "keyof", "conditional", "infer"],
     exercises: TS_GENERICS,
   },
@@ -327,7 +329,7 @@ export const ALL_MODULES: Module[] = [
     badge: "TS Core",
     color: "blue",
     group: "TypeScript",
-    desc: "String/numeric enums, const enum, Record map y alternatives.",
+    desc: "String/numeric enums, const enum, Record map y alternatives. Con teoría y ejemplos cotidianos.",
     topics: ["enum", "const enum", "Record", "as const"],
     exercises: TS_ENUMS,
   },
@@ -338,7 +340,7 @@ export const ALL_MODULES: Module[] = [
     badge: "TS Patterns",
     color: "violet",
     group: "TypeScript",
-    desc: "Result types, state machines, event emitters y visitor pattern.",
+    desc: "Result types, state machines, event emitters y visitor pattern. Con teoría y ejemplos cotidianos.",
     topics: ["kind", "never", "Result", "state machine"],
     exercises: TS_DISCRIMINATED,
   },
@@ -349,7 +351,7 @@ export const ALL_MODULES: Module[] = [
     badge: "TS Advanced",
     color: "indigo",
     group: "TypeScript",
-    desc: "Pick, Omit, Partial, Record, Extract, ReturnType y custom.",
+    desc: "Pick, Omit, Partial, Record, Extract, ReturnType y custom. Con teoría y ejemplos cotidianos.",
     topics: ["Pick", "Omit", "Partial", "Record", "Awaited"],
     exercises: TS_UTILITY_TYPES,
   },
@@ -362,7 +364,7 @@ export const ALL_MODULES: Module[] = [
     badge: "Arrays",
     color: "sky",
     group: "TS Arrays",
-    desc: "Transformar, extraer, reshape, spread e index con map.",
+    desc: "Transformar, extraer, reshape, spread e index con map. Con teoría y ejemplos cotidianos.",
     topics: ["map", "transform", "reshape", "spread"],
     exercises: TS_ARRAYS_MAP,
   },
@@ -373,7 +375,7 @@ export const ALL_MODULES: Module[] = [
     badge: "Arrays",
     color: "sky",
     group: "TS Arrays",
-    desc: "Filtrar por condicion, nulls, busqueda, dedupe y discriminated.",
+    desc: "Filtrar por condicion, nulls, busqueda, dedupe y discriminated. Con teoría y ejemplos cotidianos.",
     topics: ["filter", "predicate", "null", "type guard"],
     exercises: TS_ARRAYS_FILTER,
   },
@@ -384,7 +386,7 @@ export const ALL_MODULES: Module[] = [
     badge: "Arrays",
     color: "sky",
     group: "TS Arrays",
-    desc: "Sumatorias, groupBy, flatten, keyBy y pipeline de funciones.",
+    desc: "Sumatorias, groupBy, flatten, keyBy y pipeline de funciones. Con teoría y ejemplos cotidianos.",
     topics: ["reduce", "accumulator", "groupBy", "keyBy"],
     exercises: TS_ARRAYS_REDUCE,
   },
@@ -395,7 +397,7 @@ export const ALL_MODULES: Module[] = [
     badge: "Arrays",
     color: "sky",
     group: "TS Arrays",
-    desc: "find, findIndex, findLast, optional chaining y findOrThrow.",
+    desc: "find, findIndex, findLast, optional chaining y findOrThrow. Con teoría y ejemplos cotidianos.",
     topics: ["find", "findIndex", "?.", "??"],
     exercises: TS_ARRAYS_FIND,
   },
@@ -406,7 +408,7 @@ export const ALL_MODULES: Module[] = [
     badge: "Arrays",
     color: "sky",
     group: "TS Arrays",
-    desc: "Validaciones, permisos, duplicados y vacuous truth.",
+    desc: "Validaciones, permisos, duplicados y vacuous truth. Con teoría y ejemplos cotidianos.",
     topics: ["some", "every", "includes", "validate"],
     exercises: TS_ARRAYS_SOME_EVERY,
   },
@@ -417,7 +419,7 @@ export const ALL_MODULES: Module[] = [
     badge: "Arrays",
     color: "sky",
     group: "TS Arrays",
-    desc: "Numerico, localeCompare, multi-criterio e Intl.Collator.",
+    desc: "Numerico, localeCompare, multi-criterio e Intl.Collator. Con teoría y ejemplos cotidianos.",
     topics: ["sort", "toSorted", "compare", "Collator"],
     exercises: TS_ARRAYS_SORT,
   },
@@ -428,7 +430,7 @@ export const ALL_MODULES: Module[] = [
     badge: "Arrays",
     color: "sky",
     group: "TS Arrays",
-    desc: "flat, flatMap, includes, at, from, entries, splice y slice.",
+    desc: "flat, flatMap, includes, at, from, entries, splice y slice. Con teoría y ejemplos cotidianos.",
     topics: ["flat", "flatMap", "at", "splice", "slice"],
     exercises: TS_ARRAYS_EXTRAS,
   },

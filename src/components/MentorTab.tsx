@@ -20,6 +20,20 @@ function splitCompleteCode(text: string): string[] {
     .filter(Boolean);
 }
 
+/** Separa el ejemplo cotidiano del tip técnico en explanationText enriquecido. */
+function splitExplanation(text: string): {
+  everyday?: string;
+  technical: string;
+} {
+  const match = text.match(
+    /^🌍 Ejemplo cotidiano:\s*([\s\S]*?)\n\n([\s\S]*)$/,
+  );
+  if (match) {
+    return { everyday: match[1].trim(), technical: match[2].trim() };
+  }
+  return { technical: text };
+}
+
 export default function MentorTab({
   exercise,
   moduleName,
@@ -31,6 +45,7 @@ export default function MentorTab({
   const [isLoading, setIsLoading] = useState(false);
   const referenceItems = splitCompleteCode(exercise.completeCode);
   const colorStyle = moduleColorStyle(color);
+  const { everyday, technical } = splitExplanation(exercise.explanationText);
 
   async function getExplanation() {
     if (isLoading) return;
@@ -56,10 +71,20 @@ export default function MentorTab({
         <h4 className="text-[13px] font-bold text-ink">Análisis Técnico</h4>
         <div
           style={colorStyle}
-          className="mod-task-border rounded-r-input border-l-2 bg-surface-2 py-2.5 pl-4 pr-3 text-xs leading-relaxed text-muted"
+          className="mod-task-border space-y-3 rounded-r-input border-l-2 bg-surface-2 py-2.5 pl-4 pr-3 text-xs leading-relaxed text-muted"
         >
-          <p className="mb-1 font-semibold text-ink">💡 Mentoría</p>
-          <p>{exercise.explanationText}</p>
+          {everyday && (
+            <div className="rounded-[10px] border border-lime-500/20 bg-lime-500/5 p-3">
+              <p className="mb-1 font-semibold text-lime-300">
+                🌍 Ejemplo cotidiano
+              </p>
+              <p className="whitespace-pre-line text-muted">{everyday}</p>
+            </div>
+          )}
+          <div>
+            <p className="mb-1 font-semibold text-ink">💡 Mentoría técnica</p>
+            <p className="whitespace-pre-line">{technical}</p>
+          </div>
         </div>
 
         <div className="space-y-3 rounded-[10px] border border-line bg-surface-2 p-4">

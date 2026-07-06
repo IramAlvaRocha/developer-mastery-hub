@@ -49,6 +49,15 @@ export default function ExerciseWorkspace({
   const isLast = index === total - 1;
 
   useEffect(() => {
+    setActiveTab(
+      exercise.theory ? "theory" : exercise.simulation ? "terminal" : "challenge",
+    );
+    setUserAnswers({});
+    setIncorrectKeys(new Set());
+    setSolved(alreadyCompleted);
+  }, [exercise.id, exercise.theory, exercise.simulation, alreadyCompleted]);
+
+  useEffect(() => {
     if (!celebrate) return;
     const t = setTimeout(() => setCelebrate(false), 1500);
     return () => clearTimeout(t);
