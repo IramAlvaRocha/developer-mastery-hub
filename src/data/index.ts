@@ -17,6 +17,7 @@ import {
   GIT_EXERCISES,
 } from "./modules/legacy-core";
 import { NODEJS_PRO_EXERCISES } from "./modules/nodejs";
+import { NODEJS_SETUP_EXERCISES } from "./modules/nodejs-setup";
 import { NUXT_EXERCISES } from "./modules/nuxt";
 import { VUETIFY_EXERCISES } from "./modules/vuetify";
 import { GCP_EXERCISES } from "./modules/gcp";
@@ -114,6 +115,17 @@ export const ALL_MODULES: Module[] = [
   },
 
   // ─── BACKEND & DATOS ──────────────────────────────────────────────────────
+  {
+    key: "nodejs-setup",
+    name: "Node.js: Iniciar Proyecto",
+    icon: "🌱",
+    badge: "Setup",
+    color: "lime",
+    group: "Backend & Datos",
+    desc: "De npm init a TypeScript 6.0: ESM, Express, node --watch, nodemon, type stripping nativo, tsx, tsconfig y scripts dev/build/start con Node 24 LTS (2026).",
+    topics: ["npm init", "type stripping", "tsx", "tsconfig", "type module"],
+    exercises: NODEJS_SETUP_EXERCISES,
+  },
   {
     key: "nodejs",
     name: "Node.js Backend",
