@@ -1,6 +1,6 @@
 import type { Module } from '../index';
 
-const EF_C0RE_ARCHITECTURE: Exercise[] = [
+const EF_CORE_ARCHITECTURE: Exercise[] = [
   {
     id: 1,
     title: "Configuración de Value Object con OwnsOne",
