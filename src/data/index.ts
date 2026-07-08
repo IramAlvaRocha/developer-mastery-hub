@@ -26,6 +26,7 @@ import { BASH_EXERCISES } from "./modules/bash";
 import { CODE_QUALITY_EXERCISES } from "./modules/code-quality";
 import { DOCKER_EXERCISES } from "./modules/docker";
 import { EF_CORE_PERFORMANCE } from "./modules/ef-core-performance";
+import { EF_CORE_ARCHITECTURE } from "./modules/ef-core-architecture";
 import { EF_RESILIENCE_EXERCISES } from "./modules/ef-core-resilience-security";
 import {
   TS_PRIMITIVOS_ENRICHED as TS_PRIMITIVOS,
@@ -138,6 +139,17 @@ export const ALL_MODULES: Module[] = [
     desc: "API REST, JWT, middleware, interceptors, CORS, rate limit, clean architecture, Prisma ORM, .env y seguridad.",
     topics: ["JWT", "middleware", "Prisma", "CORS", "clean architecture"],
     exercises: NODEJS_PRO_EXERCISES,
+  },
+  {
+    key: "ef-core-architecture",
+    name: "EF Core: Arquitectura",
+    icon: "🏗️",
+    badge: "Backend",
+    color: "purple",
+    group: "Backend & Datos",
+    desc: "Value Objects con OwnsOne, Shadow Properties, filtros globales de consulta e índices compuestos multi-tenant para un dominio limpio y seguro.",
+    topics: ["OwnsOne", "Shadow Properties", "HasQueryFilter", "HasIndex"],
+    exercises: EF_CORE_ARCHITECTURE,
   },
   {
     key: "ef-core-performance",
