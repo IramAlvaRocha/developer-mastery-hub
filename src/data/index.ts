@@ -26,6 +26,7 @@ import { BASH_EXERCISES } from "./modules/bash";
 import { CODE_QUALITY_EXERCISES } from "./modules/code-quality";
 import { DOCKER_EXERCISES } from "./modules/docker";
 import { EF_CORE_PERFORMANCE } from "./modules/ef-core-performance";
+import { EF_RESILIENCE_EXERCISES } from "./modules/ef-core-resilience-security";
 import {
   TS_PRIMITIVOS_ENRICHED as TS_PRIMITIVOS,
   TS_INTERFACES_ENRICHED as TS_INTERFACES,
