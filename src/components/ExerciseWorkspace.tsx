@@ -294,70 +294,57 @@ export default function ExerciseWorkspace({
 
       {/* Barra de navegación inferior */}
       <footer className="shrink-0 border-t border-line bg-surface/95 backdrop-blur">
-        <div className="mx-auto flex w-full max-w-3xl items-center justify-between gap-3 px-4 py-3 md:px-6">
-          <div className="flex min-w-0 items-center gap-2.5">
-            <span className="text-[13px] font-medium text-muted">
-              Ejercicio{" "}
-              <span className="font-bold text-ink">{index + 1}</span> / {total}
-            </span>
-            {solved && (
-              <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-400">
-                ✓ Completado
+        <div className="mx-auto w-full max-w-3xl px-4 py-2.5 md:px-6">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex min-w-0 items-center gap-2">
+              <span className="shrink-0 text-[13px] font-medium text-muted">
+                Ejercicio{" "}
+                <span className="font-bold text-ink">{index + 1}</span> / {total}
               </span>
-            )}
-            <span className="hidden items-center gap-1 text-[11px] text-faint lg:flex">
-              <kbd className="rounded border border-line bg-surface-2 px-1.5 py-0.5 font-sans text-[10px] font-semibold text-muted">
-                ←
-              </kbd>
-              <kbd className="rounded border border-line bg-surface-2 px-1.5 py-0.5 font-sans text-[10px] font-semibold text-muted">
-                →
-              </kbd>
-              <span className="text-faint">/</span>
-              <kbd className="rounded border border-line bg-surface-2 px-1.5 py-0.5 font-sans text-[10px] font-semibold text-muted">
-                n
-              </kbd>
-              <kbd className="rounded border border-line bg-surface-2 px-1.5 py-0.5 font-sans text-[10px] font-semibold text-muted">
-                p
-              </kbd>
-              navegar
-            </span>
-            {solved && !isLast && (
-              <span className="text-[11px] text-emerald-400">
-                Completado — <kbd className="rounded border border-emerald-500/30 bg-emerald-500/10 px-1 py-0.5 font-sans text-[10px] font-semibold">n</kbd> siguiente
-              </span>
-            )}
-            {isLast && solved && (
-              <span className="text-[11px] text-emerald-400">✓ Módulo completado</span>
-            )}
+              {solved && (
+                <span className="inline-flex shrink-0 items-center gap-1 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-400">
+                  ✓ Completado
+                </span>
+              )}
+              {isLast && solved && (
+                <span className="hidden shrink-0 text-[11px] text-emerald-400 sm:inline">
+                  Módulo completado
+                </span>
+              )}
+            </div>
+
+            <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
+              <button
+                onClick={onPrev}
+                disabled={isFirst}
+                className="btn-secondary"
+                aria-label="Ejercicio anterior"
+              >
+                ←<span className="hidden sm:inline">Anterior</span>
+              </button>
+              {activeTab === "challenge" && (
+                <>
+                  <button onClick={resetChallenge} className="btn-ghost">
+                    Limpiar
+                  </button>
+                  <button onClick={verify} className="btn-primary">
+                    Verificar
+                  </button>
+                </>
+              )}
+              <button
+                onClick={onNext}
+                disabled={isLast}
+                className="btn-primary"
+                aria-label="Siguiente ejercicio"
+              >
+                <span className="hidden sm:inline">Siguiente</span> →
+              </button>
+            </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            <button
-              onClick={onPrev}
-              disabled={isFirst}
-              className="btn-secondary"
-              aria-label="Ejercicio anterior"
-            >
-              ←<span className="hidden sm:inline">Anterior</span>
-            </button>
-            {activeTab === "challenge" && (
-              <>
-                <button onClick={resetChallenge} className="btn-ghost">
-                  Limpiar
-                </button>
-                <button onClick={verify} className="btn-primary">
-                  Verificar
-                </button>
-              </>
-            )}
-            <button
-              onClick={onNext}
-              disabled={isLast}
-              className="btn-primary"
-              aria-label="Siguiente ejercicio"
-            >
-              <span className="hidden sm:inline">Siguiente</span> →
-            </button>
+          <div className="mt-1.5 flex justify-center border-t border-line/40 pt-1.5">
+            <KeyboardHints />
           </div>
         </div>
       </footer>
@@ -462,6 +449,32 @@ function TabButton({
     >
       {children}
     </button>
+  );
+}
+
+/** Atajos de teclado en fila propia del footer para no competir con botones. */
+function KeyboardHints() {
+  return (
+    <p
+      className="flex flex-wrap items-center justify-center gap-x-1.5 gap-y-1 text-[10px] text-faint"
+      aria-label="Atajos de teclado para navegar entre ejercicios"
+    >
+      <span className="sr-only">Atajos:</span>
+      <Kbd>←</Kbd>
+      <Kbd>→</Kbd>
+      <span className="text-line">o</span>
+      <Kbd>p</Kbd>
+      <Kbd>n</Kbd>
+      <span>navegar</span>
+    </p>
+  );
+}
+
+function Kbd({ children }: { children: React.ReactNode }) {
+  return (
+    <kbd className="rounded border border-line bg-surface-2 px-1.5 py-0.5 font-sans text-[10px] font-semibold text-muted">
+      {children}
+    </kbd>
   );
 }
 
