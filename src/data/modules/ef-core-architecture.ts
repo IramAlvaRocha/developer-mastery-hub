@@ -8,6 +8,8 @@ export const EF_CORE_ARCHITECTURE: Exercise[] = [
     category: "Arquitectura",
     description: "Un aggregate root 'Company' tiene un 'Address'. No queremos que 'Address' sea una tabla separada ni que tenga su propia identidad, debe ser parte de 'Company' para mantener la consistencia transaccional.",
     objective: "Configurar la propiedad 'Address' usando Fluent API para que se mapee como un Value Object dentro de la tabla Company.",
+    tags: ["EF Core", "Arquitectura", "Value Object", "OwnsOne"],
+    completed: false,
     fileName: "CompanyConfiguration.cs",
     explanationText: "Usar OwnsOne le dice a EF Core que el objeto no tiene vida propia y depende enteramente de su padre. Es como el bolsillo de un abrigo. El bolsillo no existe por sí solo en la tintorería; se lava y existe junto con el abrigo. Si el abrigo se tira a la basura, el bolsillo también. Esto mantiene tu dominio limpio y tu base de datos sin tablas innecesarias.",
     codeSnippet: `public class CompanyConfiguration : IEntityTypeConfiguration<Company>
@@ -47,6 +49,8 @@ export const EF_CORE_ARCHITECTURE: Exercise[] = [
     category: "Rendimiento",
     description: "La tabla 'Product' tiene una propiedad 'Sku' que actualmente se crea como nvarchar(max) por defecto en SQL Server. Esto causa fragmentación de índices y desperdicia memoria, ya que los SKU nunca superan los 50 caracteres alfanuméricos.",
     objective: "Forzar la columna 'Sku' a tener una longitud máxima de 50 y ser de tipo varchar (no Unicode) para optimizar el almacenamiento.",
+    tags: ["EF Core", "Rendimiento", "HasMaxLength", "IsUnicode"],
+    completed: false,
     fileName: "ProductConfiguration.cs",
     explanationText: "Definir límites estrictos evita reservar bloques de memoria gigantes inútiles. Es como reservar un camión de mudanza entero para una sola mochila. Si usas HasMaxLength, pides una motocicleta. Y al usar IsUnicode(false), le dices al motor 'y no traigas remolque pesado, porque no llevaremos carga especial (caracteres Unicode)', reduciendo el peso en disco a la mitad y evitando la fragmentación.",
     codeSnippet: `public class ProductConfiguration : IEntityTypeConfiguration<Product>
@@ -80,6 +84,8 @@ export const EF_CORE_ARCHITECTURE: Exercise[] = [
     category: "Arquitectura",
     description: "En un sistema multi-tenant, cada registro debe estar asociado a un inquilino (Tenant). Sin embargo, el modelo de dominio puro no debe saber nada sobre la infraestructura de base de datos ni tener la propiedad TenantId explícitamente en sus clases, para evitar acoplamiento.",
     objective: "Crear una propiedad oculta (Shadow Property) llamada 'TenantId' de tipo string en la entidad 'Document' usando Fluent API, sin modificar la clase C#.",
+    tags: ["EF Core", "Arquitectura", "Shadow Properties", "Multi-Tenant"],
+    completed: false,
     fileName: "DocumentConfiguration.cs",
     explanationText: "Las Shadow Properties existen en el modelo de EF Core y en la base de datos, pero no en tu clase C#. Es como el sello de seguridad invisible que le ponen a los billetes en el banco. El billete (tu clase C#) no cambia su diseño y la gente lo usa sin ver el sello, pero el banco (EF Core) sabe que está ahí para rastrearlo y protegerlo. Así mantenemos el dominio limpio.",
     codeSnippet: `public class DocumentConfiguration : IEntityTypeConfiguration<Document>
@@ -111,6 +117,8 @@ export const EF_CORE_ARCHITECTURE: Exercise[] = [
     category: "Arquitectura",
     description: "El sistema no borra físicamente los registros por motivos de auditoría legal. En su lugar, se marca la propiedad 'IsDeleted' como true. El problema es que los desarrolladores olvidan filtrar esto en sus consultas LINQ, causando que se devuelvan registros 'borrados' a los usuarios.",
     objective: "Configurar un filtro de consulta automático a nivel de modelo para que EF Core ignore siempre los registros donde 'IsDeleted' es verdadero.",
+    tags: ["EF Core", "Arquitectura", "Soft Delete", "HasQueryFilter"],
+    completed: false,
     fileName: "UserConfiguration.cs",
     explanationText: "HasQueryFilter aplica un 'where' automáticamente a todas tus consultas. Es como tener un colador en el fregadero de la cocina. No tienes que ir cazando tú los restos de comida uno por uno para atraparlos; el colador automáticamente los retiene y solo deja pasar el agua limpia. Así evitas que datos 'basura' lleguen a la aplicación accidentalmente.",
     codeSnippet: `public class UserConfiguration : IEntityTypeConfiguration<User>
@@ -146,6 +154,8 @@ export const EF_CORE_ARCHITECTURE: Exercise[] = [
     category: "Ciberseguridad",
     description: "En nuestra arquitectura multi-tenant, no se puede permitir que dos usuarios del mismo Tenant se registren con el mismo correo, pero sí es válido que el mismo correo exista en Tenants distintos. Un índice simple en Email está bloqueando registros válidos.",
     objective: "Crear un índice compuesto único sobre la propiedad Shadow 'TenantId' y la propiedad 'Email' usando arreglos de strings en la Fluent API.",
+    tags: ["EF Core", "Arquitectura", "Índices", "HasIndex", "IsUnique"],
+    completed: false,
     fileName: "AccountConfiguration.cs",
     explanationText: "Un índice compuesto único asegura la unicidad basándose en la combinación de dos columnas. Es como un torneo: no puedes tener dos equipos con el mismo nombre en la misma liga, pero sí un 'Tigres' en México y otro en España. La unicidad depende de liga (Tenant) + nombre (Email). Al usar Shadow Properties, el compilador nos exige pasar los nombres como strings, no mediante lambdas.",
     codeSnippet: `public class AccountConfiguration : IEntityTypeConfiguration<Account>
