@@ -115,13 +115,13 @@ export default function ExerciseWorkspace({
     }
   }
 
-  // Atajos de teclado: ← / → para navegar (cuando no se escribe en un input).
+  // Atajos de teclado: ← / → / n / p para navegar (cuando no se escribe en un input).
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       const tag = (e.target as HTMLElement)?.tagName;
       if (tag === "INPUT" || tag === "TEXTAREA") return;
-      if (e.key === "ArrowRight" && !isLast) onNext();
-      if (e.key === "ArrowLeft" && !isFirst) onPrev();
+      if ((e.key === "ArrowRight" || e.key === "n") && !isLast) onNext();
+      if ((e.key === "ArrowLeft" || e.key === "p") && !isFirst) onPrev();
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
@@ -312,8 +312,23 @@ export default function ExerciseWorkspace({
               <kbd className="rounded border border-line bg-surface-2 px-1.5 py-0.5 font-sans text-[10px] font-semibold text-muted">
                 →
               </kbd>
+              <span className="text-faint">/</span>
+              <kbd className="rounded border border-line bg-surface-2 px-1.5 py-0.5 font-sans text-[10px] font-semibold text-muted">
+                n
+              </kbd>
+              <kbd className="rounded border border-line bg-surface-2 px-1.5 py-0.5 font-sans text-[10px] font-semibold text-muted">
+                p
+              </kbd>
               navegar
             </span>
+            {solved && !isLast && (
+              <span className="text-[11px] text-emerald-400">
+                Completado — <kbd className="rounded border border-emerald-500/30 bg-emerald-500/10 px-1 py-0.5 font-sans text-[10px] font-semibold">n</kbd> siguiente
+              </span>
+            )}
+            {isLast && solved && (
+              <span className="text-[11px] text-emerald-400">✓ Módulo completado</span>
+            )}
           </div>
 
           <div className="flex items-center gap-2">

@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { Exercise } from "@/lib/types";
 import { moduleColorStyle } from "@/lib/moduleColors";
 
@@ -51,6 +51,16 @@ export default function ExerciseSidebar({
       m === "default" ? "asc" : m === "asc" ? "desc" : "default",
     );
   }
+
+  const navRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!navRef.current) return;
+    const active = navRef.current.querySelector<HTMLButtonElement>('[data-active="true"]');
+    if (active) {
+      active.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    }
+  }, [activeIndex, starFilter, sortMode]);
 
   const sortLabel =
     sortMode === "asc"
@@ -128,7 +138,7 @@ export default function ExerciseSidebar({
         </div>
       </div>
 
-      <nav className="flex-grow space-y-1 overflow-y-auto p-2.5" style={colorStyle}>
+      <nav ref={navRef} className="flex-grow space-y-1 overflow-y-auto p-2.5" style={colorStyle}>
         {items.map(({ ex, index }) => {
           const active = activeIndex === index;
           const done = isCompleted(ex.id);
@@ -136,6 +146,7 @@ export default function ExerciseSidebar({
           return (
             <button
               key={ex.id}
+              data-active={active ? "true" : undefined}
               onClick={() => onSelect(index)}
               className={`group flex w-full items-center gap-2.5 rounded-input px-3 py-2.5 text-left motion-safe-transition transition-all ${
                 active
