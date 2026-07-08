@@ -25,6 +25,7 @@ import { GIT_ADVANCED_EXERCISES } from "./modules/git-advanced";
 import { BASH_EXERCISES } from "./modules/bash";
 import { CODE_QUALITY_EXERCISES } from "./modules/code-quality";
 import { DOCKER_EXERCISES } from "./modules/docker";
+import { EF_CORE_PERFORMANCE } from "./modules/ef-core-performance";
 import {
   TS_PRIMITIVOS_ENRICHED as TS_PRIMITIVOS,
   TS_INTERFACES_ENRICHED as TS_INTERFACES,
@@ -136,6 +137,17 @@ export const ALL_MODULES: Module[] = [
     desc: "API REST, JWT, middleware, interceptors, CORS, rate limit, clean architecture, Prisma ORM, .env y seguridad.",
     topics: ["JWT", "middleware", "Prisma", "CORS", "clean architecture"],
     exercises: NODEJS_PRO_EXERCISES,
+  },
+  {
+    key: "ef-core-performance",
+    name: "EF Core: Alto Rendimiento",
+    icon: "⚡",
+    badge: "Backend",
+    color: "purple",
+    group: "Backend & Datos",
+    desc: "Domina las técnicas avanzadas de Entity Framework Core para evitar cuellos de botella, problemas de memoria y optimizar consultas en aplicaciones a gran escala.",
+    topics: ["AsNoTracking", "Include", "AsSplitQuery", "ExecuteUpdateAsync", "ExecuteDeleteAsync"],
+    exercises: EF_CORE_PERFORMANCE,
   },
   {
     key: "sql",
