@@ -18,6 +18,7 @@ import {
 } from "./modules/legacy-core";
 import { NODEJS_PRO_EXERCISES } from "./modules/nodejs";
 import { NODEJS_SETUP_EXERCISES } from "./modules/nodejs-setup";
+import { PRISMA_EXERCISES } from "./modules/prisma";
 import { NUXT_EXERCISES } from "./modules/nuxt";
 import { VUETIFY_EXERCISES } from "./modules/vuetify";
 import { GCP_EXERCISES } from "./modules/gcp";
@@ -139,6 +140,17 @@ export const ALL_MODULES: Module[] = [
     desc: "API REST, JWT, middleware, interceptors, CORS, rate limit, clean architecture, Prisma ORM, .env y seguridad.",
     topics: ["JWT", "middleware", "Prisma", "CORS", "clean architecture"],
     exercises: NODEJS_PRO_EXERCISES,
+  },
+  {
+    key: "prisma",
+    name: "Prisma ORM",
+    icon: "🔺",
+    badge: "ORM",
+    color: "teal",
+    group: "Backend & Datos",
+    desc: "Desde cero: schema, prisma.config.ts, modelos, relaciones 1:1/1:N/N:M, Prisma Client, CRUD, include/select, transacciones, migraciones, seed y raw SQL seguro (Prisma 7).",
+    topics: ["schema", "relations", "PrismaClient", "migrate", "transactions"],
+    exercises: PRISMA_EXERCISES,
   },
   {
     key: "ef-core-architecture",
