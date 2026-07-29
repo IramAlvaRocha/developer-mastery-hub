@@ -19,7 +19,7 @@ Cada paso del back tiene su contraparte en el front (ej. `ApiResponse` en C# ↔
 |-------|---------|
 | Buenas Practicas | .NET Backend Best Practices, React Frontend Best Practices |
 | Frontend | Vue 3, Pinia, Nuxt 3, Vuetify 3 |
-| Backend & Datos | Node.js, SQL Server |
+| Backend & Datos | Node.js Setup, Node.js, Prisma ORM, EF Core, SQL Server |
 | Cloud & Serverless | Google Cloud Platform, Firebase |
 | DevOps & Git | Git & DevOps, Git Flow/Monorepos, Bash & Terminal, Docker & K8s |
 | APIs & Seguridad | Axios/Fetch, Security (OAuth2/JWT) |
