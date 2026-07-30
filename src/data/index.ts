@@ -29,6 +29,7 @@ import { DOCKER_EXERCISES } from "./modules/docker";
 import { EF_CORE_PERFORMANCE } from "./modules/ef-core-performance";
 import { EF_CORE_ARCHITECTURE } from "./modules/ef-core-architecture";
 import { EF_CORE_RESILIENCE_SECURITY } from "./modules/ef-core-resilience-security";
+import { CODE_VULNERABILITIES_EXERCISES } from "./modules/code-vulnerabilities";
 import {
   TS_PRIMITIVOS_ENRICHED as TS_PRIMITIVOS,
   TS_INTERFACES_ENRICHED as TS_INTERFACES,
@@ -289,6 +290,17 @@ export const ALL_MODULES: Module[] = [
     desc: "JWT, PKCE, CORS, CSP, HTTPS, Firebase Rules y XSS defense.",
     topics: ["JWT", "PKCE", "CORS", "CSP"],
     exercises: SECURITY_EXERCISES,
+  },
+  {
+    key: "code-vulnerabilities",
+    name: "Vulnerabilidades & Secure Coding",
+    icon: "🛡️",
+    badge: "OWASP",
+    color: "red",
+    group: "APIs & Seguridad",
+    desc: "SQLi, XSS, OS Command Injection, Path Traversal, BOLA, Prototype Pollution y mitigación OWASP.",
+    topics: ["SQLi", "XSS", "BOLA", "Command Injection", "ReDoS", "Zod"],
+    exercises: CODE_VULNERABILITIES_EXERCISES,
   },
 
   // ─── TESTING & CALIDAD ────────────────────────────────────────────────────

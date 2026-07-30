@@ -15,4 +15,6 @@ dist/
 Thumbs.db
 *.log
 
-bun.lock
+# package locks
+yarn.lock
+pnpm-lock.yaml

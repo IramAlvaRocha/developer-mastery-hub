@@ -1,0 +1,3 @@
+#!/bin/sh
+# Native Git Pre-Commit Hook (Zero external dependencies)
+bun scripts/security-check.js
