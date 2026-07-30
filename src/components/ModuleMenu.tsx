@@ -47,7 +47,7 @@ const GROUP_META: Record<string, { icon: string; color: string; desc: string }> 
     "APIs & Seguridad": {
       icon: "🔑",
       color: "rose",
-      desc: "Auth, JWT, CORS y XSS.",
+      desc: "Auth, JWT, OWASP, Vulnerabilidades y XSS.",
     },
     "Testing & Calidad": {
       icon: "🧪",

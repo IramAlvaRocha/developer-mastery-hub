@@ -22,7 +22,7 @@ Cada paso del back tiene su contraparte en el front (ej. `ApiResponse` en C# ↔
 | Backend & Datos | Node.js Setup, Node.js, Prisma ORM, EF Core, SQL Server |
 | Cloud & Serverless | Google Cloud Platform, Firebase |
 | DevOps & Git | Git & DevOps, Git Flow/Monorepos, Bash & Terminal, Docker & K8s |
-| APIs & Seguridad | Axios/Fetch, Security (OAuth2/JWT) |
+| APIs & Seguridad | Axios/Fetch, Security (OAuth2/JWT), Vulnerabilidades & Secure Coding (OWASP Top 10) |
 | Testing & Calidad | Vitest, E2E (Cypress/Playwright), Calidad de Código |
 | TypeScript | Primitivos, Interfaces, Types & Unions, Funciones, Generics, Enums, Discriminated Unions, Utility Types |
 | TS Arrays | map, filter, reduce, find, some/every, sort, extras |
