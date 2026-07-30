@@ -5,11 +5,12 @@ interface Props {
 export default function TheoryTab({ theory }: Props) {
   return (
     <div className="animate-fade-in space-y-4">
-      <div className="ui-card p-5">
-        <h4 className="mb-3 text-[13px] font-semibold text-ink">
+      <div className="rounded-[28px] border border-line bg-surface p-5 sm:p-6">
+        <p className="section-eyebrow text-muted">{"{ Teoría }"}</p>
+        <h4 className="mt-1 text-lg font-semibold tracking-tight text-cream">
           Fundamentos teóricos
         </h4>
-        <div className="max-h-[460px] space-y-3 overflow-y-auto rounded-[24px] border border-line bg-surface-2 p-4 text-[13px] leading-relaxed text-muted">
+        <div className="mt-4 max-h-[460px] space-y-3 overflow-y-auto rounded-[24px] border border-line bg-[#0e100f] p-4 text-[14px] leading-relaxed text-muted sm:p-5">
           <Markdown source={theory} />
         </div>
       </div>
@@ -60,7 +61,7 @@ function Markdown({ source }: { source: string }) {
       blocks.push(
         <h5
           key={key++}
-          className="pt-1 text-[13px] font-bold text-ink"
+          className="pt-1 text-[13px] font-bold text-cream"
         >
           {renderInline(trimmed.slice(3))}
         </h5>,
@@ -99,7 +100,7 @@ function Markdown({ source }: { source: string }) {
                   {head.map((c, ci) => (
                     <th
                       key={ci}
-                      className="border-b border-line px-3 py-1.5 font-semibold text-ink"
+                      className="border-b border-line px-3 py-1.5 font-semibold text-cream"
                     >
                       {renderInline(c)}
                     </th>
@@ -184,7 +185,7 @@ function renderInline(text: string): React.ReactNode[] {
   return parts.map((part, i) => {
     if (part.startsWith("**") && part.endsWith("**")) {
       return (
-        <strong key={i} className="font-semibold text-ink">
+        <strong key={i} className="font-semibold text-cream">
           {part.slice(2, -2)}
         </strong>
       );

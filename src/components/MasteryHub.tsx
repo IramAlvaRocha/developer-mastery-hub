@@ -162,7 +162,7 @@ export default function MasteryHub() {
 
   return (
     <div className="relative flex h-full flex-col overflow-hidden">
-      <header className="flex shrink-0 items-center gap-3 border-b border-line bg-surface/95 px-4 py-3.5 backdrop-blur md:gap-4 md:px-6">
+      <header className="flex shrink-0 items-center gap-3 border-b border-line bg-[#121412]/95 px-4 py-3.5 backdrop-blur md:gap-4 md:px-6">
         {!inModule && (
           <button
             type="button"
@@ -184,7 +184,7 @@ export default function MasteryHub() {
             ◆
           </span>
           <div className="min-w-0 text-left">
-            <h1 className="truncate text-base font-semibold tracking-tight text-ink sm:text-lg">
+            <h1 className="truncate text-base font-semibold tracking-tight text-cream sm:text-lg">
               Mastery Hub
             </h1>
             <p className="truncate text-[12px] font-medium text-muted">
@@ -197,7 +197,7 @@ export default function MasteryHub() {
 
         <div className="hidden min-w-0 flex-1 items-center justify-center md:flex">
           {inModule ? (
-            <nav className="flex max-w-full items-center gap-2 rounded-full border border-line bg-canvas/60 px-4 py-2 text-xs">
+            <nav className="flex max-w-full items-center gap-2 rounded-full border border-line bg-canvas/50 px-4 py-2 text-xs">
               <button
                 onClick={goBackToMenu}
                 className="shrink-0 text-brand transition-colors hover:text-brand-strong"
@@ -207,7 +207,7 @@ export default function MasteryHub() {
               <span className="text-faint">/</span>
               <span className="truncate text-muted">{currentModule.group}</span>
               <span className="text-faint">/</span>
-              <span className="truncate font-semibold text-ink">
+              <span className="truncate font-semibold text-cream">
                 {currentModule.name}
               </span>
             </nav>
