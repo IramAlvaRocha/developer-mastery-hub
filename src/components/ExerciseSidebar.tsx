@@ -32,13 +32,15 @@ export default function ExerciseSidebar({
   const colorStyle = moduleColorStyle(color);
 
   const starLevels = useMemo(
-    () => Array.from(new Set(exercises.map((e) => e.stars))).sort((a, b) => a - b),
+    () =>
+      Array.from(new Set(exercises.map((e) => e.stars))).sort((a, b) => a - b),
     [exercises],
   );
 
   const items = useMemo(() => {
     let list = exercises.map((ex, index) => ({ ex, index }));
-    if (starFilter != null) list = list.filter((it) => it.ex.stars === starFilter);
+    if (starFilter != null)
+      list = list.filter((it) => it.ex.stars === starFilter);
     if (sortMode === "asc")
       list = [...list].sort((a, b) => a.ex.stars - b.ex.stars);
     if (sortMode === "desc")
@@ -52,11 +54,13 @@ export default function ExerciseSidebar({
     );
   }
 
-  const navRef = useRef<HTMLDivElement>(null);
+  const navRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
     if (!navRef.current) return;
-    const active = navRef.current.querySelector<HTMLButtonElement>('[data-active="true"]');
+    const active = navRef.current.querySelector<HTMLButtonElement>(
+      '[data-active="true"]',
+    );
     if (active) {
       active.scrollIntoView({ block: "nearest", behavior: "smooth" });
     }
@@ -71,50 +75,48 @@ export default function ExerciseSidebar({
 
   return (
     <aside
-      className={`fixed inset-y-0 left-0 z-40 flex h-full w-72 shrink-0 flex-col border-r border-line bg-surface motion-safe-transition transition-transform duration-300 md:static ${
+      className={`fixed inset-y-0 left-0 z-40 flex h-full w-[min(18.5rem,88vw)] shrink-0 flex-col border-r border-line bg-[#121412] motion-safe-transition transition-transform duration-300 md:static md:w-72 ${
         isOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
       }`}
     >
-      <div className="flex items-center justify-between border-b border-line bg-surface-2 p-4">
+      <div className="flex items-center justify-between gap-2 border-b border-line px-4 py-3.5">
         <div className="min-w-0">
-          <p className="text-[10px] font-bold uppercase tracking-wider text-faint">
-            Módulo activo
+          <p className="text-[11px] font-medium uppercase tracking-wide text-faint">
+            Módulo
           </p>
-          <h4 className="max-w-[200px] truncate text-sm font-bold text-ink">
+          <h4 className="truncate text-[15px] font-semibold text-cream">
             {moduleName}
           </h4>
         </div>
         <button
           onClick={onClose}
-          className="icon-btn md:hidden"
+          className="icon-btn border border-line md:hidden"
           aria-label="Cerrar"
         >
           ×
         </button>
       </div>
 
-      <div className="shrink-0 border-b border-line p-4" style={colorStyle}>
-        <div className="mb-2 flex justify-between text-[11px] font-semibold text-muted">
-          <span>Completadas</span>
+      <div className="shrink-0 border-b border-line px-4 py-3" style={colorStyle}>
+        <div className="mb-1.5 flex justify-between text-[11px] font-semibold">
+          <span className="text-muted">Completado</span>
           <span className="mod-text">{progress}%</span>
         </div>
-        <div className="h-1.5 overflow-hidden rounded-full bg-surface-2">
+        <div className="h-1.5 overflow-hidden rounded-full bg-elevated">
           <div
             className="mod-progress motion-safe-transition"
             style={{ width: `${progress}%` }}
-          ></div>
+          />
         </div>
       </div>
 
-      <div className="shrink-0 space-y-2 border-b border-line px-3 py-3" style={colorStyle}>
+      <div className="shrink-0 space-y-2 border-b border-line px-3 py-3">
         <button
           onClick={cycleSort}
-          className="flex w-full items-center justify-between rounded-input border border-line bg-surface-2 px-3 py-2 text-[11px] font-semibold text-muted transition-colors hover:text-ink"
+          className="flex w-full items-center justify-between rounded-full border border-line bg-canvas/50 px-3 py-2 text-[11px] font-semibold text-muted transition-colors hover:text-cream"
           title="Cambiar orden por dificultad"
         >
-          <span className="flex items-center gap-1.5">
-            <span className="text-faint">⇅</span> {sortLabel}
-          </span>
+          <span>{sortLabel}</span>
           <span className="text-faint">
             {sortMode === "asc" ? "↑" : sortMode === "desc" ? "↓" : "•"}
           </span>
@@ -138,44 +140,60 @@ export default function ExerciseSidebar({
         </div>
       </div>
 
-      <nav ref={navRef} className="flex-grow space-y-1 overflow-y-auto p-2.5" style={colorStyle}>
-        {items.map(({ ex, index }) => {
-          const active = activeIndex === index;
-          const done = isCompleted(ex.id);
-          const label = ex.step != null ? `Paso ${ex.step}` : `Nv.${ex.stars}`;
-          return (
-            <button
-              key={ex.id}
-              data-active={active ? "true" : undefined}
-              onClick={() => onSelect(index)}
-              className={`group flex w-full items-center gap-2.5 rounded-input px-3 py-2.5 text-left motion-safe-transition transition-all ${
-                active
-                  ? "mod-sidebar-active border-l-2 bg-elevated text-ink"
-                  : "border-l-2 border-transparent text-muted hover:bg-surface-2 hover:text-ink"
-              }`}
-            >
-              <span
-                className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-[10px] font-bold ${
-                  done
-                    ? "bg-emerald-500/15 text-emerald-400"
-                    : active
-                      ? "mod-sidebar-item-active"
-                      : "bg-surface-2 text-faint"
-                }`}
-              >
-                {done ? "✓" : index + 1}
-              </span>
-              <div className="flex min-w-0 flex-col">
-                <span className="text-[9px] font-bold uppercase tracking-wider text-faint">
-                  {ex.category} • {label}
-                </span>
-                <span className="truncate text-[13px] font-semibold">
-                  {ex.title}
-                </span>
-              </div>
-            </button>
-          );
-        })}
+      <nav ref={navRef} className="min-h-0 flex-1 overflow-y-auto px-3 py-4">
+        <ul className="relative ml-3 border-l border-line/80">
+          {items.map(({ ex, index }, i) => {
+            const active = activeIndex === index;
+            const done = isCompleted(ex.id);
+            const label =
+              ex.step != null ? `Paso ${ex.step}` : `Nv.${ex.stars}`;
+            const isLast = i === items.length - 1;
+            return (
+              <li key={ex.id} className="relative">
+                <button
+                  data-active={active ? "true" : undefined}
+                  onClick={() => onSelect(index)}
+                  className={`relative flex w-full items-start gap-3 py-2.5 pl-5 pr-2 text-left transition-colors ${
+                    active
+                      ? "text-cream"
+                      : "text-muted hover:text-cream"
+                  }`}
+                >
+                  <span
+                    className={`absolute left-0 top-[1.15rem] z-[1] flex h-3.5 w-3.5 -translate-x-1/2 items-center justify-center rounded-full text-[9px] font-bold ${
+                      done
+                        ? "bg-brand text-canvas"
+                        : active
+                          ? "bg-sky shadow-[0_0_0_3px_rgba(0,186,226,0.28)]"
+                          : "border border-line bg-[#121412]"
+                    }`}
+                    aria-hidden
+                  >
+                    {done ? "✓" : null}
+                  </span>
+                  {!isLast && (
+                    <span
+                      className="absolute left-0 top-[1.55rem] h-[calc(100%-0.35rem)] w-px -translate-x-1/2 bg-line/80"
+                      aria-hidden
+                    />
+                  )}
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-[10px] font-medium uppercase tracking-wide text-faint">
+                      {ex.category} · {label}
+                    </span>
+                    <span
+                      className={`mt-0.5 block truncate text-[13px] leading-snug ${
+                        active ? "font-semibold" : "font-medium"
+                      }`}
+                    >
+                      {ex.title}
+                    </span>
+                  </span>
+                </button>
+              </li>
+            );
+          })}
+        </ul>
 
         {items.length === 0 && (
           <p className="px-3 py-6 text-center text-[12px] text-faint">
@@ -199,10 +217,10 @@ function FilterChip({
   return (
     <button
       onClick={onClick}
-      className={`rounded-full border px-2.5 py-1 text-[10px] font-bold tracking-wide motion-safe-transition transition-colors ${
+      className={`rounded-full border px-2.5 py-1 text-[10px] font-bold tracking-wide transition-colors ${
         active
-          ? "mod-chip-active border"
-          : "border-line bg-surface-2 text-faint hover:text-muted"
+          ? "border-brand/40 bg-brand/15 text-brand"
+          : "border-line bg-canvas/40 text-faint hover:text-muted"
       }`}
     >
       {children}

@@ -1,51 +1,54 @@
 @import "tailwindcss";
 
 /* ──────────────────────────────────────────────────────────────────────────
-   Design tokens (inspirados en DESIGN.md): tema oscuro neutro + acento azul.
-   Tailwind v4 genera utilidades de color, radio y sombra a partir de estas
-   variables (color -> bg/text/border, radius -> rounded, shadow -> shadow).
+   Design tokens — GSAP-inspired (cream on near-black) + EduWave energy.
+   Radios altos: nunca elementos totalmente rectos.
    ────────────────────────────────────────────────────────────────────────── */
 @theme {
-  --font-sans: "Inter", ui-sans-serif, -apple-system, BlinkMacSystemFont,
-    "Segoe UI", Roboto, sans-serif;
-  --font-mono: "JetBrains Mono", "SF Mono", "Cascadia Code", "Roboto Mono",
-    Menlo, Courier, monospace;
+  --font-sans: "DM Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", "SF Mono", "Cascadia Code", Menlo, monospace;
 
-  --color-canvas: #0d0d0f;
-  --color-surface: #1c1c1c;
-  --color-surface-2: #151516;
-  --color-elevated: #242425;
-  --color-line: #333333;
-  --color-line-soft: #272728;
-  --color-ink: #fafafa;
-  --color-muted: #a3a3a3;
-  --color-faint: #6f6f72;
+  --color-canvas: #0e100f;
+  --color-surface: #191919;
+  --color-surface-2: #141514;
+  --color-elevated: #222422;
+  --color-line: #42433d;
+  --color-line-soft: #2e2f2b;
+  --color-ink: #fffce1;
+  --color-muted: #7c7c6f;
+  --color-faint: #5a5a50;
 
-  --color-brand: #3b82f6;
-  --color-brand-strong: #2563eb;
-  --color-brand-deep: #1d4ed8;
+  --color-brand: #0ae448;
+  --color-brand-strong: #abff84;
+  --color-brand-deep: #08c93d;
+  --color-cream: #fffce1;
+  --color-orangey: #ff8709;
+  --color-pink: #fec5fb;
+  --color-lilac: #9d95ff;
+  --color-sky: #00bae2;
+  --color-core-green: #dfffd1;
+  --color-sage: #a8e6a1;
+  --color-peach: #ffb7a1;
+  --color-butter: #f5e6a3;
   --color-danger: #f87171;
 
-  --radius-card: 14px;
-  --radius-input: 10px;
+  --radius-card: 28px;
+  --radius-input: 20px;
+  --radius-pill: 100px;
 
-  --shadow-glow: 0 0 20px rgba(59, 130, 246, 0.3);
-  --shadow-glow-soft: 0 0 12px rgba(59, 130, 246, 0.18);
-  --shadow-float: 0 10px 15px -3px rgba(0, 0, 0, 0.35),
-    0 4px 6px -4px rgba(0, 0, 0, 0.3);
+  --shadow-glow: 0 0 24px rgba(10, 228, 72, 0.28);
+  --shadow-glow-soft: 0 0 14px rgba(10, 228, 72, 0.16);
+  --shadow-float: 0 12px 40px rgba(0, 0, 0, 0.45);
 }
 
-/* ─── Colores de modulo (CSS vars: --module-rgb, --module-rgb-light) ───────
-   Aplicar moduleColorStyle(color) en el contenedor; evita clases Tailwind
-   interpoladas (bg-${color}-500) y el safelist dinamico. */
 @layer utilities {
   .mod-icon-bg {
-    background-color: rgb(var(--module-rgb) / 0.1);
+    background-color: rgb(var(--module-rgb) / 0.12);
   }
   .mod-badge {
-    background-color: rgb(var(--module-rgb) / 0.1);
+    background-color: rgb(var(--module-rgb) / 0.12);
     color: rgb(var(--module-rgb-light));
-    border-color: rgb(var(--module-rgb) / 0.2);
+    border-color: rgb(var(--module-rgb) / 0.25);
   }
   .mod-text {
     color: rgb(var(--module-rgb-light));
@@ -81,7 +84,7 @@
     color: rgb(var(--module-rgb-light));
   }
   .group.mod-card-hover:hover {
-    border-color: rgb(var(--module-rgb) / 0.5);
+    border-color: rgb(var(--module-rgb) / 0.55);
   }
   .mod-chip-active {
     background-color: rgb(var(--module-rgb) / 0.15);
@@ -117,7 +120,17 @@ body {
   text-rendering: optimizeLegibility;
 }
 
-/* ─── Componentes reutilizables del sistema de diseño ─────────────────────── */
+body.is-landing {
+  overflow-x: hidden;
+  overflow-y: auto;
+  height: auto;
+  min-height: 100%;
+}
+
+body.is-app {
+  overflow: hidden;
+}
+
 @layer components {
   .ui-card {
     border-radius: var(--radius-card);
@@ -130,30 +143,31 @@ body {
     align-items: center;
     justify-content: center;
     gap: 0.5rem;
-    min-height: 40px;
-    padding: 0 18px;
-    border-radius: var(--radius-input);
-    background-color: var(--color-brand);
-    color: #fff;
+    min-height: 44px;
+    padding: 0 24px;
+    border-radius: var(--radius-pill);
+    background: transparent;
+    color: var(--color-cream);
     font-weight: 600;
-    font-size: 13px;
-    line-height: 20px;
-    box-shadow: var(--shadow-glow-soft);
-    transition: background-color 0.15s ease, box-shadow 0.15s ease,
-      transform 0.1s ease;
+    font-size: 16px;
+    line-height: 1.05;
+    border: 1.5px solid transparent;
+    background-image:
+      linear-gradient(var(--color-canvas), var(--color-canvas)),
+      linear-gradient(114.41deg, #0ae448 20.74%, #abff84 65.5%);
+    background-origin: border-box;
+    background-clip: padding-box, border-box;
+    transition: opacity 0.15s ease, transform 0.1s ease;
   }
   .btn-primary:hover {
-    background-color: var(--color-brand-strong);
-    box-shadow: var(--shadow-glow);
+    opacity: 0.9;
   }
   .btn-primary:active {
-    background-color: var(--color-brand-deep);
     transform: translateY(1px);
   }
   .btn-primary:disabled {
-    opacity: 0.45;
+    opacity: 0.4;
     cursor: not-allowed;
-    box-shadow: none;
   }
 
   .btn-secondary {
@@ -161,24 +175,19 @@ body {
     align-items: center;
     justify-content: center;
     gap: 0.5rem;
-    min-height: 40px;
-    padding: 0 16px;
-    border-radius: var(--radius-input);
+    min-height: 44px;
+    padding: 0 22px;
+    border-radius: var(--radius-pill);
     background-color: transparent;
-    border: 1px solid var(--color-line);
-    color: var(--color-ink);
-    font-weight: 500;
-    font-size: 13px;
-    line-height: 20px;
-    transition: border-color 0.15s ease, background-color 0.15s ease,
-      color 0.15s ease;
+    border: 1px solid var(--color-cream);
+    color: var(--color-cream);
+    font-weight: 600;
+    font-size: 15px;
+    line-height: 1.05;
+    transition: opacity 0.15s ease, border-color 0.15s ease;
   }
   .btn-secondary:hover {
-    border-color: var(--color-brand);
-    color: #fff;
-  }
-  .btn-secondary:active {
-    background-color: rgba(59, 130, 246, 0.1);
+    opacity: 0.85;
   }
   .btn-secondary:disabled {
     opacity: 0.35;
@@ -190,43 +199,62 @@ body {
     align-items: center;
     justify-content: center;
     gap: 0.4rem;
-    padding: 6px 12px;
-    border-radius: 8px;
+    padding: 8px 14px;
+    border-radius: var(--radius-pill);
     background-color: transparent;
     color: var(--color-muted);
     font-weight: 600;
-    font-size: 13px;
+    font-size: 14px;
     transition: background-color 0.15s ease, color 0.15s ease;
   }
   .btn-ghost:hover {
-    background-color: rgba(255, 255, 255, 0.07);
-    color: #fff;
+    background-color: rgba(255, 252, 225, 0.06);
+    color: var(--color-cream);
+  }
+
+  .btn-filled-soft {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    min-height: 48px;
+    padding: 0 28px;
+    border-radius: var(--radius-pill);
+    background-color: var(--color-sage);
+    color: #0e100f;
+    font-weight: 700;
+    font-size: 16px;
+    transition: transform 0.15s ease, filter 0.15s ease;
+  }
+  .btn-filled-soft:hover {
+    filter: brightness(1.05);
+    transform: translateY(-1px);
   }
 
   .icon-btn {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 36px;
-    height: 36px;
+    width: 40px;
+    height: 40px;
     border-radius: 9999px;
     color: var(--color-ink);
     transition: background-color 0.15s ease;
   }
   .icon-btn:hover {
-    background-color: rgba(255, 255, 255, 0.08);
+    background-color: rgba(255, 252, 225, 0.08);
   }
 
   .input-field {
     width: 100%;
-    min-height: 44px;
+    min-height: 48px;
     border-radius: var(--radius-input);
     border: 1px solid var(--color-line);
-    background-color: rgba(28, 28, 28, 0.4);
+    background-color: rgba(20, 21, 20, 0.7);
     color: var(--color-ink);
-    padding: 0 14px;
-    font-size: 14px;
-    line-height: 20px;
+    padding: 0 18px;
+    font-size: 15px;
+    line-height: 1.2;
     transition: border-color 0.15s ease, box-shadow 0.15s ease;
   }
   .input-field::placeholder {
@@ -235,15 +263,31 @@ body {
   .input-field:focus {
     outline: none;
     border-color: var(--color-brand);
-    box-shadow: 0 0 0 1px var(--color-brand), 0 0 20px rgba(59, 130, 246, 0.2);
+    box-shadow: 0 0 0 1px var(--color-brand), var(--shadow-glow-soft);
+  }
+
+  .section-eyebrow {
+    font-size: 16px;
+    font-weight: 400;
+    color: var(--color-cream);
+    letter-spacing: -0.01em;
+  }
+
+  .pill-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    border-radius: 9999px;
+    padding: 0.4rem 0.9rem;
+    font-size: 12px;
+    font-weight: 600;
   }
 }
 
-/* ─── Animaciones ─────────────────────────────────────────────────────────── */
 @keyframes fadeInUp {
   from {
     opacity: 0;
-    transform: translateY(8px);
+    transform: translateY(10px);
   }
   to {
     opacity: 1;
@@ -251,16 +295,14 @@ body {
   }
 }
 .animate-fade-in {
-  animation: fadeInUp 0.28s ease both;
+  animation: fadeInUp 0.3s ease both;
 }
 
-/* Entrada escalonada: cada tarjeta usa --i (su indice) para retrasar su aparicion. */
 .animate-stagger {
-  animation: fadeInUp 0.36s ease both;
+  animation: fadeInUp 0.38s ease both;
   animation-delay: calc(var(--i, 0) * 45ms);
 }
 
-/* Pop con rebote para el check de celebracion. */
 @keyframes popIn {
   0% {
     opacity: 0;
@@ -279,7 +321,6 @@ body {
   animation: popIn 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) both;
 }
 
-/* Confeti: cada pieza viaja a un offset/rotacion definido por variables inline. */
 @keyframes confettiFall {
   0% {
     opacity: 0;
@@ -300,27 +341,49 @@ body {
   left: 50%;
   width: 9px;
   height: 9px;
-  border-radius: 2px;
+  border-radius: 9999px;
   animation: confettiFall 1s ease-out forwards;
   animation-delay: var(--delay, 0ms);
 }
 
-/* ─── View Transitions (API del navegador) ───────────────────────────────────
-   Suavizamos el cross-fade por defecto del root cuando cambia el estado de la
-   isla de React (menu <-> subcategorias <-> ejercicio). */
+@keyframes floatY {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-12px);
+  }
+}
+.animate-float {
+  animation: floatY 4s ease-in-out infinite;
+}
+
+@keyframes marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+.animate-marquee {
+  animation: marquee 32s linear infinite;
+}
+
 ::view-transition-old(root),
 ::view-transition-new(root) {
   animation-duration: 0.32s;
 }
 
-/* Accesibilidad: si el usuario prefiere menos movimiento, desactivamos
-   animaciones, transiciones decorativas y efectos de elevacion. */
 @media (prefers-reduced-motion: reduce) {
   .animate-fade-in,
   .animate-stagger,
   .animate-pop,
   .confetti-piece,
-  .shimmer-loading {
+  .shimmer-loading,
+  .animate-float,
+  .animate-marquee {
     animation: none !important;
   }
   .shimmer-loading {
@@ -351,15 +414,15 @@ body {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: #3a3a3c;
+  background: #42433d;
   border-radius: 9999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #4a4a4d;
+  background: #5a5a50;
 }
 
 .shimmer-loading {
-  background: linear-gradient(90deg, #1c1c1c 25%, #2a2a2a 50%, #1c1c1c 75%);
+  background: linear-gradient(90deg, #191919 25%, #2a2a2a 50%, #191919 75%);
   background-size: 200% 100%;
   animation: shimmer 1.5s infinite;
 }

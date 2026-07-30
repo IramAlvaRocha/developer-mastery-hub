@@ -19,18 +19,18 @@ export default function ModuleCard({ module, progress, index = 0, onStart }: Pro
       style={{ "--i": index, ...moduleColorStyle(module.color) } as React.CSSProperties}
       className={`animate-stagger group mod-card-hover flex h-full flex-col justify-between gap-4 rounded-card border bg-surface p-5 text-left motion-safe-transition motion-safe-lift transition-all hover:-translate-y-0.5 ${
         done
-          ? "border-emerald-500/40 hover:border-emerald-500/60"
+          ? "border-brand/40 hover:border-brand/60"
           : "border-line"
       }`}
     >
       <div>
         <div className="flex items-center justify-between">
-          <span className="mod-icon-bg flex h-10 w-10 items-center justify-center rounded-input text-xl">
+          <span className="mod-icon-bg flex h-10 w-10 items-center justify-center rounded-[20px] text-xl">
             {module.icon}
           </span>
           {done ? (
-            <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-emerald-400">
-              ✓ Completado
+            <span className="inline-flex items-center gap-1 rounded-full border border-brand/30 bg-brand/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-brand">
+              Completado
             </span>
           ) : (
             <span className="mod-badge rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide">

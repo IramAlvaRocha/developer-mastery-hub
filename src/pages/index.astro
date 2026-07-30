@@ -1,8 +1,47 @@
 ---
 import Base from "@/layouts/Base.astro";
-import MasteryHub from "@/components/MasteryHub.tsx";
+import LandingShell from "@/components/landing/LandingShell.tsx";
+import Hero from "@/components/landing/Hero.tsx";
+import TechMarquee from "@/components/landing/TechMarquee.tsx";
+import LearnSections from "@/components/landing/LearnSections.tsx";
+import LandingFooter from "@/components/landing/LandingFooter.tsx";
 ---
 
-<Base title="Developer Mastery Hub — Preparacion Full Stack Senior">
-  <MasteryHub client:load />
+<Base
+  title="Developer Mastery Hub — Domina cualquier stack"
+  bodyClass="is-landing"
+>
+  <LandingShell client:load />
+  <main>
+    <Hero client:load />
+    <TechMarquee client:visible />
+    <LearnSections client:visible />
+
+    <section class="mx-auto max-w-[1280px] px-4 pb-24 sm:px-6">
+      <div
+        class="relative overflow-hidden rounded-[32px] border border-line bg-surface px-6 py-14 sm:px-12 sm:py-16"
+      >
+        <div
+          class="pointer-events-none absolute -right-8 -top-8 h-40 w-40 rounded-full bg-gradient-to-br from-pink/50 to-lilac/40 blur-2xl"
+          aria-hidden="true"
+        >
+        </div>
+        <p class="section-eyebrow text-[clamp(1.05rem,2vw,1.25rem)] text-cream">
+          {"{ Empieza hoy }"}
+        </p>
+        <h2
+          class="mt-3 max-w-3xl text-[clamp(2.4rem,6vw,4.25rem)] font-semibold leading-[1.05] tracking-tight text-cream"
+        >
+          Entra al catálogo y retoma donde lo dejaste
+        </h2>
+        <p class="mt-5 max-w-2xl text-[clamp(1.15rem,2.4vw,1.5rem)] leading-relaxed text-muted">
+          Progreso local, soluciones claras y módulos pensados para nivel senior.
+        </p>
+        <a href="/aprender" class="btn-filled-soft mt-10 inline-flex !min-h-14 !px-8 !text-lg">
+          Ir a aprender
+        </a>
+      </div>
+    </section>
+  </main>
+  <LandingFooter />
 </Base>

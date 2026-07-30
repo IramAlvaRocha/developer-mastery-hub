@@ -6,8 +6,8 @@ interface Props {
 }
 
 const STYLES: Record<Toast["type"], string> = {
-  success: "border-emerald-500/40 text-emerald-200",
-  error: "border-red-500/40 text-red-200",
+  success: "border-brand/40 text-brand-strong",
+  error: "border-danger/40 text-danger",
   info: "border-line text-ink",
 };
 
@@ -23,7 +23,7 @@ export default function Toasts({ toasts, onDismiss }: Props) {
       {toasts.map((toast) => (
         <div
           key={toast.id}
-          className={`animate-fade-in pointer-events-auto flex items-start gap-2.5 rounded-[12px] border bg-surface p-3 text-[12px] shadow-float ${STYLES[toast.type]}`}
+          className={`animate-fade-in pointer-events-auto flex items-start gap-2.5 rounded-[24px] border bg-surface p-3 text-[12px] shadow-float ${STYLES[toast.type]}`}
         >
           <span className="shrink-0 text-sm">{ICONS[toast.type]}</span>
           <p className="min-w-0 flex-1 font-medium leading-normal">

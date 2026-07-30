@@ -3,9 +3,10 @@ import "@/styles/global.css";
 
 interface Props {
   title?: string;
+  bodyClass?: string;
 }
 
-const { title = "Developer Mastery Hub" } = Astro.props;
+const { title = "Developer Mastery Hub", bodyClass = "is-app" } = Astro.props;
 ---
 
 <!doctype html>
@@ -15,17 +16,17 @@ const { title = "Developer Mastery Hub" } = Astro.props;
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta
       name="description"
-      content="Plataforma interactiva de preparacion Full Stack Senior (.NET + React)"
+      content="Plataforma interactiva de preparacion Full Stack Senior — TypeScript, React, .NET, Node, Prisma y mas."
     />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap"
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,600&family=JetBrains+Mono:wght@400;500&display=swap"
       rel="stylesheet"
     />
     <title>{title}</title>
   </head>
-  <body class="bg-canvas text-ink h-full font-sans antialiased overflow-hidden">
+  <body class={`bg-canvas text-ink font-sans antialiased ${bodyClass}`}>
     <slot />
   </body>
 </html>

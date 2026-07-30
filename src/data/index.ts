@@ -28,7 +28,7 @@ import { CODE_QUALITY_EXERCISES } from "./modules/code-quality";
 import { DOCKER_EXERCISES } from "./modules/docker";
 import { EF_CORE_PERFORMANCE } from "./modules/ef-core-performance";
 import { EF_CORE_ARCHITECTURE } from "./modules/ef-core-architecture";
-import { EF_RESILIENCE_EXERCISES } from "./modules/ef-core-resilience-security";
+import { EF_CORE_RESILIENCE_SECURITY } from "./modules/ef-core-resilience-security";
 import {
   TS_PRIMITIVOS_ENRICHED as TS_PRIMITIVOS,
   TS_INTERFACES_ENRICHED as TS_INTERFACES,
@@ -173,6 +173,17 @@ export const ALL_MODULES: Module[] = [
     desc: "Domina las técnicas avanzadas de Entity Framework Core para evitar cuellos de botella, problemas de memoria y optimizar consultas en aplicaciones a gran escala.",
     topics: ["AsNoTracking", "Include", "AsSplitQuery", "ExecuteUpdateAsync", "ExecuteDeleteAsync"],
     exercises: EF_CORE_PERFORMANCE,
+  },
+  {
+    key: "ef-core-resilience-security",
+    name: "EF Core: Resiliencia y Seguridad",
+    icon: "🛡️",
+    badge: "Backend",
+    color: "purple",
+    group: "Backend & Datos",
+    desc: "RowVersion, concurrencia optimista, SQL Injection, transacciones atómicas, aislamiento Serializable y EnableRetryOnFailure para aplicaciones robustas en la nube.",
+    topics: ["RowVersion", "Concurrencia", "SQL Injection", "Transacciones", "Retry Policy"],
+    exercises: EF_CORE_RESILIENCE_SECURITY,
   },
   {
     key: "sql",
