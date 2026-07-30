@@ -1,11 +1,11 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import type { Exercise } from "@/lib/types";
 import { isAnswerCorrect } from "@/lib/answers";
 import { moduleColorStyle } from "@/lib/moduleColors";
 import { usePrefersReducedMotion } from "@/lib/useReducedMotion";
 import ChallengeCode from "./ChallengeCode";
 import TheoryTab from "./TheoryTab";
-import MentorTab from "./MentorTab";
+import SolutionPanel from "./SolutionPanel";
 import SimulatedTerminal from "./SimulatedTerminal";
 
 type Tab = "theory" | "terminal" | "challenge" | "code";
@@ -14,7 +14,6 @@ interface Props {
   exercise: Exercise;
   moduleName: string;
   color: string;
-  systemPrompt: string;
   alreadyCompleted: boolean;
   index: number;
   total: number;
@@ -28,7 +27,6 @@ export default function ExerciseWorkspace({
   exercise,
   moduleName,
   color,
-  systemPrompt,
   alreadyCompleted,
   index,
   total,
@@ -139,45 +137,42 @@ export default function ExerciseWorkspace({
   return (
     <main className="relative flex flex-1 flex-col overflow-hidden bg-canvas">
       {celebrate && <Celebration color={color} reduceMotion={reduceMotion} />}
-      {/* Progreso de posición dentro del módulo */}
-      <div className="h-0.5 w-full shrink-0 bg-surface-2" style={colorStyle}>
+      <div className="h-1.5 w-full shrink-0 bg-surface-2" style={colorStyle}>
         <div
-          className="mod-progress motion-safe-transition h-full"
-          style={{ width: `${positionPercent}%`, borderRadius: 0 }}
-        ></div>
+          className="mod-progress motion-safe-transition h-full !rounded-none"
+          style={{ width: `${positionPercent}%` }}
+        />
       </div>
-      {/* Contenido scrolleable */}
       <div className="flex-1 overflow-y-auto">
         <div className="animate-fade-in mx-auto w-full max-w-3xl space-y-5 p-4 pb-28 md:p-6 md:pb-6">
-          {/* Tarjeta del ejercicio */}
-          <section className="ui-card p-5">
-            <div className="mb-2.5 flex items-center justify-between">
-              <span className="inline-flex items-center gap-2 rounded-full border border-brand/30 bg-brand/10 px-3 py-1 font-mono text-[10px] font-bold uppercase tracking-wider text-brand">
+          <section className="ui-card p-5 sm:p-6">
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+              <span className="inline-flex items-center gap-2 rounded-full border border-brand/25 bg-brand/10 px-3.5 py-1.5 font-mono text-[10px] font-bold uppercase tracking-wider text-brand">
                 {label}
                 <span className="text-faint">•</span>
                 <span className="text-muted">{exercise.category}</span>
               </span>
-              <span className="text-xs tracking-tight text-amber-400">
+              <span className="text-xs tracking-tight text-butter">
                 {"★".repeat(exercise.stars)}
                 <span className="text-line">
                   {"★".repeat(Math.max(0, 5 - exercise.stars))}
                 </span>
               </span>
             </div>
-            <h2 className="text-xl font-bold tracking-tight text-ink">
+            <h2 className="text-xl font-semibold tracking-tight text-ink sm:text-2xl">
               {exercise.title}
             </h2>
-            <p className="mt-2 text-sm leading-relaxed text-muted">
+            <p className="mt-2 text-[15px] leading-relaxed text-muted">
               {exercise.description}
             </p>
-            <div className="mt-3.5 flex flex-wrap gap-2 text-[11px]">
-              <span className="rounded-full border border-line bg-surface-2 px-3 py-1 font-medium text-muted">
-                🎯 {exercise.objective}
+            <div className="mt-4 flex flex-wrap gap-2 text-[11px]">
+              <span className="pill-chip border border-peach/30 bg-peach/15 text-peach">
+                {exercise.objective}
               </span>
               {exercise.tags.map((tag) => (
                 <span
                   key={tag}
-                  className="rounded-full border border-line bg-surface-2 px-3 py-1 text-faint"
+                  className="pill-chip border border-line bg-surface-2 text-faint"
                 >
                   #{tag}
                 </span>
@@ -185,14 +180,13 @@ export default function ExerciseWorkspace({
             </div>
           </section>
 
-          {/* Tabs: teoría primero, luego desafío */}
-          <div className="flex gap-1 overflow-x-auto border-b border-line">
+          <div className="flex gap-1.5 overflow-x-auto rounded-[24px] border border-line bg-surface p-1.5">
             {exercise.theory && (
               <TabButton
                 active={activeTab === "theory"}
                 onClick={() => setActiveTab("theory")}
               >
-                📚 Teoría
+                Teoría
               </TabButton>
             )}
             {exercise.simulation && (
@@ -200,60 +194,58 @@ export default function ExerciseWorkspace({
                 active={activeTab === "terminal"}
                 onClick={() => setActiveTab("terminal")}
               >
-                🖥️ Terminal
+                Terminal
               </TabButton>
             )}
             <TabButton
               active={activeTab === "challenge"}
               onClick={() => setActiveTab("challenge")}
             >
-              📝 Desafío
+              Desafío
               {!solved && (
-                <span className="ml-1 inline-block h-1.5 w-1.5 rounded-full bg-brand"></span>
+                <span className="ml-1.5 inline-block h-1.5 w-1.5 rounded-full bg-brand" />
               )}
             </TabButton>
             <TabButton
               active={activeTab === "code"}
               onClick={() => setActiveTab("code")}
             >
-              📖 Mentoría & Solución
+              Solución
             </TabButton>
           </div>
 
-          {/* Contenido */}
           <div className="min-h-[220px]">
             {activeTab === "challenge" && (
               <div className="space-y-4">
                 <div
                   style={colorStyle}
-                  className="ui-card mod-task-border flex items-start gap-3 border-l-2 p-4"
+                  className="ui-card mod-task-border flex items-start gap-3 border-l-[3px] p-4 sm:p-5"
                 >
-                  <span className="mt-0.5 shrink-0 text-base">🎯</span>
                   <div>
                     <p className="text-[10px] font-bold uppercase tracking-wider text-faint">
                       Tu tarea
                     </p>
-                    <p className="mt-0.5 text-[13px] leading-relaxed text-ink">
+                    <p className="mt-1 text-[14px] leading-relaxed text-ink">
                       {instruction}
                     </p>
                   </div>
                 </div>
                 <div className="ui-card overflow-hidden">
-                  <div className="flex flex-col gap-1.5 border-b border-line bg-surface-2 px-4 py-2.5 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
+                  <div className="flex flex-col gap-1.5 border-b border-line bg-surface-2 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
                     <span
                       className="min-w-0 truncate font-mono text-[11px] text-muted"
                       title={exercise.fileName}
                     >
-                      📄 {exercise.fileName}
+                      {exercise.fileName}
                     </span>
                     <span
-                      className="shrink-0 self-start truncate rounded-full bg-elevated px-2.5 py-0.5 text-[10px] font-semibold text-muted sm:max-w-[45%] sm:self-auto"
+                      className="shrink-0 self-start truncate rounded-full bg-elevated px-3 py-1 text-[10px] font-semibold text-muted sm:max-w-[45%] sm:self-auto"
                       title={moduleName}
                     >
                       {moduleName}
                     </span>
                   </div>
-                  <div className="max-h-80 overflow-y-auto bg-[#0f0f10] p-4">
+                  <div className="max-h-80 overflow-y-auto bg-[#0f100f] p-4">
                     <ChallengeCode
                       codeSnippet={exercise.codeSnippet}
                       inputs={exercise.inputs}
@@ -280,35 +272,24 @@ export default function ExerciseWorkspace({
             )}
 
             {activeTab === "code" && (
-              <MentorTab
-                exercise={exercise}
-                moduleName={moduleName}
-                color={color}
-                systemPrompt={systemPrompt}
-                onToast={onToast}
-              />
+              <SolutionPanel exercise={exercise} color={color} />
             )}
           </div>
         </div>
       </div>
 
-      {/* Barra de navegación inferior */}
       <footer className="shrink-0 border-t border-line bg-surface/95 backdrop-blur">
-        <div className="mx-auto w-full max-w-3xl px-4 py-2.5 md:px-6">
+        <div className="mx-auto w-full max-w-3xl px-4 py-3 md:px-6">
           <div className="flex items-center justify-between gap-2">
             <div className="flex min-w-0 items-center gap-2">
               <span className="shrink-0 text-[13px] font-medium text-muted">
                 Ejercicio{" "}
-                <span className="font-bold text-ink">{index + 1}</span> / {total}
+                <span className="font-semibold text-ink">{index + 1}</span> /{" "}
+                {total}
               </span>
               {solved && (
-                <span className="inline-flex shrink-0 items-center gap-1 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-400">
-                  ✓ Completado
-                </span>
-              )}
-              {isLast && solved && (
-                <span className="hidden shrink-0 text-[11px] text-emerald-400 sm:inline">
-                  Módulo completado
+                <span className="inline-flex shrink-0 items-center gap-1 rounded-full border border-brand/30 bg-brand/10 px-2.5 py-0.5 text-[11px] font-semibold text-brand">
+                  Completado
                 </span>
               )}
             </div>
@@ -317,17 +298,17 @@ export default function ExerciseWorkspace({
               <button
                 onClick={onPrev}
                 disabled={isFirst}
-                className="btn-secondary"
+                className="btn-secondary !min-h-10 !px-3 !text-sm sm:!px-4"
                 aria-label="Ejercicio anterior"
               >
-                ←<span className="hidden sm:inline">Anterior</span>
+                ←<span className="hidden sm:inline"> Anterior</span>
               </button>
               {activeTab === "challenge" && (
                 <>
-                  <button onClick={resetChallenge} className="btn-ghost">
+                  <button onClick={resetChallenge} className="btn-ghost !text-sm">
                     Limpiar
                   </button>
-                  <button onClick={verify} className="btn-primary">
+                  <button onClick={verify} className="btn-primary !min-h-10 !px-4 !text-sm">
                     Verificar
                   </button>
                 </>
@@ -335,15 +316,15 @@ export default function ExerciseWorkspace({
               <button
                 onClick={onNext}
                 disabled={isLast}
-                className="btn-primary"
+                className="btn-primary !min-h-10 !px-3 !text-sm sm:!px-4"
                 aria-label="Siguiente ejercicio"
               >
-                <span className="hidden sm:inline">Siguiente</span> →
+                <span className="hidden sm:inline">Siguiente </span>→
               </button>
             </div>
           </div>
 
-          <div className="mt-1.5 flex justify-center border-t border-line/40 pt-1.5">
+          <div className="mt-2 flex justify-center border-t border-line/40 pt-2">
             <KeyboardHints />
           </div>
         </div>
@@ -353,12 +334,12 @@ export default function ExerciseWorkspace({
 }
 
 const CONFETTI_COLORS = [
-  "#3b82f6",
-  "#10b981",
-  "#f59e0b",
-  "#ec4899",
-  "#8b5cf6",
-  "#22d3ee",
+  "#0ae448",
+  "#abff84",
+  "#ff8709",
+  "#fec5fb",
+  "#9d95ff",
+  "#00bae2",
 ];
 
 /** Overlay efímero de celebración: check con rebote + lluvia de confeti. */
@@ -441,10 +422,10 @@ function TabButton({
   return (
     <button
       onClick={onClick}
-      className={`flex shrink-0 items-center gap-1.5 border-b-2 px-4 py-2.5 text-[13px] font-semibold transition-colors ${
+      className={`flex shrink-0 items-center gap-1.5 rounded-full px-4 py-2.5 text-[13px] font-semibold transition-colors ${
         active
-          ? "border-brand text-ink"
-          : "border-transparent text-muted hover:text-ink"
+          ? "bg-cream text-canvas"
+          : "text-muted hover:bg-elevated hover:text-ink"
       }`}
     >
       {children}

@@ -6,10 +6,10 @@ export default function TheoryTab({ theory }: Props) {
   return (
     <div className="animate-fade-in space-y-4">
       <div className="ui-card p-5">
-        <h4 className="mb-3 flex items-center gap-2 text-[13px] font-bold text-ink">
-          📚 Fundamentos Teóricos
+        <h4 className="mb-3 text-[13px] font-semibold text-ink">
+          Fundamentos teóricos
         </h4>
-        <div className="max-h-[460px] space-y-3 overflow-y-auto rounded-[10px] border border-line bg-surface-2 p-4 text-[13px] leading-relaxed text-muted">
+        <div className="max-h-[460px] space-y-3 overflow-y-auto rounded-[24px] border border-line bg-surface-2 p-4 text-[13px] leading-relaxed text-muted">
           <Markdown source={theory} />
         </div>
       </div>
@@ -91,7 +91,7 @@ function Markdown({ source }: { source: string }) {
         blocks.push(
           <div
             key={key++}
-            className="overflow-x-auto rounded-[8px] border border-line"
+            className="overflow-x-auto rounded-[20px] border border-line"
           >
             <table className="w-full border-collapse text-left text-[12px]">
               <thead>

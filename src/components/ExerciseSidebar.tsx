@@ -148,7 +148,7 @@ export default function ExerciseSidebar({
               key={ex.id}
               data-active={active ? "true" : undefined}
               onClick={() => onSelect(index)}
-              className={`group flex w-full items-center gap-2.5 rounded-input px-3 py-2.5 text-left motion-safe-transition transition-all ${
+              className={`group flex w-full items-center gap-2.5 rounded-[20px] px-3 py-2.5 text-left motion-safe-transition transition-all ${
                 active
                   ? "mod-sidebar-active border-l-2 bg-elevated text-ink"
                   : "border-l-2 border-transparent text-muted hover:bg-surface-2 hover:text-ink"
@@ -157,7 +157,7 @@ export default function ExerciseSidebar({
               <span
                 className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-[10px] font-bold ${
                   done
-                    ? "bg-emerald-500/15 text-emerald-400"
+                    ? "bg-brand/15 text-brand"
                     : active
                       ? "mod-sidebar-item-active"
                       : "bg-surface-2 text-faint"

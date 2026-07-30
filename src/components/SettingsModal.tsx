@@ -1,22 +1,16 @@
 import { useEffect, useRef, useState } from "react";
 import {
-  getApiKey,
-  saveApiKey,
-  getProvider,
-  saveProvider,
-  getModel,
-  saveModel,
-  PROVIDERS,
-  type AiProvider,
-} from "@/lib/gemini";
+  clearAuthProfile,
+  readAuthProfile,
+  saveAuthProfile,
+  type AuthProfile,
+} from "@/lib/authStub";
 
 interface Props {
   open: boolean;
   onClose: () => void;
   onToast: (type: "success" | "error" | "info", message: string) => void;
-  /** Devuelve un JSON con todo el progreso (para descargar). */
   onExportProgress: () => string;
-  /** Importa un JSON de progreso. Devuelve true si era valido. */
   onImportProgress: (raw: string) => boolean;
 }
 
@@ -27,28 +21,15 @@ export default function SettingsModal({
   onExportProgress,
   onImportProgress,
 }: Props) {
-  const [provider, setProvider] = useState<AiProvider>("gemini");
-  const [apiKey, setApiKey] = useState("");
-  const [model, setModel] = useState("");
-  const [showKey, setShowKey] = useState(false);
+  const [profile, setProfile] = useState<AuthProfile | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const avatarInputRef = useRef<HTMLInputElement>(null);
 
-  // Sincroniza los valores guardados cada vez que se abre.
   useEffect(() => {
     if (!open) return;
-    const p = getProvider();
-    setProvider(p);
-    setApiKey(getApiKey(p));
-    setModel(getModel());
+    setProfile(readAuthProfile());
   }, [open]);
 
-  // Al cambiar de proveedor, carga la key guardada de ese proveedor.
-  function handleProviderChange(next: AiProvider) {
-    setProvider(next);
-    setApiKey(getApiKey(next));
-  }
-
-  // Cerrar con Escape.
   useEffect(() => {
     if (!open) return;
     function onKey(e: KeyboardEvent) {
@@ -59,20 +40,6 @@ export default function SettingsModal({
   }, [open, onClose]);
 
   if (!open) return null;
-
-  function handleSave() {
-    saveProvider(provider);
-    saveApiKey(apiKey.trim(), provider);
-    saveModel(model.trim());
-    onToast("success", "Configuración guardada.");
-    onClose();
-  }
-
-  function handleClear() {
-    saveApiKey("", provider);
-    setApiKey("");
-    onToast("info", "Clave de API eliminada.");
-  }
 
   function handleExportProgress() {
     try {
@@ -94,7 +61,7 @@ export default function SettingsModal({
 
   function handleImportFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
-    e.target.value = ""; // permite reimportar el mismo archivo
+    e.target.value = "";
     if (!file) return;
     const reader = new FileReader();
     reader.onload = () => {
@@ -110,8 +77,17 @@ export default function SettingsModal({
     reader.readAsText(file);
   }
 
-  const config = PROVIDERS[provider];
-  const hasKey = apiKey.trim().length > 0;
+  function handleAvatar(file: File | null) {
+    if (!file || !profile) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const next = { ...profile, avatarDataUrl: String(reader.result) };
+      saveAuthProfile(next);
+      setProfile(next);
+      onToast("success", "Imagen de perfil actualizada (local).");
+    };
+    reader.readAsDataURL(file);
+  }
 
   return (
     <div
@@ -123,153 +99,98 @@ export default function SettingsModal({
       <div
         className="absolute inset-0 bg-black/60 backdrop-blur-sm"
         onClick={onClose}
-      ></div>
+      />
 
       <div className="ui-card animate-fade-in relative z-10 w-full max-w-md p-6 shadow-float">
-        <div className="mb-4 flex items-start justify-between gap-3">
-          <div className="flex items-center gap-2.5">
-            <span className="flex h-9 w-9 items-center justify-center rounded-input bg-brand/15 text-base">
-              ⚙️
-            </span>
-            <div>
-              <h3 className="text-base font-bold text-ink">Configuración</h3>
-              <p className="text-[11px] text-muted">Proveedor de IA</p>
-            </div>
+        <div className="mb-5 flex items-start justify-between gap-3">
+          <div>
+            <p className="section-eyebrow text-sm text-muted">{"{ Settings }"}</p>
+            <h3 className="text-lg font-semibold text-ink">Configuración</h3>
           </div>
           <button onClick={onClose} className="icon-btn" aria-label="Cerrar">
             ×
           </button>
         </div>
 
-        <div className="space-y-4">
-          {/* Selector de proveedor */}
-          <div className="space-y-1.5">
-            <label
-              htmlFor="ai-provider"
-              className="text-[13px] font-semibold text-ink"
-            >
-              Proveedor de IA
-            </label>
-            <select
-              id="ai-provider"
-              value={provider}
-              onChange={(e) => handleProviderChange(e.target.value as AiProvider)}
-              className="input-field"
-            >
-              {(Object.keys(PROVIDERS) as AiProvider[]).map((p) => (
-                <option key={p} value={p}>
-                  {PROVIDERS[p].label}
-                </option>
-              ))}
-            </select>
-            <p className="text-[11px] leading-relaxed text-faint">
-              Groq y OpenRouter ofrecen API keys gratuitas sin tarjeta, ideales
-              si no puedes conseguir la de Google.
-            </p>
-          </div>
+        <div className="space-y-5">
+          <section className="rounded-[24px] border border-line bg-surface-2 p-4">
+            <p className="mb-3 text-sm font-semibold text-ink">Perfil</p>
+            {profile ? (
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  className="relative h-14 w-14 overflow-hidden rounded-full border border-line"
+                  onClick={() => avatarInputRef.current?.click()}
+                  aria-label="Cambiar imagen"
+                >
+                  {profile.avatarDataUrl ? (
+                    <img
+                      src={profile.avatarDataUrl}
+                      alt=""
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <span className="flex h-full w-full items-center justify-center bg-lilac/20 text-lg font-bold text-lilac">
+                      {profile.name.slice(0, 1).toUpperCase()}
+                    </span>
+                  )}
+                </button>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate font-medium text-ink">{profile.name}</p>
+                  <p className="truncate text-xs text-muted">{profile.email}</p>
+                  <button
+                    type="button"
+                    className="mt-1 text-xs text-danger"
+                    onClick={() => {
+                      clearAuthProfile();
+                      setProfile(null);
+                      onToast("info", "Sesión local cerrada.");
+                    }}
+                  >
+                    Cerrar sesión demo
+                  </button>
+                </div>
+                <input
+                  ref={avatarInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => handleAvatar(e.target.files?.[0] ?? null)}
+                />
+              </div>
+            ) : (
+              <p className="text-sm leading-relaxed text-muted">
+                Aún no hay sesión. Usa Login / Registro en la{" "}
+                <a href="/" className="text-brand">
+                  landing
+                </a>{" "}
+                (UI lista; auth real después).
+              </p>
+            )}
+          </section>
 
-          {/* API key */}
-          <div className="space-y-1.5">
-            <div className="flex items-center justify-between">
-              <label
-                htmlFor="ai-key"
-                className="text-[13px] font-semibold text-ink"
-              >
-                Clave de API
-              </label>
-              <span
-                className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
-                  hasKey
-                    ? "bg-emerald-500/10 text-emerald-400"
-                    : "bg-elevated text-faint"
-                }`}
-              >
-                {hasKey ? "Configurada" : "Sin configurar"}
-              </span>
-            </div>
-
-            <div className="relative">
-              <input
-                id="ai-key"
-                value={apiKey}
-                onChange={(e) => setApiKey(e.target.value)}
-                type={showKey ? "text" : "password"}
-                placeholder={config.keyPlaceholder}
-                className="input-field pr-10 font-mono text-xs"
-                autoComplete="off"
-              />
-              <button
-                type="button"
-                onClick={() => setShowKey((v) => !v)}
-                className="absolute right-2 top-1/2 -translate-y-1/2 text-sm text-muted hover:text-ink"
-                aria-label={showKey ? "Ocultar clave" : "Mostrar clave"}
-              >
-                {showKey ? "🙈" : "👁️"}
-              </button>
-            </div>
-
-            <p className="text-[11px] leading-relaxed text-faint">
-              Se guarda solo en este navegador (localStorage). Consíguela gratis
-              en{" "}
-              <a
-                href={config.keyUrl}
-                target="_blank"
-                rel="noreferrer"
-                className="text-brand hover:text-brand-strong"
-              >
-                {config.label}
-              </a>
-              .
-            </p>
-          </div>
-
-          {/* Modelo opcional */}
-          <div className="space-y-1.5">
-            <label
-              htmlFor="ai-model"
-              className="text-[13px] font-semibold text-ink"
-            >
-              Modelo{" "}
-              <span className="font-normal text-faint">(opcional)</span>
-            </label>
-            <input
-              id="ai-model"
-              value={model}
-              onChange={(e) => setModel(e.target.value)}
-              type="text"
-              placeholder={config.defaultModel}
-              className="input-field font-mono text-xs"
-              autoComplete="off"
-            />
-            <p className="text-[11px] leading-relaxed text-faint">
-              Déjalo vacío para usar{" "}
-              <span className="font-mono">{config.defaultModel}</span>.
-            </p>
-          </div>
-
-          {/* Backup del progreso */}
-          <div className="space-y-1.5 border-t border-line pt-4">
-            <span className="text-[13px] font-semibold text-ink">
+          <section className="space-y-2">
+            <span className="text-sm font-semibold text-ink">
               Progreso (backup)
             </span>
-            <p className="text-[11px] leading-relaxed text-faint">
-              Tu progreso vive solo en este navegador. Expórtalo para respaldarlo
-              o llevarlo a otro dispositivo. Al importar se fusiona con el actual.
+            <p className="text-[12px] leading-relaxed text-faint">
+              Tu avance vive en este navegador. Expórtalo para respaldarlo o
+              llevarlo a otro dispositivo.
             </p>
             <div className="flex gap-2 pt-1">
               <button
                 type="button"
                 onClick={handleExportProgress}
-                className="btn-secondary flex-1"
+                className="btn-secondary flex-1 !min-h-11 !text-sm"
               >
-                ⬇️ Exportar
+                Exportar
               </button>
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
-                className="btn-secondary flex-1"
+                className="btn-secondary flex-1 !min-h-11 !text-sm"
               >
-                ⬆️ Importar
+                Importar
               </button>
             </div>
             <input
@@ -280,25 +201,11 @@ export default function SettingsModal({
               className="hidden"
               aria-hidden
             />
-          </div>
+          </section>
 
-          <div className="flex items-center justify-between gap-2 pt-1">
-            <button
-              onClick={handleClear}
-              disabled={!hasKey}
-              className="btn-ghost"
-            >
-              Eliminar clave
-            </button>
-            <div className="flex gap-2">
-              <button onClick={onClose} className="btn-secondary">
-                Cancelar
-              </button>
-              <button onClick={handleSave} className="btn-primary">
-                Guardar
-              </button>
-            </div>
-          </div>
+          <button onClick={onClose} className="btn-primary w-full">
+            Listo
+          </button>
         </div>
       </div>
     </div>

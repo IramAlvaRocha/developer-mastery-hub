@@ -1,10 +1,9 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { Module } from "@/lib/types";
 import type { LastVisited } from "@/lib/useProgress";
 import { moduleColorStyle } from "@/lib/moduleColors";
 import { useAnimatedWidth, useCountUp } from "@/lib/useReducedMotion";
 import { runViewTransition } from "@/lib/viewTransition";
-import ModuleCard from "./ModuleCard";
 
 interface Props {
   modules: Module[];
@@ -14,61 +13,92 @@ interface Props {
   onResume: (key: string, index: number) => void;
   lastVisited: LastVisited | null;
   onToast: (type: "success" | "error" | "info", message: string) => void;
+  sidebarOpen: boolean;
+  onSidebarOpenChange: (open: boolean) => void;
 }
 
-type StatusFilter = "all" | "progress" | "new" | "done";
-
-/** Metadatos visuales por categoria principal (con fallback al primer modulo). */
 const GROUP_META: Record<string, { icon: string; color: string; desc: string }> =
   {
     "Buenas Practicas": {
       icon: "🏆",
       color: "purple",
-      desc: "Patrones senior de .NET (backend) y React (frontend), en orden de construcción.",
+      desc: "Patrones senior de .NET y React.",
     },
     Frontend: {
       icon: "⚡",
       color: "emerald",
-      desc: "Ecosistema Vue: Composition API, Pinia, Nuxt y Vuetify.",
+      desc: "Vue, Pinia, Nuxt y Vuetify.",
     },
     "Backend & Datos": {
       icon: "🟢",
       color: "lime",
-      desc: "APIs REST con Node.js y bases de datos con SQL Server.",
+      desc: "Node.js, APIs y SQL Server.",
     },
     "Cloud & Serverless": {
       icon: "☁️",
       color: "blue",
-      desc: "Google Cloud Platform y Firebase: funciones, IAM y servicios gestionados.",
+      desc: "GCP y Firebase.",
     },
     "DevOps & Git": {
       icon: "🐳",
       color: "sky",
-      desc: "Git, Git Flow, monorepos, Docker, Kubernetes y CI/CD.",
+      desc: "Git, Docker y CI/CD.",
     },
     "APIs & Seguridad": {
       icon: "🔑",
       color: "rose",
-      desc: "Axios/Fetch, OAuth2, JWT, CORS, CSP y defensa XSS.",
+      desc: "Auth, JWT, CORS y XSS.",
     },
     "Testing & Calidad": {
       icon: "🧪",
       color: "amber",
-      desc: "Vitest, E2E (Cypress/Playwright), ESLint, SonarQube y coverage.",
+      desc: "Vitest, E2E y calidad.",
     },
     TypeScript: {
       icon: "💙",
       color: "indigo",
-      desc: "Primitivos, interfaces, types, funciones, generics, enums y utility types.",
+      desc: "Tipos, generics y utilities.",
     },
     "TS Arrays": {
       icon: "🔄",
       color: "cyan",
-      desc: "Dominio de map, filter, reduce, find, some/every, sort y extras.",
+      desc: "map, filter, reduce y más.",
     },
   };
 
-/** Nombre estable para la View Transition compartida (tarjeta -> encabezado). */
+const ROUTE_CATEGORIES: { id: string; label: string; groups: string[] }[] = [
+  {
+    id: "practices",
+    label: "Buenas prácticas",
+    groups: ["Buenas Practicas"],
+  },
+  {
+    id: "language",
+    label: "Lenguaje",
+    groups: ["TypeScript", "TS Arrays"],
+  },
+  {
+    id: "frontend",
+    label: "Frontend",
+    groups: ["Frontend"],
+  },
+  {
+    id: "backend",
+    label: "Backend & datos",
+    groups: ["Backend & Datos"],
+  },
+  {
+    id: "platform",
+    label: "Plataforma",
+    groups: [
+      "Cloud & Serverless",
+      "DevOps & Git",
+      "APIs & Seguridad",
+      "Testing & Calidad",
+    ],
+  },
+];
+
 function groupVtName(group: string): string {
   return (
     "vt-cat-" +
@@ -86,23 +116,43 @@ export default function ModuleMenu({
   onStart,
   onResume,
   lastVisited,
+  sidebarOpen,
+  onSidebarOpenChange,
 }: Props) {
-  const [query, setQuery] = useState("");
+  const availableGroups = useMemo(
+    () =>
+      groups.filter((g) =>
+        modules.some((m) => (m.group || "Otros") === g),
+      ),
+    [groups, modules],
+  );
+
+  const categories = useMemo(
+    () =>
+      ROUTE_CATEGORIES.map((cat) => ({
+        ...cat,
+        groups: cat.groups.filter((g) => availableGroups.includes(g)),
+      })).filter((cat) => cat.groups.length > 0),
+    [availableGroups],
+  );
+
   const [selectedGroup, setSelectedGroup] = useState<string | null>(null);
-  const [status, setStatus] = useState<StatusFilter>("all");
+  const [openCats, setOpenCats] = useState<Record<string, boolean>>({});
 
-  const q = query.trim().toLowerCase();
-  const searching = q.length > 0;
+  useEffect(() => {
+    if (!selectedGroup && availableGroups.length > 0) {
+      setSelectedGroup(availableGroups[0]);
+    }
+  }, [availableGroups, selectedGroup]);
 
-  /** Estado de avance de un módulo: sin empezar / en curso / completado. */
-  function moduleStatus(m: Module): Exclude<StatusFilter, "all"> {
-    const p = getPercent(m.key, m.exercises.length);
-    if (p >= 100) return "done";
-    if (p > 0) return "progress";
-    return "new";
-  }
+  useEffect(() => {
+    if (!selectedGroup) return;
+    const parent = categories.find((c) => c.groups.includes(selectedGroup));
+    if (parent) {
+      setOpenCats((prev) => ({ ...prev, [parent.id]: true }));
+    }
+  }, [selectedGroup, categories]);
 
-  // Módulo a reanudar: el último visitado que aún no esté al 100%.
   const resume = useMemo(() => {
     if (!lastVisited) return null;
     const mod = modules.find((m) => m.key === lastVisited.key);
@@ -115,36 +165,6 @@ export default function ModuleMenu({
     return { mod, index, ex, percent };
   }, [lastVisited, modules, getPercent]);
 
-  const filtered = useMemo(() => {
-    if (!q) return modules;
-    return modules.filter((m) =>
-      [m.name, m.desc, m.group, ...m.topics, ...m.exercises.map((e) => e.title)]
-        .join(" ")
-        .toLowerCase()
-        .includes(q),
-    );
-  }, [modules, q]);
-
-  const stats = useMemo(() => {
-    const totalExercises = modules.reduce(
-      (s, m) => s + m.exercises.length,
-      0,
-    );
-    const weighted = modules.reduce(
-      (s, m) => s + getPercent(m.key, m.exercises.length) * m.exercises.length,
-      0,
-    );
-    const overall = totalExercises
-      ? Math.round(weighted / totalExercises)
-      : 0;
-    return {
-      totalModules: modules.length,
-      totalExercises,
-      overall,
-      totalGroups: groups.length,
-    };
-  }, [modules, getPercent, groups.length]);
-
   function groupProgress(mods: Module[]) {
     const total = mods.reduce((s, m) => s + m.exercises.length, 0);
     if (!total) return 0;
@@ -155,202 +175,397 @@ export default function ModuleMenu({
     return Math.round(weighted / total);
   }
 
-  function openGroup(group: string) {
+  function selectGroup(group: string) {
     runViewTransition(() => setSelectedGroup(group));
+    if (window.matchMedia("(max-width: 1023px)").matches) {
+      onSidebarOpenChange(false);
+    }
   }
 
-  function backToGroups() {
-    runViewTransition(() => setSelectedGroup(null));
+  function toggleCat(id: string) {
+    setOpenCats((prev) => ({ ...prev, [id]: !prev[id] }));
   }
 
-  // Modulos a mostrar segun el estado de navegacion.
-  const baseModules = searching
-    ? filtered
-    : selectedGroup
-      ? modules.filter((m) => (m.group || "Otros") === selectedGroup)
-      : [];
-  const visibleModules =
-    status === "all"
-      ? baseModules
-      : baseModules.filter((m) => moduleStatus(m) === status);
+  const metrics = useMemo(() => {
+    const totalExercises = modules.reduce(
+      (s, m) => s + m.exercises.length,
+      0,
+    );
+    let doneExercises = 0;
+    let modulesDone = 0;
+    let modulesInProgress = 0;
+    let modulesNew = 0;
 
-  const showGroupGrid = !searching && !selectedGroup;
+    for (const m of modules) {
+      const p = getPercent(m.key, m.exercises.length);
+      doneExercises += Math.round((p / 100) * m.exercises.length);
+      if (p >= 100) modulesDone += 1;
+      else if (p > 0) modulesInProgress += 1;
+      else modulesNew += 1;
+    }
+
+    const overall = totalExercises
+      ? Math.round((doneExercises / totalExercises) * 100)
+      : 0;
+
+    const routeRows = availableGroups.map((group) => {
+      const mods = modules.filter((m) => (m.group || "Otros") === group);
+      const exercises = mods.reduce((s, m) => s + m.exercises.length, 0);
+      const progress = groupProgress(mods);
+      const done = mods.filter(
+        (m) => getPercent(m.key, m.exercises.length) >= 100,
+      ).length;
+      const active = mods.filter((m) => {
+        const p = getPercent(m.key, m.exercises.length);
+        return p > 0 && p < 100;
+      }).length;
+      return { group, mods, exercises, progress, done, active };
+    });
+
+    return {
+      totalModules: modules.length,
+      totalExercises,
+      doneExercises,
+      modulesDone,
+      modulesInProgress,
+      modulesNew,
+      overall,
+      totalGroups: availableGroups.length,
+      routeRows,
+    };
+  }, [modules, getPercent, availableGroups]);
+
+  const selectedRoute = useMemo(() => {
+    if (!selectedGroup) return null;
+    return (
+      metrics.routeRows.find((r) => r.group === selectedGroup) ?? null
+    );
+  }, [metrics.routeRows, selectedGroup]);
+
+  const activeMeta = selectedGroup
+    ? (GROUP_META[selectedGroup] ?? { icon: "📦", color: "slate", desc: "" })
+    : null;
 
   return (
-    <main className="mx-auto flex w-full max-w-7xl flex-1 flex-col overflow-y-auto px-4 py-8 md:px-8">
-      {/* Hero */}
-      <div className="animate-fade-in space-y-3 text-center">
-        <span className="inline-flex items-center gap-1.5 rounded-full border border-brand/30 bg-brand/10 px-3 py-1 text-[11px] font-semibold text-brand">
-          Full Stack Senior · .NET + React
-        </span>
-        <h2 className="text-3xl font-bold tracking-tight text-ink md:text-4xl">
-          Ruta de Especialización
-        </h2>
-        <p className="mx-auto max-w-2xl text-sm leading-relaxed text-muted">
-          Elige una categoría para ver sus módulos. Buenas prácticas de .NET
-          (backend) y React (frontend), más TypeScript, testing, seguridad,
-          calidad y DevOps.
-        </p>
-      </div>
-
-      {/* Continuar donde lo dejaste */}
-      {resume && showGroupGrid && (
-        <ResumeCard
-          icon={resume.mod.icon}
-          color={resume.mod.color}
-          moduleName={resume.mod.name}
-          exerciseTitle={resume.ex.title}
-          stepLabel={
-            resume.ex.step != null
-              ? `Paso ${resume.ex.step}`
-              : `Ejercicio ${resume.index + 1}`
-          }
-          total={resume.mod.exercises.length}
-          percent={resume.percent}
-          onResume={() => onResume(resume.mod.key, resume.index)}
-        />
-      )}
-
-      {/* Stats */}
-      <div className="mx-auto mt-6 grid w-full max-w-2xl grid-cols-4 gap-3">
-        <Stat value={stats.totalGroups} label="Categorías" />
-        <Stat value={stats.totalModules} label="Módulos" />
-        <Stat value={stats.totalExercises} label="Ejercicios" />
-        <Stat value={stats.overall} suffix="%" label="Progreso" accent />
-      </div>
-
-      {/* Buscador */}
-      <div className="mx-auto mt-6 w-full max-w-3xl">
-        <div className="relative">
-          <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-muted">
-            🔍
-          </span>
-          <input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            type="search"
-            placeholder="Buscar módulo, tema o ejercicio…"
-            className="input-field pl-11"
+    <main className="relative flex flex-1 flex-col overflow-hidden">
+      <div className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-3 overflow-hidden px-4 py-3 md:gap-4 md:px-6 md:py-4">
+        {resume && (
+          <ResumeCard
+            icon={resume.mod.icon}
+            color={resume.mod.color}
+            moduleName={resume.mod.name}
+            exerciseTitle={resume.ex.title}
+            stepLabel={
+              resume.ex.step != null
+                ? `Paso ${resume.ex.step}`
+                : `Ejercicio ${resume.index + 1}`
+            }
+            total={resume.mod.exercises.length}
+            percent={resume.percent}
+            onResume={() => onResume(resume.mod.key, resume.index)}
           />
-        </div>
-      </div>
+        )}
 
-      {/* ── Nivel 1: Categorías principales ── */}
-      {showGroupGrid && (
-        <div className="mt-8 grid w-full grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {groups.map((group, i) => {
-            const groupModules = modules.filter(
-              (m) => (m.group || "Otros") === group,
-            );
-            if (groupModules.length === 0) return null;
-            const exercises = groupModules.reduce(
-              (sum, m) => sum + m.exercises.length,
-              0,
-            );
-            return (
-              <GroupCard
-                key={group}
-                index={i}
-                group={group}
-                moduleCount={groupModules.length}
-                exerciseCount={exercises}
-                progress={groupProgress(groupModules)}
-                onSelect={() => openGroup(group)}
-              />
-            );
-          })}
-        </div>
-      )}
+        <div className="relative flex min-h-0 flex-1 gap-0 lg:gap-4">
+          {sidebarOpen && (
+            <button
+              type="button"
+              className="fixed inset-0 z-30 bg-black/55 backdrop-blur-[2px] lg:hidden"
+              aria-label="Cerrar menú de rutas"
+              onClick={() => onSidebarOpenChange(false)}
+            />
+          )}
 
-      {/* ── Nivel 2: Subcategorías (módulos del grupo) o resultados de búsqueda ── */}
-      {!showGroupGrid && (
-        <div className="mt-8">
-          <div className="mb-4 flex items-center gap-3">
-            {!searching && (
+          <aside
+            className={`fixed inset-y-0 left-0 z-40 flex w-[min(20rem,88vw)] flex-col border-r border-line bg-surface transition-transform duration-300 lg:static lg:z-auto lg:h-auto lg:rounded-[28px] lg:border ${
+              sidebarOpen
+                ? "translate-x-0"
+                : "-translate-x-full lg:w-0 lg:translate-x-0 lg:overflow-hidden lg:border-0"
+            }`}
+            aria-hidden={!sidebarOpen}
+          >
+            <div className="flex shrink-0 items-center justify-between border-b border-line px-4 py-3.5">
+              <div>
+                <p className="section-eyebrow text-sm text-muted">
+                  {"{ Rutas }"}
+                </p>
+                <p className="text-sm font-semibold text-ink">
+                  Menú de aprendizaje
+                </p>
+              </div>
               <button
-                onClick={backToGroups}
-                className="btn-secondary shrink-0"
+                type="button"
+                className="icon-btn border border-line"
+                aria-label="Ocultar menú"
+                onClick={() => onSidebarOpenChange(false)}
               >
-                ← Categorías
+                ←
               </button>
-            )}
-            <h3
-              className="text-sm font-bold tracking-tight text-ink"
-              style={
-                !searching && selectedGroup
-                  ? { viewTransitionName: groupVtName(selectedGroup) }
-                  : undefined
-              }
-            >
-              {searching ? `Resultados para “${query}”` : selectedGroup}
-            </h3>
-            <div className="h-px flex-1 bg-line"></div>
-            <span className="shrink-0 text-[11px] font-semibold text-faint">
-              {visibleModules.length} módulos
-            </span>
-          </div>
-
-          {/* Filtros por estado de avance */}
-          <div className="mb-5 flex flex-wrap items-center gap-1.5">
-            <StatusChip active={status === "all"} onClick={() => setStatus("all")}>
-              Todos
-            </StatusChip>
-            <StatusChip
-              active={status === "progress"}
-              onClick={() => setStatus("progress")}
-            >
-              ▸ En curso
-            </StatusChip>
-            <StatusChip active={status === "new"} onClick={() => setStatus("new")}>
-              ○ Sin empezar
-            </StatusChip>
-            <StatusChip
-              active={status === "done"}
-              onClick={() => setStatus("done")}
-            >
-              ✓ Completados
-            </StatusChip>
-          </div>
-
-          {visibleModules.length > 0 ? (
-            <div className="grid w-full grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-              {visibleModules.map((mod, i) => (
-                <ModuleCard
-                  key={mod.key}
-                  index={i}
-                  module={mod}
-                  progress={getPercent(mod.key, mod.exercises.length)}
-                  onStart={onStart}
-                />
-              ))}
             </div>
-          ) : (
-            <div className="py-16 text-center text-sm text-muted">
-              {searching ? (
-                <>
-                  No hay módulos que coincidan con{" "}
-                  <span className="font-semibold text-ink">“{query}”</span>.
-                </>
-              ) : status !== "all" ? (
-                <>
-                  No hay módulos en este estado.{" "}
-                  <button
-                    onClick={() => setStatus("all")}
-                    className="font-semibold text-brand hover:text-brand-strong"
-                  >
-                    Ver todos
-                  </button>
-                </>
-              ) : (
-                "No hay módulos disponibles."
+
+            <nav className="min-h-0 flex-1 overflow-y-auto px-3 py-3">
+              {categories.map((cat) => {
+                const expanded = openCats[cat.id] ?? false;
+                return (
+                  <div key={cat.id} className="mb-2">
+                    <button
+                      type="button"
+                      onClick={() => toggleCat(cat.id)}
+                      className="flex w-full items-center justify-between rounded-[18px] px-3 py-2.5 text-left transition-colors hover:bg-canvas"
+                    >
+                      <span className="text-[11px] font-bold uppercase tracking-wider text-faint">
+                        {cat.label}
+                      </span>
+                      <span className="text-xs text-muted">
+                        {expanded ? "▾" : "▸"}
+                      </span>
+                    </button>
+
+                    {expanded && (
+                      <div className="mt-1 space-y-1 pb-2 pl-1">
+                        {cat.groups.map((group) => {
+                          const meta = GROUP_META[group] ?? {
+                            icon: "📦",
+                            color: "slate",
+                            desc: "",
+                          };
+                          const row = metrics.routeRows.find(
+                            (r) => r.group === group,
+                          );
+                          const active = selectedGroup === group;
+                          return (
+                            <button
+                              key={group}
+                              type="button"
+                              onClick={() => selectGroup(group)}
+                              style={
+                                {
+                                  viewTransitionName: groupVtName(group),
+                                  ...moduleColorStyle(meta.color),
+                                } as React.CSSProperties
+                              }
+                              className={`flex w-full items-center gap-2.5 rounded-[20px] border px-3 py-2.5 text-left transition-colors ${
+                                active
+                                  ? "mod-chip-active border"
+                                  : "border-transparent bg-transparent text-muted hover:border-line hover:bg-canvas hover:text-ink"
+                              }`}
+                            >
+                              <span className="mod-icon-bg flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-base">
+                                {meta.icon}
+                              </span>
+                              <span className="min-w-0 flex-1">
+                                <span className="block truncate text-sm font-semibold text-ink">
+                                  {group}
+                                </span>
+                                <span className="block truncate text-[11px] text-muted">
+                                  {row?.mods.length ?? 0} módulos ·{" "}
+                                  {row?.progress ?? 0}%
+                                </span>
+                              </span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </nav>
+          </aside>
+
+          {/* Panel de métricas */}
+          <section className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-[28px] border border-line bg-surface">
+            <div className="shrink-0 border-b border-line px-4 py-4 sm:px-5">
+              <p className="text-[12px] text-muted">{"{ Métricas }"}</p>
+              <h2 className="text-lg font-semibold tracking-tight text-ink sm:text-xl">
+                Avance de tus cursos
+              </h2>
+              <p className="mt-0.5 text-sm text-muted">
+                Resumen global y detalle por ruta. Elige una ruta en el menú
+                para enfocarla.
+              </p>
+            </div>
+
+            <div className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-5">
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+                <MetricTile
+                  label="Progreso"
+                  value={metrics.overall}
+                  suffix="%"
+                  accent
+                />
+                <MetricTile label="Rutas" value={metrics.totalGroups} />
+                <MetricTile label="Cursos" value={metrics.totalModules} />
+                <MetricTile
+                  label="Ejercicios"
+                  value={metrics.doneExercises}
+                  hint={`de ${metrics.totalExercises}`}
+                />
+                <MetricTile
+                  label="Completados"
+                  value={metrics.modulesDone}
+                  hint="cursos"
+                />
+                <MetricTile
+                  label="En curso"
+                  value={metrics.modulesInProgress}
+                  hint="cursos"
+                />
+              </div>
+
+              <div className="mt-6">
+                <p className="mb-3 text-[11px] font-bold uppercase tracking-wider text-faint">
+                  Por ruta
+                </p>
+                <div className="space-y-2.5">
+                  {metrics.routeRows.map((row) => {
+                    const meta = GROUP_META[row.group] ?? {
+                      icon: "📦",
+                      color: "slate",
+                      desc: "",
+                    };
+                    const selected = selectedGroup === row.group;
+                    return (
+                      <button
+                        key={row.group}
+                        type="button"
+                        onClick={() => selectGroup(row.group)}
+                        style={moduleColorStyle(meta.color)}
+                        className={`flex w-full flex-col gap-2 rounded-[22px] border px-4 py-3.5 text-left transition-colors sm:flex-row sm:items-center ${
+                          selected
+                            ? "mod-border-40 bg-canvas"
+                            : "border-line bg-canvas/40 hover:border-line hover:bg-canvas/70"
+                        }`}
+                      >
+                        <div className="flex min-w-0 flex-1 items-center gap-3">
+                          <span className="mod-icon-bg flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-lg">
+                            {meta.icon}
+                          </span>
+                          <div className="min-w-0">
+                            <p className="truncate font-semibold text-ink">
+                              {row.group}
+                            </p>
+                            <p className="truncate text-xs text-muted">
+                              {row.mods.length} cursos · {row.exercises}{" "}
+                              ejercicios · {row.done} hechos · {row.active} en
+                              curso
+                            </p>
+                          </div>
+                        </div>
+                        <div className="w-full sm:w-40">
+                          <div className="mb-1 flex justify-between text-[11px] font-semibold">
+                            <span className="text-muted">Avance</span>
+                            <span className="mod-text">{row.progress}%</span>
+                          </div>
+                          <div className="h-1.5 overflow-hidden rounded-full bg-surface-2">
+                            <div
+                              className="mod-progress"
+                              style={{ width: `${row.progress}%` }}
+                            />
+                          </div>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {selectedRoute && activeMeta && (
+                <div className="mt-8">
+                  <div className="mb-3 flex items-end justify-between gap-3">
+                    <div>
+                      <p className="text-[11px] font-bold uppercase tracking-wider text-faint">
+                        Cursos en {selectedRoute.group}
+                      </p>
+                      <p className="text-sm text-muted">{activeMeta.desc}</p>
+                    </div>
+                    <span className="shrink-0 text-sm font-semibold text-brand">
+                      {selectedRoute.progress}%
+                    </span>
+                  </div>
+                  <div className="space-y-2">
+                    {selectedRoute.mods.map((mod) => {
+                      const p = getPercent(mod.key, mod.exercises.length);
+                      const doneCount = Math.round(
+                        (p / 100) * mod.exercises.length,
+                      );
+                      return (
+                        <button
+                          key={mod.key}
+                          type="button"
+                          onClick={() => onStart(mod.key)}
+                          style={moduleColorStyle(mod.color)}
+                          className="flex w-full items-center gap-3 rounded-[20px] border border-line bg-canvas/50 px-3.5 py-3 text-left transition-colors hover:border-brand/30 hover:bg-canvas"
+                        >
+                          <span className="mod-icon-bg flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-lg">
+                            {mod.icon}
+                          </span>
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-2">
+                              <p className="truncate text-sm font-semibold text-ink">
+                                {mod.name}
+                              </p>
+                              {p >= 100 && (
+                                <span className="shrink-0 rounded-full border border-brand/30 bg-brand/10 px-2 py-0.5 text-[10px] font-bold text-brand">
+                                  Hecho
+                                </span>
+                              )}
+                            </div>
+                            <p className="mt-0.5 text-[11px] text-muted">
+                              {doneCount}/{mod.exercises.length} ejercicios ·{" "}
+                              {p}%
+                            </p>
+                            <div className="mt-2 h-1 overflow-hidden rounded-full bg-surface-2">
+                              <div
+                                className="mod-progress"
+                                style={{ width: `${p}%` }}
+                              />
+                            </div>
+                          </div>
+                          <span className="shrink-0 text-xs font-semibold text-muted">
+                            Abrir →
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
               )}
             </div>
-          )}
+          </section>
         </div>
-      )}
-
-      <div className="pb-10"></div>
+      </div>
     </main>
+  );
+}
+
+function MetricTile({
+  label,
+  value,
+  suffix,
+  hint,
+  accent,
+}: {
+  label: string;
+  value: number;
+  suffix?: string;
+  hint?: string;
+  accent?: boolean;
+}) {
+  const animated = useCountUp(value);
+  return (
+    <div className="rounded-[22px] border border-line bg-canvas/60 px-3 py-3.5 text-center">
+      <p
+        className={`text-xl font-semibold tracking-tight sm:text-2xl ${accent ? "text-brand" : "text-ink"}`}
+      >
+        {animated}
+        {suffix}
+      </p>
+      <p className="mt-0.5 text-[10px] font-bold uppercase tracking-wide text-faint">
+        {label}
+      </p>
+      {hint && <p className="mt-0.5 text-[10px] text-muted">{hint}</p>}
+    </div>
   );
 }
 
@@ -375,166 +590,38 @@ function ResumeCard({
 }) {
   const width = useAnimatedWidth(percent);
   return (
-    <div className="animate-fade-in mx-auto mt-6 w-full max-w-3xl">
-      <div
-        style={moduleColorStyle(color)}
-        className="group relative overflow-hidden rounded-card border mod-border-40 bg-surface p-4 sm:p-5"
-      >
-        <div className="mod-glow pointer-events-none absolute -right-16 -top-16 h-44 w-44 rounded-full blur-3xl"></div>
-        <div className="relative flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex min-w-0 items-center gap-3.5">
-            <span className="mod-icon-bg flex h-12 w-12 shrink-0 items-center justify-center rounded-[12px] text-2xl">
-              {icon}
-            </span>
-            <div className="min-w-0">
-              <p className="mod-text text-[10px] font-bold uppercase tracking-wider">
-                ▸ Continúa donde lo dejaste
-              </p>
-              <h3 className="mt-0.5 truncate text-[15px] font-bold tracking-tight text-ink">
-                {exerciseTitle}
-              </h3>
-              <p className="mt-0.5 truncate text-xs text-muted">
-                {moduleName} · {stepLabel}
-              </p>
-            </div>
-          </div>
-          <button
-            onClick={onResume}
-            className="btn-primary shrink-0 self-start sm:self-auto"
-          >
-            Continuar →
-          </button>
-        </div>
-        <div className="relative mt-4">
-          <div className="mb-1.5 flex justify-between text-[11px] font-semibold">
-            <span className="text-muted">{total} ejercicios</span>
-            <span className="mod-text">{percent}% completado</span>
-          </div>
-          <div className="h-1.5 overflow-hidden rounded-full bg-surface-2">
-            <div className="mod-progress" style={{ width: `${width}%` }}></div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function StatusChip({
-  active,
-  onClick,
-  children,
-}: {
-  active: boolean;
-  onClick: () => void;
-  children: React.ReactNode;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      className={`rounded-full border px-3 py-1 text-[11px] font-semibold transition-colors ${
-        active
-          ? "border-brand/40 bg-brand/10 text-brand"
-          : "border-line bg-surface text-muted hover:border-brand/30 hover:text-ink"
-      }`}
+    <div
+      style={moduleColorStyle(color)}
+      className="animate-fade-in relative shrink-0 overflow-hidden rounded-[28px] border mod-border-40 bg-surface p-4"
     >
-      {children}
-    </button>
-  );
-}
-
-function GroupCard({
-  index,
-  group,
-  moduleCount,
-  exerciseCount,
-  progress,
-  onSelect,
-}: {
-  index: number;
-  group: string;
-  moduleCount: number;
-  exerciseCount: number;
-  progress: number;
-  onSelect: () => void;
-}) {
-  const meta = GROUP_META[group] ?? { icon: "📦", color: "slate", desc: "" };
-  const c = meta.color;
-  const done = progress >= 100;
-  const width = useAnimatedWidth(progress);
-  return (
-    <button
-      onClick={onSelect}
-      style={
-        {
-          "--i": index,
-          viewTransitionName: groupVtName(group),
-          ...moduleColorStyle(c),
-        } as React.CSSProperties
-      }
-      className={`animate-stagger group mod-card-hover flex h-full flex-col justify-between gap-4 rounded-card border bg-surface p-5 text-left motion-safe-transition motion-safe-lift transition-all hover:-translate-y-0.5 ${
-        done
-          ? "border-emerald-500/40 hover:border-emerald-500/60"
-          : "border-line"
-      }`}
-    >
-      <div>
-        <div className="flex items-center justify-between">
-          <span className="mod-icon-bg flex h-11 w-11 items-center justify-center rounded-[12px] text-2xl">
-            {meta.icon}
+      <div className="mod-glow pointer-events-none absolute -right-12 -top-12 h-36 w-36 rounded-full blur-3xl" />
+      <div className="relative flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex min-w-0 items-center gap-3">
+          <span className="mod-icon-bg flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-xl">
+            {icon}
           </span>
-          {done ? (
-            <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-emerald-400">
-              ✓ Completado
-            </span>
-          ) : (
-            <span className="mod-badge rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide">
-              {moduleCount} módulos
-            </span>
-          )}
+          <div className="min-w-0">
+            <p className="mod-text text-[10px] font-bold uppercase tracking-wider">
+              Continuar
+            </p>
+            <h3 className="truncate text-[15px] font-semibold text-ink">
+              {exerciseTitle}
+            </h3>
+            <p className="truncate text-xs text-muted">
+              {moduleName} · {stepLabel} · {total} ej.
+            </p>
+          </div>
         </div>
-        <h3 className="mod-title-hover mt-3 text-base font-bold tracking-tight text-ink transition-colors">
-          {group}
-        </h3>
-        <p className="mt-1.5 text-xs leading-relaxed text-muted">{meta.desc}</p>
+        <button
+          onClick={onResume}
+          className="btn-primary shrink-0 self-start !min-h-10 !px-4 !text-sm sm:self-auto"
+        >
+          Seguir →
+        </button>
       </div>
-      <div className="border-t border-line-soft pt-3">
-        <div className="mb-1.5 flex justify-between text-[11px] font-semibold">
-          <span className="text-muted">{exerciseCount} ejercicios</span>
-          <span className={progress > 0 ? "mod-text" : "text-faint"}>
-            {progress}%
-          </span>
-        </div>
-        <div className="h-1.5 overflow-hidden rounded-full bg-surface-2">
-          <div className="mod-progress" style={{ width: `${width}%` }}></div>
-        </div>
+      <div className="relative mt-3 h-1.5 overflow-hidden rounded-full bg-surface-2">
+        <div className="mod-progress" style={{ width: `${width}%` }} />
       </div>
-    </button>
-  );
-}
-
-function Stat({
-  value,
-  suffix,
-  label,
-  accent,
-}: {
-  value: number;
-  suffix?: string;
-  label: string;
-  accent?: boolean;
-}) {
-  const animated = useCountUp(value);
-  return (
-    <div className="ui-card flex flex-col items-center justify-center py-3">
-      <span
-        className={`text-xl font-bold ${accent ? "text-brand" : "text-ink"}`}
-      >
-        {animated}
-        {suffix}
-      </span>
-      <span className="text-[11px] font-medium uppercase tracking-wide text-faint">
-        {label}
-      </span>
     </div>
   );
 }
