@@ -8,5 +8,8 @@ export default defineConfig({
   integrations: [react()],
   vite: {
     plugins: [tailwindcss()],
+    esbuild: {
+      drop: ['console', 'debugger'],
+    },
   },
 });

@@ -40,10 +40,26 @@ Cada paso del back tiene su contraparte en el front (ej. `ApiResponse` en C# ↔
 ## Cómo Usar
 
 ```bash
-npm install      # instala dependencias
-npm run dev      # servidor de desarrollo (http://localhost:4321)
-npm run build    # build estático a /dist
-npm run preview  # previsualiza el build
+bun install      # instala dependencias con Bun
+bun run dev      # servidor de desarrollo (http://localhost:4321)
+bun run build    # build estático a /dist
+bun run preview  # previsualiza el build
+```
+
+### 🔒 Seguridad y Git Hooks (Validación Nativa)
+
+Para evitar que se realicen commits con `console.log` o código de depuración en la consola, se cuenta con una validación nativa sin librerías externas.
+
+Para activar los hooks automáticamente en tu entorno Git, ejecuta:
+
+```bash
+git config core.hooksPath .githooks
+```
+
+También puedes ejecutar la verificación de seguridad manualmente en cualquier momento:
+
+```bash
+bun run security-check
 ```
 
 (Opcional) Configura tu API Key de Gemini en el menú para habilitar las funciones de IA.
