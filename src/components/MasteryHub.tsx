@@ -23,7 +23,7 @@ export default function MasteryHub() {
   const [activeIndex, setActiveIndex] = useState(0);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [profile, setProfile] = useState<AuthProfile | null>(null);
-  const [routesSidebarOpen, setRoutesSidebarOpen] = useState(true);
+  const [routesSidebarOpen, setRoutesSidebarOpen] = useState(false);
 
   const {
     isCompleted,
@@ -41,12 +41,12 @@ export default function MasteryHub() {
   useEffect(() => {
     try {
       const saved = localStorage.getItem(ROUTES_SIDEBAR_KEY);
-      if (saved != null) setRoutesSidebarOpen(saved === "1");
+      // Solo restaura si el usuario lo dejó abierto en desktop.
+      if (saved === "1" && window.matchMedia("(min-width: 1024px)").matches) {
+        setRoutesSidebarOpen(true);
+      }
     } catch {
       /* ignore */
-    }
-    if (typeof window !== "undefined" && window.matchMedia("(max-width: 1023px)").matches) {
-      setRoutesSidebarOpen(false);
     }
   }, []);
 

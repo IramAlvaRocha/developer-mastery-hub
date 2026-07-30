@@ -177,9 +177,6 @@ export default function ModuleMenu({
 
   function selectGroup(group: string) {
     runViewTransition(() => setSelectedGroup(group));
-    if (window.matchMedia("(max-width: 1023px)").matches) {
-      onSidebarOpenChange(false);
-    }
   }
 
   function toggleCat(id: string) {
@@ -266,114 +263,216 @@ export default function ModuleMenu({
           />
         )}
 
-        <div className="relative flex min-h-0 flex-1 gap-0 lg:gap-4">
-          {sidebarOpen && (
-            <button
-              type="button"
-              className="fixed inset-0 z-30 bg-black/55 backdrop-blur-[2px] lg:hidden"
-              aria-label="Cerrar menú de rutas"
-              onClick={() => onSidebarOpenChange(false)}
-            />
-          )}
-
-          <aside
-            className={`fixed inset-y-0 left-0 z-40 flex w-[min(20rem,88vw)] flex-col border-r border-line bg-surface transition-transform duration-300 lg:static lg:z-auto lg:h-auto lg:rounded-[28px] lg:border ${
+        <div className="relative flex min-h-0 flex-1">
+          {/* Backdrop + drawer hamburguesa (slide desde la izquierda) */}
+          <div
+            className={`fixed inset-0 z-50 transition-opacity duration-300 ${
               sidebarOpen
-                ? "translate-x-0"
-                : "-translate-x-full lg:w-0 lg:translate-x-0 lg:overflow-hidden lg:border-0"
+                ? "pointer-events-auto opacity-100"
+                : "pointer-events-none opacity-0"
             }`}
             aria-hidden={!sidebarOpen}
           >
-            <div className="flex shrink-0 items-center justify-between border-b border-line px-4 py-3.5">
-              <div>
-                <p className="section-eyebrow text-sm text-muted">
-                  {"{ Rutas }"}
-                </p>
-                <p className="text-sm font-semibold text-ink">
-                  Menú de aprendizaje
-                </p>
+            <button
+              type="button"
+              className="absolute inset-0 bg-black/60 backdrop-blur-[2px]"
+              aria-label="Cerrar menú de rutas"
+              onClick={() => onSidebarOpenChange(false)}
+            />
+
+            <aside
+              className={`absolute inset-y-0 left-0 flex w-[min(20.5rem,90vw)] flex-col border-r border-line bg-[#121412] shadow-float transition-transform duration-300 ease-out motion-reduce:transition-none ${
+                sidebarOpen ? "translate-x-0" : "-translate-x-full"
+              }`}
+              role="dialog"
+              aria-modal="true"
+              aria-label="Menú de rutas"
+            >
+              <div className="flex shrink-0 items-center gap-2 border-b border-line px-3 py-3">
+                <button
+                  type="button"
+                  className="icon-btn border border-line"
+                  aria-label="Cerrar menú"
+                  onClick={() => onSidebarOpenChange(false)}
+                >
+                  ←
+                </button>
+                <a
+                  href="/"
+                  className="icon-btn border border-line"
+                  aria-label="Inicio"
+                  title="Inicio"
+                >
+                  ⌂
+                </a>
+                <div className="min-w-0 flex-1 pl-1">
+                  <p className="text-[11px] font-medium uppercase tracking-wide text-faint">
+                    Catálogo
+                  </p>
+                  <p className="truncate text-sm font-semibold text-cream">
+                    Menú de aprendizaje
+                  </p>
+                </div>
               </div>
-              <button
-                type="button"
-                className="icon-btn border border-line"
-                aria-label="Ocultar menú"
-                onClick={() => onSidebarOpenChange(false)}
-              >
-                ←
-              </button>
-            </div>
 
-            <nav className="min-h-0 flex-1 overflow-y-auto px-3 py-3">
-              {categories.map((cat) => {
-                const expanded = openCats[cat.id] ?? false;
-                return (
-                  <div key={cat.id} className="mb-2">
-                    <button
-                      type="button"
-                      onClick={() => toggleCat(cat.id)}
-                      className="flex w-full items-center justify-between rounded-[18px] px-3 py-2.5 text-left transition-colors hover:bg-canvas"
-                    >
-                      <span className="text-[11px] font-bold uppercase tracking-wider text-faint">
-                        {cat.label}
-                      </span>
-                      <span className="text-xs text-muted">
-                        {expanded ? "▾" : "▸"}
-                      </span>
-                    </button>
+              <nav className="min-h-0 flex-1 overflow-y-auto px-3 py-4">
+                {categories.map((cat) => {
+                  const expanded = openCats[cat.id] ?? false;
+                  return (
+                    <div key={cat.id} className="mb-5">
+                      <button
+                        type="button"
+                        onClick={() => toggleCat(cat.id)}
+                        className="mb-2 flex w-full items-center justify-between px-2 text-left"
+                      >
+                        <span className="text-[11px] font-bold uppercase tracking-wider text-faint">
+                          {cat.label}
+                        </span>
+                        <span className="text-xs text-muted">
+                          {expanded ? "▾" : "▸"}
+                        </span>
+                      </button>
 
-                    {expanded && (
-                      <div className="mt-1 space-y-1 pb-2 pl-1">
-                        {cat.groups.map((group) => {
-                          const meta = GROUP_META[group] ?? {
-                            icon: "📦",
-                            color: "slate",
-                            desc: "",
-                          };
-                          const row = metrics.routeRows.find(
-                            (r) => r.group === group,
-                          );
-                          const active = selectedGroup === group;
-                          return (
-                            <button
-                              key={group}
-                              type="button"
-                              onClick={() => selectGroup(group)}
-                              style={
-                                {
-                                  viewTransitionName: groupVtName(group),
-                                  ...moduleColorStyle(meta.color),
-                                } as React.CSSProperties
-                              }
-                              className={`flex w-full items-center gap-2.5 rounded-[20px] border px-3 py-2.5 text-left transition-colors ${
-                                active
-                                  ? "mod-chip-active border"
-                                  : "border-transparent bg-transparent text-muted hover:border-line hover:bg-canvas hover:text-ink"
-                              }`}
-                            >
-                              <span className="mod-icon-bg flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-base">
-                                {meta.icon}
-                              </span>
-                              <span className="min-w-0 flex-1">
-                                <span className="block truncate text-sm font-semibold text-ink">
-                                  {group}
-                                </span>
-                                <span className="block truncate text-[11px] text-muted">
-                                  {row?.mods.length ?? 0} módulos ·{" "}
-                                  {row?.progress ?? 0}%
-                                </span>
-                              </span>
-                            </button>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </nav>
-          </aside>
+                      {expanded && (
+                        <ul className="relative ml-3 border-l border-line/80 pl-0">
+                          {cat.groups.map((group, gi) => {
+                            const meta = GROUP_META[group] ?? {
+                              icon: "📦",
+                              color: "slate",
+                              desc: "",
+                            };
+                            const row = metrics.routeRows.find(
+                              (r) => r.group === group,
+                            );
+                            const progress = row?.progress ?? 0;
+                            const active = selectedGroup === group;
+                            const done = progress >= 100;
+                            const inProgress = progress > 0 && progress < 100;
+                            const isLast = gi === cat.groups.length - 1;
 
-          {/* Panel de métricas */}
+                            return (
+                              <li key={group} className="relative">
+                                <button
+                                  type="button"
+                                  onClick={() => selectGroup(group)}
+                                  className={`group relative flex w-full items-start gap-3 py-2.5 pl-5 pr-2 text-left transition-colors ${
+                                    active
+                                      ? "text-cream"
+                                      : "text-muted hover:text-cream"
+                                  }`}
+                                >
+                                  {/* Nodo del árbol */}
+                                  <span
+                                    className={`absolute left-0 top-[1.15rem] z-[1] flex h-3.5 w-3.5 -translate-x-1/2 items-center justify-center rounded-full ${
+                                      done
+                                        ? "bg-brand text-[9px] font-bold text-canvas"
+                                        : active
+                                          ? "bg-sky shadow-[0_0_0_3px_rgba(0,186,226,0.25)]"
+                                          : inProgress
+                                            ? "border-2 border-orangey bg-[#121412]"
+                                            : "border border-line bg-[#121412]"
+                                    }`}
+                                    aria-hidden
+                                  >
+                                    {done ? "✓" : null}
+                                  </span>
+                                  {!isLast && (
+                                    <span
+                                      className="absolute left-0 top-[1.55rem] h-[calc(100%-0.4rem)] w-px -translate-x-1/2 bg-line/80"
+                                      aria-hidden
+                                    />
+                                  )}
+
+                                  <span className="min-w-0 flex-1">
+                                    <span
+                                      className={`block truncate text-[14px] leading-snug ${
+                                        active
+                                          ? "font-semibold text-cream"
+                                          : "font-medium"
+                                      }`}
+                                    >
+                                      {group}
+                                    </span>
+                                    <span className="mt-0.5 block text-[11px] text-faint">
+                                      {row?.mods.length ?? 0} cursos · {progress}%
+                                    </span>
+                                  </span>
+                                </button>
+
+                                {/* Cursos anidados (como en la imagen) */}
+                                {active && row && (
+                                  <ul className="relative mb-2 ml-5 border-l border-dashed border-line/70 pb-1">
+                                    {row.mods.map((mod, mi) => {
+                                      const p = getPercent(
+                                        mod.key,
+                                        mod.exercises.length,
+                                      );
+                                      const modDone = p >= 100;
+                                      const lastMod = mi === row.mods.length - 1;
+                                      return (
+                                        <li key={mod.key} className="relative">
+                                          <button
+                                            type="button"
+                                            onClick={() => {
+                                              onStart(mod.key);
+                                              onSidebarOpenChange(false);
+                                            }}
+                                            className="flex w-full items-center gap-2.5 py-2 pl-5 pr-2 text-left text-muted transition-colors hover:text-cream"
+                                          >
+                                            <span
+                                              className={`absolute left-0 top-1/2 z-[1] h-2 w-2 -translate-x-1/2 -translate-y-1/2 rounded-full ${
+                                                modDone
+                                                  ? "bg-brand"
+                                                  : p > 0
+                                                    ? "bg-sky"
+                                                    : "border border-line bg-[#121412]"
+                                              }`}
+                                              aria-hidden
+                                            />
+                                            {!lastMod && (
+                                              <span
+                                                className="absolute left-0 top-1/2 h-1/2 w-px -translate-x-1/2 border-l border-dashed border-line/70"
+                                                aria-hidden
+                                              />
+                                            )}
+                                            <span className="truncate text-[13px]">
+                                              {mod.icon} {mod.name}
+                                            </span>
+                                            <span className="ml-auto shrink-0 text-[10px] text-faint">
+                                              {p}%
+                                            </span>
+                                          </button>
+                                        </li>
+                                      );
+                                    })}
+                                  </ul>
+                                )}
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      )}
+                    </div>
+                  );
+                })}
+              </nav>
+
+              <div className="shrink-0 border-t border-line px-4 py-3">
+                <div className="mb-1.5 flex justify-between text-[11px] font-semibold">
+                  <span className="text-muted">Progreso total</span>
+                  <span className="text-brand">{metrics.overall}%</span>
+                </div>
+                <div className="h-1.5 overflow-hidden rounded-full bg-elevated">
+                  <div
+                    className="h-full rounded-full bg-brand transition-[width] duration-500"
+                    style={{ width: `${metrics.overall}%` }}
+                  />
+                </div>
+              </div>
+            </aside>
+          </div>
+
+          {/* Panel de métricas (full width; el menú es overlay) */}
           <section className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-[28px] border border-line bg-surface">
             <div className="shrink-0 border-b border-line px-4 py-4 sm:px-5">
               <p className="text-[12px] text-muted">{"{ Métricas }"}</p>
