@@ -1,45 +1,44 @@
-# AWS — Playbook de la sección (Fase 1: Fundamentos)
+# AWS — Playbook de la sección
 
 > Autoría de contenido: agente `aws-content-author` (ver `.opencode/agent/aws-content-author.md`).
 > Fuentes: `D:\Projects\scrapping\temario.md` (índice) y `D:\Projects\scrapping\subtitulos_es\`
 > (transcripciones del instructor, UTF-8).
 
-## Objetivo de la Fase 1
+## Objetivo
 
-Crear los 5 módulos de **fundamentos** del curso DVA-C02, con el grupo **AWS** dentro de Cloud
-en el catálogo.
+Crear los módulos del curso DVA-C02, con el grupo **AWS** dentro de Cloud en el catálogo.
 
-## Módulos y mapeo al temario
+## Fase 1 (completada ✅) — Fundamentos
+
+| Módulo (slug) | Archivo | Secciones temario | Ejercicios |
+|---|---|---|---|
+| `aws-iam` | `src/data/modules/aws-iam.ts` | 4, 12 | 18 |
+| `aws-ec2` | `src/data/modules/aws-ec2.ts` | 5 | 17 |
+| `aws-storage` | `src/data/modules/aws-storage.ts` | 6 | 12 |
+| `aws-elb-asg` | `src/data/modules/aws-elb-asg.ts` | 7 | 16 |
+| `aws-s3` | `src/data/modules/aws-s3.ts` | 11, 13, 14 | 20 |
+
+## Fase 2 (en curso) — Datos y red
 
 | Módulo (slug) | Archivo | Secciones temario | Subtítulos (carpeta) | Ejercicios |
 |---|---|---|---|---|
-| `aws-iam` | `src/data/modules/aws-iam.ts` | 4 (IAM y CLI), 12 (CLI/SDK/IAM roles) | `04 - IAM y CLI de AWS`, `12 - CLI de AWS, SDK, roles y políticas de IAM` | ~16 |
-| `aws-ec2` | `src/data/modules/aws-ec2.ts` | 5 (Fundamentos de EC2) | `05 - Fundamentos de EC2` | ~14 |
-| `aws-storage` | `src/data/modules/aws-storage.ts` | 6 (Almacenamiento de Instancias EC2) | `06 - Almacenamiento de Instancias EC2` | ~10 |
-| `aws-elb-asg` | `src/data/modules/aws-elb-asg.ts` | 7 (ELB + ASG) | `07 - Fundamentos de AWS_ ELB + ASG` | ~14 |
-| `aws-s3` | `src/data/modules/aws-s3.ts` | 11 (S3), 13 (S3 Avanzado), 14 (Seguridad S3) | `11 - Introducción a Amazon S3`, `13 - Amazon S3 Avanzado`, `14 - Seguridad de Amazon S3` | ~18 |
+| `aws-rds` | `src/data/modules/aws-rds.ts` | 8 (RDS + Aurora + ElastiCache) | `08 - Fundamentos de AWS_ RDS + Aurora + ElastiCache` | ~12 |
+| `aws-route53` | `src/data/modules/aws-route53.ts` | 9 (Route 53) | `09 - Route 53` | ~12 |
+| `aws-vpc` | `src/data/modules/aws-vpc.ts` | 10 (Fundamentos de la VPC) | `10 - Fundamentos de la VPC` | ~10 |
+| `aws-cloudfront` | `src/data/modules/aws-cloudfront.ts` | 15 (CloudFront) | `15 - CloudFront` | ~10 |
 
-## Formato recomendado por módulo
+### Formato recomendado por módulo
 
-- **aws-iam**: context-dropdown (políticas JSON), prediction (CLI), true-false (MFA/roles),
-  snippet-pick (política mínima privilegio vs permisiva), legacy [INPUT_N] (comandos CLI).
-- **aws-ec2**: prediction (user-data/SSH), ordering (crear instancia → SG → conectar),
-  true-false (opciones de compra), legacy (CLI/SSH), bug-hunt (SG abierto).
-- **aws-storage**: matching (EBS/EFS/Instance Store ↔ caso de uso), true-false
-  (tipos de volumen), ordering (snapshot → AMI), prediction (CLI), snippet-pick (EFS vs EBS).
-- **aws-elb-asg**: matching (ALB/NLB/GWLB ↔ caso de uso), prediction (sticky/SSL),
-  ordering (ASG scaling), true-false (health checks), snippet-pick (config ASG).
-- **aws-s3**: context-dropdown (política de bucket), prediction (CLI/clases de almacenamiento),
-  matching (clase ↔ caso de uso), ordering (ciclo de vida), true-false (versionado/replicación),
-  bug-hunt (bucket público), snippet-pick (cifrado correcto).
+- **aws-rds**: true-false (réplicas vs Multi-AZ, backups), matching (RDS/Aurora/ElastiCache/MemoryDB ↔ caso de uso), prediction (read replica), ordering (promover réplica → failover), legacy (CLI).
+- **aws-route53**: prediction (TTL/CNAME vs Alias), matching (política de enrutamiento ↔ caso de uso), ordering (registrar dominio → zona → registros), true-false (health checks, geoproximidad), context-dropdown (tipo de registro).
+- **aws-vpc**: matching (subred/IGW/NAT/NACL/SG ↔ función), true-false (NACL stateless vs SG stateful, flujo de tráfico), ordering (crear VPC → subredes → IGW → ruteo), bug-hunt (NACL/SG mal configurado), prediction (gateways).
+- **aws-cloudfront**: prediction (caché/edge), ordering (crear distribución → origin → behaviors → invalidación), true-false (geo restriction, signed URLs vs cookies), matching (tipo de contenido ↔ política de caché), snippet-pick (URL firmada).
 
 ## Registro en el catálogo (lo hace el orquestador)
 
-1. `src/data/index.ts`: importar los 5 módulos y añadirlos a `ALL_MODULES` con:
-   `group: "AWS"`, `color` sugerido: `aws-iam` "orange", `aws-ec2` "amber",
-   `aws-storage` "sky", `aws-elb-asg` "orange", `aws-s3` "orange".
-2. `ModuleMenu.tsx`: añadir `GROUP_META["AWS"]` (`icon: "☁️"`, `color: "orange"`, desc)
-   y `ROUTE_CATEGORIES` (p. ej. nueva categoría "Cloud" o dentro de "Plataforma").
+1. `src/data/index.ts`: importar los módulos y añadirlos a `ALL_MODULES` con `group: "AWS"`.
+   Colores sugeridos Fase 2: `aws-rds` "sky", `aws-route53` "green", `aws-vpc` "cyan", `aws-cloudfront` "blue".
+2. `ModuleMenu.tsx`: el grupo AWS ya está en `GROUP_META` y `ROUTE_CATEGORIES` (Plataforma).
 3. Verificación: build + security-check + catálogo completo.
 
 ## Criterio de calidad (estándar del proyecto)

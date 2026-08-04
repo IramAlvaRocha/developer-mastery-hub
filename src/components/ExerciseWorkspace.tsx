@@ -7,7 +7,7 @@ import { moduleColorStyle } from "@/lib/moduleColors";
 import { usePrefersReducedMotion } from "@/lib/useReducedMotion";
 import { FORMAT_LABELS, type FormatOption } from "@/lib/formatMeta";
 import ChallengeCode from "./ChallengeCode";
-import ExerciseFormat from "./formats/ExerciseFormat";
+import ExerciseFormatView from "./formats/ExerciseFormat";
 import TheoryTab from "./TheoryTab";
 import SolutionPanel from "./SolutionPanel";
 import SimulatedTerminal from "./SimulatedTerminal";
@@ -522,7 +522,7 @@ export default function ExerciseWorkspace({
                 </div>
                 <div style={colorStyle} className="flex-1 p-4 sm:p-5">
                   {exercise.format ? (
-                    <ExerciseFormat
+                    <ExerciseFormatView
                       exercise={exercise}
                       color={color}
                       userAnswers={userAnswers}
