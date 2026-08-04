@@ -15,6 +15,10 @@ dist/
 Thumbs.db
 *.log
 
+# editor tooling (personal, no parte del proyecto)
+.cursor/
+.gemini/
+
 # package locks
 yarn.lock
 pnpm-lock.yaml
