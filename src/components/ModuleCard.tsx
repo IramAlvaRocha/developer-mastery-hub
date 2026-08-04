@@ -9,15 +9,15 @@ interface Props {
   onStart: (key: string) => void;
 }
 
-export default function ModuleCard({ module, progress, index = 0, onStart }: Props) {
+export default function ModuleCard({ module, progress, onStart }: Props) {
   const done = progress >= 100;
   const width = useAnimatedWidth(progress);
 
   return (
     <button
       onClick={() => onStart(module.key)}
-      style={{ "--i": index, ...moduleColorStyle(module.color) } as React.CSSProperties}
-      className={`animate-stagger group mod-card-hover flex h-full flex-col justify-between gap-4 rounded-card border bg-surface p-5 text-left motion-safe-transition motion-safe-lift transition-all hover:-translate-y-0.5 ${
+      style={moduleColorStyle(module.color) as React.CSSProperties}
+      className={`course-card group mod-card-hover flex h-full flex-col justify-between gap-4 rounded-card border bg-surface p-5 text-left motion-safe-transition motion-safe-lift transition-all hover:-translate-y-0.5 ${
         done
           ? "border-brand/40 hover:border-brand/60"
           : "border-line"

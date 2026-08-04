@@ -32,3 +32,45 @@ export function isAnswerCorrect(
   if (!norm) return false;
   return acceptedAnswers(expected).some((a) => normalizeAnswer(a) === norm);
 }
+
+// ──────────────────────────────────────────────────────────────────────────
+// Verificacion de formatos interactivos (prediction, ordering, matching...).
+// Todas reutilizan normalizeAnswer como base de comparacion.
+// ──────────────────────────────────────────────────────────────────────────
+
+/** True si `value` (ids separados por comas) reconstruye la secuencia correcta. */
+export function isOrderingCorrect(
+  correctOrder: string[],
+  value: string,
+): boolean {
+  const order = value
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+  if (order.length !== correctOrder.length) return false;
+  return order.every((id, i) => id === correctOrder[i]);
+}
+
+/** True si `value` (índice como string) coincide con el índice correcto. */
+export function isChoiceCorrect(correct: number, value: string): boolean {
+  const n = Number.parseInt(value, 10);
+  if (!Number.isFinite(n)) return false;
+  return n === correct;
+}
+
+/** True si `value` ("true" | "false") coincide con la respuesta esperada. */
+export function isTrueFalseCorrect(expected: boolean, value: string): boolean {
+  if (value !== "true" && value !== "false") return false;
+  return (value === "true") === expected;
+}
+
+/** True si todos los pares del matching están emparejados correctamente. */
+export function isMatchingCorrect(
+  pairs: { id: string; definition: string }[],
+  answers: Record<string, string>,
+): boolean {
+  return pairs.every((p) => {
+    const def = (answers[`pair-${p.id}`] ?? "").trim();
+    return def === p.definition;
+  });
+}

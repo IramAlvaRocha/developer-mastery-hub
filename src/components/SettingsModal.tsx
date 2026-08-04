@@ -24,6 +24,7 @@ export default function SettingsModal({
   const [profile, setProfile] = useState<AuthProfile | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const avatarInputRef = useRef<HTMLInputElement>(null);
+  const titleRef = useRef<HTMLHeadingElement>(null);
 
   useEffect(() => {
     if (!open) return;
@@ -38,6 +39,11 @@ export default function SettingsModal({
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [open, onClose]);
+
+  useEffect(() => {
+    if (!open) return;
+    titleRef.current?.focus();
+  }, [open]);
 
   if (!open) return null;
 
@@ -94,18 +100,25 @@ export default function SettingsModal({
       className="fixed inset-0 z-70 flex items-center justify-center p-4"
       role="dialog"
       aria-modal="true"
-      aria-label="Configuración"
+      aria-labelledby="settings-title"
     >
       <div
-        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+        className="absolute inset-0 bg-canvas/85 backdrop-blur-sm"
         onClick={onClose}
       />
 
       <div className="ui-card animate-fade-in relative z-10 w-full max-w-md p-6 shadow-float">
         <div className="mb-5 flex items-start justify-between gap-3">
           <div>
-            <p className="section-eyebrow text-sm text-muted">{"{ Settings }"}</p>
-            <h3 className="text-lg font-semibold text-ink">Configuración</h3>
+            <p className="section-eyebrow text-cream">{"{ Settings }"}</p>
+            <h2
+              ref={titleRef}
+              id="settings-title"
+              tabIndex={-1}
+              className="mt-0.5 text-lg font-semibold text-ink outline-none"
+            >
+              Configuración
+            </h2>
           </div>
           <button onClick={onClose} className="icon-btn" aria-label="Cerrar">
             ×

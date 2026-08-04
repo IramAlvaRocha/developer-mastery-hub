@@ -6,86 +6,103 @@ export const CODE_VULNERABILITIES_EXERCISES: Exercise[] = [
     title: "SQL Injection (SQLi): Consultas Parametrizadas",
     stars: 3,
     category: "SQL INJECTION",
-    description: "Reemplaza la concatenación de variables en la consulta SQL por parámetros posicionales o nombrados para prevenir SQL Injection.",
-    objective: "Uso de consultas parametrizadas",
+    description: "Detecta por qué una consulta construida concatenando la entrada del usuario es vulnerable y cómo corregirla con parámetros.",
+    objective: "Reconocer y prevenir SQL Injection",
     tags: ["SQLi", "Parameterized Query", "Security", "DB"],
     fileName: "usersRepository.ts",
     completed: false,
-    instruction: "Corrige la consulta vulnerable sustituyendo la concatenación directa de cadenas por parámetros de consulta de forma segura.",
+    instruction: "Lee el snippet y elige la vulnerabilidad que contiene.",
     theory: "SQL Injection ocurre cuando entradas de usuario no sanitizadas se concatenan directamente en comandos SQL. Al usar consultas parametrizadas, el motor de base de datos trata el input como un dato estricto y no como código ejecutable.",
-    explanationText: "Las consultas parametrizadas envían el comando SQL y los datos por separado al motor de la base de datos, imposibilitando la ejecución de código malicioso inyectado.",
-    codeSnippet: `// ❌ VULNERABLE: const sql = "SELECT * FROM users WHERE email = '" + req.body.email + "'";
-
-// ✅ SEGURO: Consulta parametrizada
-const query = 'SELECT * FROM users WHERE email = [INPUT_1]';
-const values = [req.body.email];
-
-const result = await db.query(query, [INPUT_2]);`,
-    inputs: {
-      INPUT_1: ["$1", "?", ":email"],
-      INPUT_2: "values",
-    },
+    explanationText: "🌍 Ejemplo cotidiano: Es como entregarle al cajero un formulario con el dato en el hueco marcado, en vez de dictarle toda la frase: el usuario no puede 'agregar' instrucciones (como OR '1'='1') porque su texto deja de ser código.\n\nLas consultas parametrizadas envían el comando SQL y los datos por separado al motor: el input se trata como un valor literal, no como parte ejecutable de la consulta. La concatenación con comillas es el error clásico porque convierte al atacante en autor de la sentencia.",
+    codeSnippet: `// Busca el usuario por email
+const sql = "SELECT * FROM users WHERE email = '" + req.body.email + "'";
+const result = await db.query(sql);`,
+    inputs: {},
     completeCode: `const query = 'SELECT * FROM users WHERE email = $1';
 const values = [req.body.email];
 const result = await db.query(query, values);`,
+    format: "bug-hunt",
+    bugHunt: {
+      prompt: "¿Qué vulnerabilidad contiene este snippet?",
+      snippet: `const sql = "SELECT * FROM users WHERE email = '" + req.body.email + "'";
+const result = await db.query(sql);`,
+      options: [
+        "Inyección SQL (SQLi): el email del usuario se concatena en la sentencia y puede convertirse en código SQL.",
+        "Cross-Site Scripting (XSS): el email se inyecta en el DOM sin sanitizar.",
+        "Denegación de servicio (ReDoS): la consulta usa una regex catastrófica.",
+        "Path Traversal: la ruta del archivo se construye con ../",
+      ],
+      correct: 0,
+    },
   },
   {
     id: 2,
     title: "Cross-Site Scripting (XSS): Sanitización y DOM Escape",
     stars: 3,
     category: "XSS",
-    description: "Evita la inyección de código JavaScript arbitrario en la interfaz utilizando propiedades seguras del DOM o librerías de sanitización.",
-    objective: "Mitigación de Reflected y Stored XSS",
+    description: "Detecta la vía por la que un comentario de usuario puede ejecutar scripts en el navegador de la víctima.",
+    objective: "Reconocer y mitigar XSS",
     tags: ["XSS", "DOMPurify", "textContent", "Frontend"],
     fileName: "commentWidget.ts",
     completed: false,
-    instruction: "Reemplaza innerHTML por textContent o sanitiza con DOMPurify para prevenir ataques XSS.",
+    instruction: "Lee el snippet y elige la vulnerabilidad que contiene.",
     theory: "XSS permite a un atacante ejecutar scripts en el navegador de la víctima si la aplicación inserta datos de usuario directamente en la estructura HTML sin escapar o sanitizar previamente.",
-    explanationText: "Usar textContent fuerza al navegador a tratar el contenido como texto plano de forma nativa. Para HTML enriquecido, DOMPurify elimina etiquetas peligrosas como <script> u atributos onerror.",
-    codeSnippet: `// ❌ VULNERABLE: container.innerHTML = userComment;
-
-// ✅ SEGURO 1: Para texto plano sin formato
-element.[INPUT_1] = userComment;
-
-// ✅ SEGURO 2: Para HTML permitido pero sanitizado
-import DOMPurify from 'dompurify';
-container.innerHTML = [INPUT_2].sanitize(userComment);`,
-    inputs: {
-      INPUT_1: "textContent",
-      INPUT_2: "DOMPurify",
-    },
+    explanationText: "🌍 Ejemplo cotidiano: Es la diferencia entre escribir en la pared con rotulador (textContent: texto inerte) y pegar un cartel con órdenes para el vendedor (innerHTML: el navegador las ejecuta). Un comentario con <img onerror=\"...\"> se convierte en código real.\n\nUsar textContent fuerza al navegador a tratar el contenido como texto plano de forma nativa: no hay etiquetas que interpretar. Para HTML enriquecido, DOMPurify elimina etiquetas y atributos peligrosos como <script> u onerror antes de insertarlos.",
+    codeSnippet: `// Render del comentario del usuario
+const comment = req.body.comment;
+container.innerHTML = comment;`,
+    inputs: {},
     completeCode: `element.textContent = userComment;
 container.innerHTML = DOMPurify.sanitize(userComment);`,
+    format: "bug-hunt",
+    bugHunt: {
+      prompt: "¿Qué vulnerabilidad contiene este snippet?",
+      snippet: `const comment = req.body.comment;
+container.innerHTML = comment;`,
+      options: [
+        "Cross-Site Scripting (XSS): innerHTML interpreta etiquetas y atributos del comentario, permitiendo ejecutar scripts.",
+        "SQL Injection: el comentario se guarda concatenado en una consulta.",
+        "Prototype Pollution: la clave __proto__ contamina Object.prototype.",
+        "Path Traversal: el comentario se usa como ruta de archivo.",
+      ],
+      correct: 0,
+    },
   },
   {
     id: 3,
     title: "OS Command Injection: Invocación Sin Shell",
     stars: 4,
     category: "COMMAND INJECTION",
-    description: "Reemplaza llamadas vulnerables a exec() por execFile() pasando argumentos en un arreglo sin iniciar una subshell del sistema.",
-    objective: "Eliminar el contexto de shell en ejecución de procesos",
+    description: "Detecta por qué pasar la entrada del usuario a exec() permite ejecutar comandos adicionales en la shell.",
+    objective: "Reconocer y eliminar el contexto de shell",
     tags: ["Command Injection", "execFile", "Node.js", "Security"],
     fileName: "imageProcessor.ts",
     completed: false,
-    instruction: "Usa execFile en lugar de exec para evitar que caracteres especiales como ';' o '|' ejecuten comandos adicionales.",
+    instruction: "Lee el snippet y elige la vulnerabilidad que contiene.",
     theory: "La inyección de comandos ocurre cuando argumentos provistos por el usuario se pasan a funciones que ejecutan shells (`sh`, `bash`, `cmd.exe`), permitiendo encadenar comandos maliciosos.",
-    explanationText: "execFile ejecuta directamente el archivo binario ejecutable sin pasar por la shell del sistema operativo, neutralizando metacaracteres inyectados como '; rm -rf /'.",
-    codeSnippet: `import { [INPUT_1] } from 'node:child_process';
+    explanationText: "🌍 Ejemplo cotidiano: exec es como darle al operador la frase completa por el interfono con el altavoz abierto: cualquier ';' o '|' se convierte en una orden nueva. execFile es entregarle una orden escrita: 'imprime este archivo', y el archivo va en una lista aparte, no se lee como texto interpretable.\n\nexecFile ejecuta directamente el binario con un arreglo de argumentos, sin pasar por la shell del sistema operativo. Así, metacaracteres como '; rm -rf /' quedan como texto literal del argumento en vez de comandos encadenados.",
+    codeSnippet: `import { exec } from 'node:child_process';
 
-// ❌ VULNERABLE: exec(\`convert \${userFilename} output.png\`);
-
-// ✅ SEGURO: Pasar ejecutable y argumentos separados
-const args = [userFilename, 'output.png'];
-[INPUT_1]('/usr/bin/convert', [INPUT_2], (error, stdout) => {
-  if (error) throw error;
-});`,
-    inputs: {
-      INPUT_1: "execFile",
-      INPUT_2: "args",
-    },
+// Procesa la imagen que el usuario subió
+exec(\`convert \${userFilename} output.png\`);`,
+    inputs: {},
     completeCode: `import { execFile } from 'node:child_process';
 const args = [userFilename, 'output.png'];
 execFile('/usr/bin/convert', args, (error, stdout) => { ... });`,
+    format: "bug-hunt",
+    bugHunt: {
+      prompt: "¿Qué vulnerabilidad contiene este snippet?",
+      snippet: `import { exec } from 'node:child_process';
+
+exec(\`convert \${userFilename} output.png\`);`,
+      options: [
+        "OS Command Injection: exec() abre una shell y userFilename puede encadenar comandos con ';' o '|'.",
+        "Mass Assignment: userFilename inyecta propiedades no permitidas.",
+        "Deserialización insegura: el payload instancia objetos arbitrarios.",
+        "ReDoS: la ruta del archivo dispara backtracking exponencial.",
+      ],
+      correct: 0,
+    },
   },
   {
     id: 4,
@@ -99,7 +116,7 @@ execFile('/usr/bin/convert', args, (error, stdout) => { ... });`,
     completed: false,
     instruction: "Usa path.basename o verifica que la ruta resuelta permanezca dentro del directorio permitido.",
     theory: "Path Traversal permite acceder a archivos fuera del directorio web o permitido (ej. `/etc/passwd` o `.env`) mediante secuencias de navegación como `../../`.",
-    explanationText: "path.basename extrae solo la parte final del nombre del archivo eliminando cualquier directorio relativo. Además, comparar con startsWith asegura el confinamiento dentro de la ruta base.",
+    explanationText: "🌍 Ejemplo cotidiano: Es un conserje que solo escucha el nombre del paquete, no la dirección completa: aunque el remitente escriba '../../etc/passwd', el conserje solo entiende 'passwd' y no puede salir de la recepción.\n\npath.basename extrae solo la parte final del nombre del archivo, eliminando cualquier directorio relativo (../). La segunda barrera, comparar con startsWith(PUBLIC_DIR), confina la ruta resuelta dentro del directorio permitido: así los ataques a /etc/passwd o .env quedan bloqueados aunque algo se cuele.",
     codeSnippet: `import path from 'node:path';
 
 const PUBLIC_DIR = path.resolve('/var/www/uploads');
@@ -125,31 +142,47 @@ if (!filePath.startsWith(PUBLIC_DIR)) { throw new Error('Acceso no autorizado');
     title: "BOLA / IDOR: Autorización a Nivel de Objeto",
     stars: 4,
     category: "IDOR / BOLA",
-    description: "Evita vulnerabilidades BOLA (Broken Object Level Authorization) verificando que el usuario autenticado sea dueño del recurso solicitado.",
-    objective: "Validar propiedad de recursos en peticiones API",
+    description: "Identifica el controlador que sí verifica que el usuario autenticado sea dueño del recurso solicitado.",
+    objective: "Reconocer la autorización BOLA correcta",
     tags: ["BOLA", "IDOR", "Authorization", "OWASP"],
     fileName: "documentController.ts",
     completed: false,
-    instruction: "Inserta la verificación de pertenencia comparando el ID del usuario de la sesión con el propietario del documento.",
+    instruction: "Elige el snippet que implementa correctamente la autorización BOLA.",
     theory: "BOLA/IDOR ocurre cuando una API expone identificadores de objetos (`/api/documents/1024`) sin verificar si el usuario que realiza la petición posee permisos sobre dicho objeto específico.",
-    explanationText: "Autenticarse en el sistema no implica autorización automática sobre cualquier ID. Siempre se debe filtrar por el ID del usuario en la consulta o verificar explícitamente la propiedad.",
-    codeSnippet: `const document = await db.documents.findById(req.params.docId);
-
-if (!document) {
-  return res.status(404).send('Documento no encontrado');
-}
-
-// ✅ SEGURO: Verificar que el recurso pertenezca al usuario de la sesión
-if (document.ownerId !== [INPUT_1]) {
-  throw new [INPUT_2]('No tienes permisos para ver este documento');
-}`,
-    inputs: {
-      INPUT_1: ["req.user.id", "req.userId", "currentUser.id"],
-      INPUT_2: ["ForbiddenError", "Error", "UnauthorizedError"],
-    },
+    explanationText: "🌍 Ejemplo cotidiano: Que muestres tu carné en la puerta no te da derecho a la taquilla de otro: la autenticación (quién eres) y la autorización (qué te pertenece) son verificaciones distintas, y la API no puede mezclarlas.\n\nAutenticarse no implica autorización automática sobre cualquier ID: hay que filtrar por el ID de la sesión (WHERE ownerId = req.user.id) o verificar explícitamente que document.ownerId coincida. Sin esa comprobación, cualquiera puede recorrer IDs y leer recursos ajenos: es la vulnerabilidad nº 1 de OWASP API Security.",
+    codeSnippet: `// Dos controladores para GET /api/documents/:docId`,
+    inputs: {},
     completeCode: `if (document.ownerId !== req.user.id) {
   throw new ForbiddenError('No tienes permisos para ver este documento');
 }`,
+    format: "snippet-pick",
+    snippetPick: {
+      prompt: "¿Cuál de los dos controladores implementa correctamente la autorización BOLA?",
+      snippets: [
+        {
+          id: "inseguro",
+          label: "Opción A",
+          description: "Devuelve cualquier documento por su ID sin comprobar al dueño.",
+          code: `app.get('/api/documents/:docId', async (req, res) => {
+  const doc = await db.documents.findById(req.params.docId);
+  res.json(doc);
+});`,
+        },
+        {
+          id: "seguro",
+          label: "Opción B",
+          description: "Verifica que el documento pertenezca al usuario de la sesión.",
+          code: `app.get('/api/documents/:docId', async (req, res) => {
+  const doc = await db.documents.findById(req.params.docId);
+  if (!doc || doc.ownerId !== req.user.id) {
+    return res.status(403).send('No autorizado');
+  }
+  res.json(doc);
+});`,
+        },
+      ],
+      correct: 1,
+    },
   },
   {
     id: 6,
@@ -163,7 +196,7 @@ if (document.ownerId !== [INPUT_1]) {
     completed: false,
     instruction: "Crea objetos sin prototipo heredado usando Object.create(null) o deshabilita modificaciones a prototipos.",
     theory: "Prototype Pollution permite a un atacante inyectar propiedades en `Object.prototype` modificando claves como `__proto__` o `constructor.prototype`, alterando el comportamiento de todos los objetos en la aplicación.",
-    explanationText: "Object.create(null) genera un diccionario sin el prototipo global de Object, por lo que claves inyectadas como `__proto__` no tienen efecto sobre la cadena de prototipos.",
+    explanationText: "🌍 Ejemplo cotidiano: Es como si alguien modificara el manual de la empresa en vez de su propia ficha: al tocar la plantilla maestra (Object.prototype), todos los objetos heredan lo inyectado y la app entera cambia de comportamiento.\n\nObject.create(null) genera un diccionario sin el prototipo global de Object, así que claves como __proto__ o constructor.prototype no encuentran dónde alterar la cadena de herencia. Object.freeze(Object.prototype) complementa: congela la plantilla maestra para que ninguna fusión de datos la modifique.",
     codeSnippet: `// ❌ VULNERABLE: const map = {}; map[key] = value; (permite key = "__proto__")
 
 // ✅ SEGURO 1: Crear diccionario sin prototipo base
@@ -190,7 +223,7 @@ Object.freeze(Object.prototype);`,
     completed: false,
     instruction: "Define un esquema DTO explícito con Zod para permitir únicamente las propiedades que el usuario debe poder actualizar.",
     theory: "Mass Assignment ocurre cuando se pasan payloads JSON completos directamente a ORMs o bases de datos (`User.create(req.body)`), permitiendo a usuarios maliciosos inyectar propiedades como `isAdmin: true` o `role: 'admin'`.",
-    explanationText: "Usar un esquema DTO explícito con Zod ignora y descarta cualquier propiedad no definida en el esquema antes de tocar la base de datos.",
+    explanationText: "🌍 Ejemplo cotidiano: Es un formulario en papel con campos ocultos: si el servidor lee TODO el formulario sin filtrar, el atacante puede rellenar una línea que tú nunca mostraste ('rol: admin') y la guardas igual.\n\nUsar un esquema DTO explícito con Zod ignora y descarta cualquier propiedad no definida antes de llegar a la base de datos. Pasar req.body directamente al ORM (User.create(req.body)) acepta cualquier campo inyectado; un z.object estricto define exactamente qué puede actualizar el usuario.",
     codeSnippet: `import { z } from 'zod';
 
 // ✅ Esquema estricto: solo permite actualizar name y bio
@@ -227,7 +260,7 @@ await db.user.update({ where: { id: req.user.id }, data: cleanData });`,
     completed: false,
     instruction: "Evita eval() o parsers de objetos complejos, usando JSON.parse y validación con safeParse.",
     theory: "La deserialización insegura ocurre cuando se deserializan estructuras de datos que pueden instanciar objetos o ejecutar código arbitrario durante el proceso de des-serialización.",
-    explanationText: "JSON.parse solo construye tipos primitivos y objetos planos, previniendo la instanciación de clases o ejecución de código. Al combinarlo con safeParse de Zod se garantiza la validez de la estructura.",
+    explanationText: "🌍 Ejemplo cotidiano: Es la diferencia entre leer el papel que acompaña al paquete (JSON.parse: solo datos) y permitir que el paquete se abra solo y ejecute sus instrucciones (eval/parsers con constructores): el payload del atacante se convierte en código que corre en tu servidor.\n\nJSON.parse solo construye tipos primitivos y objetos planos: no instancia clases ni ejecuta nada. Al combinarlo con safeParse de Zod se valida la estructura antes de usarla. La deserialización insegura (eval, pickle, yaml con constructores) es justo la que convierte datos en código ejecutable.",
     codeSnippet: `// ❌ VULNERABLE: const config = eval('(' + payload + ')');
 
 // ✅ SEGURO: JSON.parse nativo + validación de esquema
@@ -249,27 +282,43 @@ const result = ConfigSchema.safeParse(parsed);`,
     title: "ReDoS: Prevención de ReDoS (Regex DoS)",
     stars: 4,
     category: "ReDoS",
-    description: "Elimina patrones de expresiones regulares con cuantificadores anidados vulnerables a backtracking exponencial.",
+    description: "Elige el validador de email que no es vulnerable a backtracking exponencial.",
     objective: "Evitar bloqueos del Event Loop por regex catastróficas",
     tags: ["ReDoS", "Regex", "Event Loop", "DoS"],
     fileName: "emailValidator.ts",
     completed: false,
-    instruction: "Sustituye la regex vulnerable por un validador nativo o regex lineal sin cuantificadores superpuestos.",
+    instruction: "Elige el validador de email seguro frente a ReDoS.",
     theory: "ReDoS (Regular Expression Denial of Service) ocurre cuando se evalúa una expresión regular con cuantificadores anidados (ej. `(a+)+$`) con una entrada diseñada para fallar al final, provocando un consumo del 100% de CPU en backtracking.",
-    explanationText: "Evitar grupos anidados repetidos `(a+)+` o utilizar validadores especializados previene congelamientos del Event Loop de Node.js.",
-    codeSnippet: `// ❌ VULNERABLE a ReDoS: /^([a-zA-Z0-9]+)+@domain\\.com$/
-
-// ✅ SEGURO: Expresión regular lineal o validador estándar
-import validator from 'validator';
-
-function validateEmail(email: string): boolean {
-  return [INPUT_1].isEmail(email);
-}`,
-    inputs: {
-      INPUT_1: "validator",
-    },
+    explanationText: "🌍 Ejemplo cotidiano: Es un guardia que, al ver una pulsera falsa, vuelve a revisar la misma fila una y otra vez en un bucle sin fin: con (a+)+ y una entrada diseñada para fallar al final, el backtracking prueba millones de combinaciones y la CPU queda atascada.\n\nEvitar grupos anidados repetidos como (a+)+ o (\\w+)+$ previene el backtracking exponencial que congela el Event Loop de Node.js. Mejor aún: usa validadores especializados como validator.isEmail, que son lineales por diseño y nunca se atascan.",
+    codeSnippet: `// Dos validadores de email`,
+    inputs: {},
     completeCode: `import validator from 'validator';
 return validator.isEmail(email);`,
+    format: "snippet-pick",
+    snippetPick: {
+      prompt: "¿Cuál de los dos validadores es seguro frente a ReDoS?",
+      snippets: [
+        {
+          id: "regex",
+          label: "Opción A",
+          description: "Regex con cuantificadores anidados (a+)+ — vulnerable a backtracking exponencial.",
+          code: `function validateEmail(email: string): boolean {
+  return /^([a-zA-Z0-9]+)+@domain\\.com$/.test(email);
+}`,
+        },
+        {
+          id: "validator",
+          label: "Opción B",
+          description: "Validador especializado, lineal por diseño y nunca se atasca.",
+          code: `import validator from 'validator';
+
+function validateEmail(email: string): boolean {
+  return validator.isEmail(email);
+}`,
+        },
+      ],
+      correct: 1,
+    },
   },
   {
     id: 10,
@@ -283,7 +332,7 @@ return validator.isEmail(email);`,
     completed: false,
     instruction: "Lee la clave secreta desde process.env y lanza un error si la variable no está definida.",
     theory: "Grabar secretos, contraseñas o tokens en el código fuente provoca fugas de seguridad inmediatas al subir cambios a repositorios de control de versiones como GitHub.",
-    explanationText: "Las variables de entorno leen la configuración directamente del entorno de ejecución o secret manager de la nube, sin exponer secretos en el repositorio git.",
+    explanationText: "🌍 Ejemplo cotidiano: Es dejar la llave de la oficina bajo el felpudo y publicar una foto del felpudo: una vez que el secreto entra a git, queda en el historial para siempre, aunque lo borres después.\n\nLas variables de entorno leen la configuración del entorno de ejecución o del secret manager de la nube, sin exponer secretos en el repositorio. El throw al faltar la variable (fail-fast) evita arrancar el servicio con una configuración rota que después falla de forma críptica en producción.",
     codeSnippet: `// ❌ VULNERABLE: const API_KEY = "sk_live_secret123456789";
 
 // ✅ SEGURO: Cargar desde process.env con aserción de existencia

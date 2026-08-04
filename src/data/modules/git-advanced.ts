@@ -9,21 +9,20 @@ export const GIT_ADVANCED_EXERCISES: Exercise[] = [
     fileName: "terminal",
     completed: false,
     explanationText: "Git Flow es como el sistema de control de tráfico aéreo: cada avión (rama) tiene una ruta definida. Sin eso, chocarían (conflictos en producción).",
-    codeSnippet:
-`# Inicializar Git Flow
-git flow [INPUT_1]
-
-# Iniciar feature
-git flow feature [INPUT_2] feature/user-auth
-
-# Terminar feature (merge a develop y elimina la rama)
-git flow feature [INPUT_3] feature/user-auth
-
-# Iniciar release
-git flow release start [INPUT_4]
-git flow release finish 1.2.0`,
-    inputs: { INPUT_1: "init", INPUT_2: "start", INPUT_3: "finish", INPUT_4: "1.2.0" },
-    completeCode: "git flow init | feature start/finish | release start/finish"
+    codeSnippet: "# Ordena el flujo: init → feature → finish → release",
+    inputs: {},
+    completeCode: "git flow init | feature start/finish | release start/finish",
+    format: "ordering",
+    ordering: {
+      prompt: "Reconstruye el flujo de Git Flow para una feature llamada user-auth y una release 1.2.0.",
+      steps: [
+        { id: "release", label: "git flow release start 1.2.0" },
+        { id: "feature", label: "git flow feature start feature/user-auth" },
+        { id: "init", label: "git flow init" },
+        { id: "finish", label: "git flow feature finish feature/user-auth" },
+      ],
+      correctOrder: ["init", "feature", "finish", "release"],
+    }
   },
   {
     id: 2, title: "Trunk Based Development: Feature Flags", stars: 4, category: "TRUNK BASED",
@@ -173,23 +172,20 @@ git log --[INPUT_4] --graph --all`,
     fileName: "terminal",
     completed: false,
     explanationText: "git stash es como el cajón de 'pendientes' de tu escritorio: apartas lo que estás haciendo, atiendes lo urgente y luego retomas.",
-    codeSnippet:
-`# Guardar cambios actuales con descripción
-git stash [INPUT_1] "WIP: user form validation"
-
-# Ver todos los stashes
-git stash [INPUT_2]
-
-# Aplicar el más reciente Y eliminarlo del stash
-git stash [INPUT_3]
-
-# Aplicar uno específico sin eliminarlo
-git stash [INPUT_4] stash@{2}
-
-# Eliminar un stash específico
-git stash drop stash@{0}`,
-    inputs: { INPUT_1: "push -m", INPUT_2: "list", INPUT_3: "pop", INPUT_4: "apply" },
-    completeCode: "stash push -m | stash list | stash pop | stash apply stash@{n}"
+    codeSnippet: "# Ordena el flujo del stash: guardar → listar → recuperar",
+    inputs: {},
+    completeCode: "stash push -m | stash list | stash pop | stash apply stash@{n}",
+    format: "ordering",
+    ordering: {
+      prompt: "Reconstruye el flujo típico del stash para apartar cambios, revisarlos y recuperarlos.",
+      steps: [
+        { id: "list", label: "git stash list" },
+        { id: "push", label: "git stash push -m \"WIP: user form validation\"" },
+        { id: "pop", label: "git stash pop" },
+        { id: "apply", label: "git stash apply stash@{2}" },
+      ],
+      correctOrder: ["push", "list", "pop", "apply"],
+    }
   },
   {
     id: 8, title: "Cherry-pick: Portar Commits Específicos", stars: 3, category: "WORKFLOW",
@@ -199,25 +195,20 @@ git stash drop stash@{0}`,
     fileName: "terminal",
     completed: false,
     explanationText: "Cherry-pick es como copiar una receta específica de un libro de cocina sin llevarte el libro completo. Útil para portar hotfixes a main y a versiones anteriores.",
-    codeSnippet:
-`# Obtener el hash del commit a portar
-git log --oneline feature/payment-fix
-
-# Portar UN commit específico
-git checkout main
-git cherry-[INPUT_1] abc1234
-
-# Portar un rango de commits
-git cherry-pick [INPUT_2]..def5678
-
-# Si hay conflicto: resolver, luego continuar
-git add .
-git cherry-pick --[INPUT_3]
-
-# Portar sin commitear (para revisar antes)
-git cherry-pick abc1234 --[INPUT_4]`,
-    inputs: { INPUT_1: "pick", INPUT_2: "abc1234", INPUT_3: "continue", INPUT_4: "no-commit" },
-    completeCode: "cherry-pick <hash> | range abc..def | --continue | --no-commit"
+    codeSnippet: "# Ordena el flujo para portar el commit abc1234 a main",
+    inputs: {},
+    completeCode: "cherry-pick <hash> | range abc..def | --continue | --no-commit",
+    format: "ordering",
+    ordering: {
+      prompt: "Reconstruye el flujo de cherry-pick cuando aparece un conflicto y hay que continuar.",
+      steps: [
+        { id: "checkout", label: "git checkout main" },
+        { id: "pick", label: "git cherry-pick abc1234" },
+        { id: "add", label: "git add ." },
+        { id: "continue", label: "git cherry-pick --continue" },
+      ],
+      correctOrder: ["checkout", "pick", "add", "continue"],
+    }
   },
   {
     id: 9, title: "GitHub Actions: Deploy a Cloud Run en PR Merge", stars: 5, category: "CI/CD",

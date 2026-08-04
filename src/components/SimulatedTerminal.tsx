@@ -114,12 +114,12 @@ export default function SimulatedTerminal({ scenario, resetKey }: Props) {
 
   return (
     <div className="overflow-hidden rounded-[28px] border border-line bg-surface">
-      <div className="flex items-center justify-between border-b border-line bg-[#161816] px-4 py-3">
+      <div className="flex items-center justify-between border-b border-line bg-surface-2 px-4 py-3">
         <div className="flex items-center gap-2.5">
           <span className="flex gap-1" aria-hidden>
-            <span className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
-            <span className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
-            <span className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
+            <span className="h-2 w-2 rounded-full bg-[#ff5f57]" />
+            <span className="h-2 w-2 rounded-full bg-[#febc2e]" />
+            <span className="h-2 w-2 rounded-full bg-[#28c840]" />
           </span>
           <span className="font-mono text-[12px] text-muted">terminal</span>
         </div>
@@ -140,7 +140,10 @@ export default function SimulatedTerminal({ scenario, resetKey }: Props) {
       </div>
       <div
         ref={scrollRef}
-        className="max-h-96 min-h-[280px] overflow-y-auto bg-[#0e100f] p-3 font-mono text-[11px] leading-relaxed md:text-xs"
+        role="log"
+        aria-live="polite"
+        aria-label="Salida de la terminal simulada"
+        className="max-h-96 min-h-[280px] overflow-y-auto bg-canvas p-3 font-mono text-[11px] leading-relaxed md:text-xs"
         onClick={() => inputRef.current?.focus()}
       >
         {lines.map((line, i) => (
@@ -176,7 +179,7 @@ export default function SimulatedTerminal({ scenario, resetKey }: Props) {
           />
         </form>
       </div>
-      <p className="border-t border-line bg-[#161816] px-4 py-2 text-[10px] text-faint">
+      <p className="border-t border-line bg-surface-2 px-4 py-2.5 text-[11px] text-faint">
         ↑↓ historial · Enter ejecutar · Prueba los comandos del desafío antes de rellenar los huecos
       </p>
     </div>

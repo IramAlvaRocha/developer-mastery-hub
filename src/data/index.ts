@@ -1,5 +1,12 @@
 import type { Module } from "@/lib/types";
 
+// ─── AWS (Fase 1: Fundamentos) ─────────────────────────────────────────────
+import { AWS_IAM_EXERCISES } from "./modules/aws-iam";
+import { AWS_EC2_EXERCISES } from "./modules/aws-ec2";
+import { AWS_STORAGE_EXERCISES } from "./modules/aws-storage";
+import { AWS_ELB_ASG_EXERCISES } from "./modules/aws-elb-asg";
+import { AWS_S3_EXERCISES } from "./modules/aws-s3";
+
 // ─── Buenas Practicas (NUEVOS) ──────────────────────────────────────────────
 import { DOTNET_BEST_PRACTICES } from "./modules/dotnet-best-practices";
 import { REACT_BEST_PRACTICES } from "./modules/react-best-practices";
@@ -49,6 +56,63 @@ import {
 } from "./enrichment";
 
 export const ALL_MODULES: Module[] = [
+  // ─── AWS (grupo propio dentro de Cloud) ────────────────────────────────────
+  {
+    key: "aws-iam",
+    name: "AWS: IAM & CLI",
+    icon: "🔑",
+    badge: "Cloud",
+    color: "orange",
+    group: "AWS",
+    desc: "Usuarios, grupos, políticas JSON, MFA, roles, claves de acceso, CLI, CloudShell, STS y buenas prácticas de Identity and Access Management.",
+    topics: ["IAM", "Políticas", "MFA", "Roles", "STS", "CLI"],
+    exercises: AWS_IAM_EXERCISES,
+  },
+  {
+    key: "aws-ec2",
+    name: "AWS: EC2 Fundamentos",
+    icon: "🖥️",
+    badge: "Compute",
+    color: "amber",
+    group: "AWS",
+    desc: "Instancias, user-data, tipos de instancia, security groups, SSH, roles de instancia y opciones de compra (On-Demand, Reserved, Spot).",
+    topics: ["EC2", "Security Groups", "SSH", "User Data", "Spot"],
+    exercises: AWS_EC2_EXERCISES,
+  },
+  {
+    key: "aws-storage",
+    name: "AWS: EBS, EFS & AMI",
+    icon: "💾",
+    badge: "Storage",
+    color: "sky",
+    group: "AWS",
+    desc: "EBS (volúmenes de red), snapshots, AMI, Instance Store, tipos de volumen y Amazon EFS (NFS compartido multi-AZ).",
+    topics: ["EBS", "EFS", "Snapshots", "AMI", "Instance Store"],
+    exercises: AWS_STORAGE_EXERCISES,
+  },
+  {
+    key: "aws-elb-asg",
+    name: "AWS: ELB & ASG",
+    icon: "⚖️",
+    badge: "Scaling",
+    color: "orange",
+    group: "AWS",
+    desc: "Alta disponibilidad y escalabilidad, ALB/NLB/GWLB, sticky sessions, SSL/TLS, connection draining y Auto Scaling Groups con políticas de escalado.",
+    topics: ["ALB", "NLB", "ASG", "Sticky", "SSL", "Scaling"],
+    exercises: AWS_ELB_ASG_EXERCISES,
+  },
+  {
+    key: "aws-s3",
+    name: "AWS: S3 Avanzado",
+    icon: "🪣",
+    badge: "Storage",
+    color: "orange",
+    group: "AWS",
+    desc: "Buckets y objetos, políticas de bucket, website hosting, versionado, replicación, clases de almacenamiento, ciclo de vida, cifrado, CORS y URLs pre-firmadas.",
+    topics: ["S3", "Buckets", "Glacier", "Cifrado", "Presigned"],
+    exercises: AWS_S3_EXERCISES,
+  },
+
   // ─── BUENAS PRACTICAS (orden back -> front) ───────────────────────────────
   {
     key: "dotnet-bp",

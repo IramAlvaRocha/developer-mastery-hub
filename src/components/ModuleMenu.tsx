@@ -1,9 +1,15 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import gsap from "gsap";
 import type { Module } from "@/lib/types";
 import type { LastVisited } from "@/lib/useProgress";
 import { moduleColorStyle } from "@/lib/moduleColors";
-import { useAnimatedWidth, useCountUp } from "@/lib/useReducedMotion";
+import {
+  prefersReducedMotion,
+  useAnimatedWidth,
+  useCountUp,
+} from "@/lib/useReducedMotion";
 import { runViewTransition } from "@/lib/viewTransition";
+import ModuleCard from "./ModuleCard";
 
 interface Props {
   modules: Module[];
@@ -64,6 +70,11 @@ const GROUP_META: Record<string, { icon: string; color: string; desc: string }> 
       color: "cyan",
       desc: "map, filter, reduce y más.",
     },
+    AWS: {
+      icon: "☁️",
+      color: "orange",
+      desc: "Certificación Developer Associate (DVA-C02): IAM, EC2, S3 y más.",
+    },
   };
 
 const ROUTE_CATEGORIES: { id: string; label: string; groups: string[] }[] = [
@@ -92,22 +103,13 @@ const ROUTE_CATEGORIES: { id: string; label: string; groups: string[] }[] = [
     label: "Plataforma",
     groups: [
       "Cloud & Serverless",
+      "AWS",
       "DevOps & Git",
       "APIs & Seguridad",
       "Testing & Calidad",
     ],
   },
 ];
-
-function groupVtName(group: string): string {
-  return (
-    "vt-cat-" +
-    group
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, "-")
-      .replace(/^-|-$/g, "")
-  );
-}
 
 export default function ModuleMenu({
   modules,
@@ -119,6 +121,8 @@ export default function ModuleMenu({
   sidebarOpen,
   onSidebarOpenChange,
 }: Props) {
+  const rootRef = useRef<HTMLElement>(null);
+
   const availableGroups = useMemo(
     () =>
       groups.filter((g) =>
@@ -243,396 +247,437 @@ export default function ModuleMenu({
     ? (GROUP_META[selectedGroup] ?? { icon: "📦", color: "slate", desc: "" })
     : null;
 
+  // Entrada del catálogo: hero, resume y métricas con stagger.
+  useEffect(() => {
+    const root = rootRef.current;
+    if (!root || prefersReducedMotion()) return;
+    const ctx = gsap.context(() => {
+      gsap.from("[data-reveal]", {
+        y: 28,
+        opacity: 0,
+        duration: 0.6,
+        stagger: 0.08,
+        ease: "power3.out",
+      });
+      gsap.from(".metric-tile", {
+        y: 16,
+        opacity: 0,
+        duration: 0.5,
+        stagger: 0.05,
+        delay: 0.25,
+        ease: "power2.out",
+      });
+    }, root);
+    return () => ctx.revert();
+  }, []);
+
+  // Re-anima la grid al cambiar de ruta.
+  useEffect(() => {
+    const root = rootRef.current;
+    if (!root || prefersReducedMotion()) return;
+    const ctx = gsap.context(() => {
+      gsap.from(".course-card", {
+        y: 24,
+        opacity: 0,
+        duration: 0.5,
+        stagger: 0.06,
+        ease: "power2.out",
+      });
+    }, root);
+    return () => ctx.revert();
+  }, [selectedGroup]);
+
+  // Escape cierra el drawer de rutas.
+  useEffect(() => {
+    if (!sidebarOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onSidebarOpenChange(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [sidebarOpen, onSidebarOpenChange]);
+
+  const firstModule = modules[0];
+
   return (
-    <main className="relative flex flex-1 flex-col overflow-hidden">
-      <div className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-3 overflow-hidden px-4 py-3 md:gap-4 md:px-6 md:py-4">
+    <main
+      ref={rootRef}
+      className="relative flex flex-1 flex-col overflow-y-auto"
+    >
+      <div className="mx-auto w-full max-w-[1280px] px-4 py-10 sm:px-6 sm:py-14">
+        {/* Hero del catálogo */}
+        <section data-reveal>
+          <p className="section-eyebrow text-cream">{"{ Catálogo }"}</p>
+          <h1 className="mt-2 text-[clamp(2.2rem,5vw,3.6rem)] font-semibold leading-[1.05] tracking-tight text-cream">
+            Elige tu ruta
+          </h1>
+          <p className="mt-3 max-w-2xl text-[clamp(1rem,2.2vw,1.2rem)] leading-relaxed text-muted">
+            Rutas por disciplina. Elige un grupo y entra a sus cursos.
+          </p>
+        </section>
+
+        {/* Continuar donde lo dejaste */}
         {resume && (
-          <ResumeCard
-            icon={resume.mod.icon}
-            color={resume.mod.color}
-            moduleName={resume.mod.name}
-            exerciseTitle={resume.ex.title}
-            stepLabel={
-              resume.ex.step != null
-                ? `Paso ${resume.ex.step}`
-                : `Ejercicio ${resume.index + 1}`
-            }
-            total={resume.mod.exercises.length}
-            percent={resume.percent}
-            onResume={() => onResume(resume.mod.key, resume.index)}
-          />
+          <div data-reveal className="mt-8 sm:mt-10">
+            <ResumeCard
+              icon={resume.mod.icon}
+              color={resume.mod.color}
+              moduleName={resume.mod.name}
+              exerciseTitle={resume.ex.title}
+              stepLabel={
+                resume.ex.step != null
+                  ? `Paso ${resume.ex.step}`
+                  : `Ejercicio ${resume.index + 1}`
+              }
+              total={resume.mod.exercises.length}
+              percent={resume.percent}
+              onResume={() => onResume(resume.mod.key, resume.index)}
+            />
+          </div>
         )}
 
-        <div className="relative flex min-h-0 flex-1">
-          {/* Backdrop + drawer hamburguesa (slide desde la izquierda) */}
+        {/* Métricas */}
+        <section className="mt-8 sm:mt-10">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-6">
+            <MetricTile
+              label="Progreso"
+              value={metrics.overall}
+              suffix="%"
+              accent
+            />
+            <MetricTile label="Rutas" value={metrics.totalGroups} />
+            <MetricTile label="Cursos" value={metrics.totalModules} />
+            <MetricTile
+              label="Ejercicios"
+              value={metrics.doneExercises}
+              hint={`de ${metrics.totalExercises}`}
+            />
+            <MetricTile
+              label="Completados"
+              value={metrics.modulesDone}
+              hint="cursos"
+            />
+            <MetricTile
+              label="En curso"
+              value={metrics.modulesInProgress}
+              hint="cursos"
+            />
+          </div>
+        </section>
+
+        {/* Empty state: primer uso */}
+        {metrics.overall === 0 && !resume && firstModule && (
           <div
-            className={`fixed inset-0 z-50 transition-opacity duration-300 ${
-              sidebarOpen
-                ? "pointer-events-auto opacity-100"
-                : "pointer-events-none opacity-0"
-            }`}
-            aria-hidden={!sidebarOpen}
+            data-reveal
+            className="mt-6 rounded-[28px] border border-brand/25 bg-brand/5 p-6 sm:p-8"
           >
+            <p className="section-eyebrow text-cream">
+              {"{ Empieza por aquí }"}
+            </p>
+            <h2 className="mt-2 text-xl font-semibold text-cream sm:text-2xl">
+              Todo listo para tu primer desafío
+            </h2>
+            <p className="mt-2 max-w-xl text-sm leading-relaxed text-muted">
+              Abre el primer módulo de una ruta para empezar con la teoría y tu
+              primer desafío guiado.
+            </p>
             <button
               type="button"
-              className="absolute inset-0 bg-black/60 backdrop-blur-[2px]"
-              aria-label="Cerrar menú de rutas"
-              onClick={() => onSidebarOpenChange(false)}
-            />
-
-            <aside
-              className={`absolute inset-y-0 left-0 flex w-[min(20.5rem,90vw)] flex-col border-r border-line bg-[#121412] shadow-float transition-transform duration-300 ease-out motion-reduce:transition-none ${
-                sidebarOpen ? "translate-x-0" : "-translate-x-full"
-              }`}
-              role="dialog"
-              aria-modal="true"
-              aria-label="Menú de rutas"
+              className="btn-filled-soft mt-5 !min-h-11"
+              onClick={() => onStart(firstModule.key)}
             >
-              <div className="flex shrink-0 items-center gap-2 border-b border-line px-3 py-3">
-                <button
-                  type="button"
-                  className="icon-btn border border-line"
-                  aria-label="Cerrar menú"
-                  onClick={() => onSidebarOpenChange(false)}
-                >
-                  ←
-                </button>
-                <a
-                  href="/"
-                  className="icon-btn border border-line"
-                  aria-label="Inicio"
-                  title="Inicio"
-                >
-                  ⌂
-                </a>
-                <div className="min-w-0 flex-1 pl-1">
-                  <p className="text-[11px] font-medium uppercase tracking-wide text-faint">
-                    Catálogo
-                  </p>
-                  <p className="truncate text-sm font-semibold text-cream">
-                    Menú de aprendizaje
-                  </p>
-                </div>
-              </div>
-
-              <nav className="min-h-0 flex-1 overflow-y-auto px-3 py-4">
-                {categories.map((cat) => {
-                  const expanded = openCats[cat.id] ?? false;
-                  return (
-                    <div key={cat.id} className="mb-5">
-                      <button
-                        type="button"
-                        onClick={() => toggleCat(cat.id)}
-                        className="mb-2 flex w-full items-center justify-between px-2 text-left"
-                      >
-                        <span className="text-[11px] font-bold uppercase tracking-wider text-faint">
-                          {cat.label}
-                        </span>
-                        <span className="text-xs text-muted">
-                          {expanded ? "▾" : "▸"}
-                        </span>
-                      </button>
-
-                      {expanded && (
-                        <ul className="relative ml-3 border-l border-line/80 pl-0">
-                          {cat.groups.map((group, gi) => {
-                            const meta = GROUP_META[group] ?? {
-                              icon: "📦",
-                              color: "slate",
-                              desc: "",
-                            };
-                            const row = metrics.routeRows.find(
-                              (r) => r.group === group,
-                            );
-                            const progress = row?.progress ?? 0;
-                            const active = selectedGroup === group;
-                            const done = progress >= 100;
-                            const inProgress = progress > 0 && progress < 100;
-                            const isLast = gi === cat.groups.length - 1;
-
-                            return (
-                              <li key={group} className="relative">
-                                <button
-                                  type="button"
-                                  onClick={() => selectGroup(group)}
-                                  className={`group relative flex w-full items-start gap-3 py-2.5 pl-5 pr-2 text-left transition-colors ${
-                                    active
-                                      ? "text-cream"
-                                      : "text-muted hover:text-cream"
-                                  }`}
-                                >
-                                  {/* Nodo del árbol */}
-                                  <span
-                                    className={`absolute left-0 top-[1.15rem] z-[1] flex h-3.5 w-3.5 -translate-x-1/2 items-center justify-center rounded-full ${
-                                      done
-                                        ? "bg-brand text-[9px] font-bold text-canvas"
-                                        : active
-                                          ? "bg-sky shadow-[0_0_0_3px_rgba(0,186,226,0.25)]"
-                                          : inProgress
-                                            ? "border-2 border-orangey bg-[#121412]"
-                                            : "border border-line bg-[#121412]"
-                                    }`}
-                                    aria-hidden
-                                  >
-                                    {done ? "✓" : null}
-                                  </span>
-                                  {!isLast && (
-                                    <span
-                                      className="absolute left-0 top-[1.55rem] h-[calc(100%-0.4rem)] w-px -translate-x-1/2 bg-line/80"
-                                      aria-hidden
-                                    />
-                                  )}
-
-                                  <span className="min-w-0 flex-1">
-                                    <span
-                                      className={`block truncate text-[14px] leading-snug ${
-                                        active
-                                          ? "font-semibold text-cream"
-                                          : "font-medium"
-                                      }`}
-                                    >
-                                      {group}
-                                    </span>
-                                    <span className="mt-0.5 block text-[11px] text-faint">
-                                      {row?.mods.length ?? 0} cursos · {progress}%
-                                    </span>
-                                  </span>
-                                </button>
-
-                                {/* Cursos anidados (como en la imagen) */}
-                                {active && row && (
-                                  <ul className="relative mb-2 ml-5 border-l border-dashed border-line/70 pb-1">
-                                    {row.mods.map((mod, mi) => {
-                                      const p = getPercent(
-                                        mod.key,
-                                        mod.exercises.length,
-                                      );
-                                      const modDone = p >= 100;
-                                      const lastMod = mi === row.mods.length - 1;
-                                      return (
-                                        <li key={mod.key} className="relative">
-                                          <button
-                                            type="button"
-                                            onClick={() => {
-                                              onStart(mod.key);
-                                              onSidebarOpenChange(false);
-                                            }}
-                                            className="flex w-full items-center gap-2.5 py-2 pl-5 pr-2 text-left text-muted transition-colors hover:text-cream"
-                                          >
-                                            <span
-                                              className={`absolute left-0 top-1/2 z-[1] h-2 w-2 -translate-x-1/2 -translate-y-1/2 rounded-full ${
-                                                modDone
-                                                  ? "bg-brand"
-                                                  : p > 0
-                                                    ? "bg-sky"
-                                                    : "border border-line bg-[#121412]"
-                                              }`}
-                                              aria-hidden
-                                            />
-                                            {!lastMod && (
-                                              <span
-                                                className="absolute left-0 top-1/2 h-1/2 w-px -translate-x-1/2 border-l border-dashed border-line/70"
-                                                aria-hidden
-                                              />
-                                            )}
-                                            <span className="truncate text-[13px]">
-                                              {mod.icon} {mod.name}
-                                            </span>
-                                            <span className="ml-auto shrink-0 text-[10px] text-faint">
-                                              {p}%
-                                            </span>
-                                          </button>
-                                        </li>
-                                      );
-                                    })}
-                                  </ul>
-                                )}
-                              </li>
-                            );
-                          })}
-                        </ul>
-                      )}
-                    </div>
-                  );
-                })}
-              </nav>
-
-              <div className="shrink-0 border-t border-line px-4 py-3">
-                <div className="mb-1.5 flex justify-between text-[11px] font-semibold">
-                  <span className="text-muted">Progreso total</span>
-                  <span className="text-brand">{metrics.overall}%</span>
-                </div>
-                <div className="h-1.5 overflow-hidden rounded-full bg-elevated">
-                  <div
-                    className="h-full rounded-full bg-brand transition-[width] duration-500"
-                    style={{ width: `${metrics.overall}%` }}
-                  />
-                </div>
-              </div>
-            </aside>
+              Empezar {firstModule.name} →
+            </button>
           </div>
+        )}
 
-          {/* Panel de métricas (full width; el menú es overlay) */}
-          <section className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-[28px] border border-line bg-surface">
-            <div className="shrink-0 border-b border-line px-4 py-4 sm:px-5">
-              <p className="text-[12px] text-muted">{"{ Métricas }"}</p>
-              <h2 className="text-lg font-semibold tracking-tight text-ink sm:text-xl">
-                Avance de tus cursos
-              </h2>
-              <p className="mt-0.5 text-sm text-muted">
-                Resumen global y detalle por ruta. Elige una ruta en el menú
-                para enfocarla.
-              </p>
-            </div>
+        {/* Filtro por ruta */}
+        <div
+          className="mt-8 flex gap-2 overflow-x-auto pb-1 sm:flex-wrap sm:overflow-visible sm:pb-0"
+          role="group"
+          aria-label="Filtrar catálogo por ruta"
+        >
+          {availableGroups.map((group) => {
+            const meta = GROUP_META[group] ?? {
+              icon: "📦",
+              color: "slate",
+              desc: "",
+            };
+            const row = metrics.routeRows.find((r) => r.group === group);
+            const progress = row?.progress ?? 0;
+            const active = selectedGroup === group;
+            return (
+              <button
+                key={group}
+                type="button"
+                onClick={() => selectGroup(group)}
+                aria-pressed={active}
+                style={moduleColorStyle(meta.color)}
+                className={`inline-flex shrink-0 items-center gap-2 rounded-full border px-3.5 py-2 text-[12px] font-semibold transition-colors ${
+                  active
+                    ? "mod-chip-active"
+                    : "border-line bg-canvas/40 text-muted hover:text-cream"
+                }`}
+              >
+                <span aria-hidden>{meta.icon}</span>
+                <span>{group}</span>
+                {active && (
+                  <span className="mod-text text-[11px] font-bold">
+                    · {progress}%
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
 
-            <div className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-5">
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-                <MetricTile
-                  label="Progreso"
-                  value={metrics.overall}
-                  suffix="%"
-                  accent
-                />
-                <MetricTile label="Rutas" value={metrics.totalGroups} />
-                <MetricTile label="Cursos" value={metrics.totalModules} />
-                <MetricTile
-                  label="Ejercicios"
-                  value={metrics.doneExercises}
-                  hint={`de ${metrics.totalExercises}`}
-                />
-                <MetricTile
-                  label="Completados"
-                  value={metrics.modulesDone}
-                  hint="cursos"
-                />
-                <MetricTile
-                  label="En curso"
-                  value={metrics.modulesInProgress}
-                  hint="cursos"
-                />
-              </div>
-
-              <div className="mt-6">
-                <p className="mb-3 text-[11px] font-bold uppercase tracking-wider text-faint">
-                  Por ruta
+        {/* Cursos del grupo seleccionado */}
+        {selectedRoute && activeMeta && (
+          <section className="mt-8">
+            <div
+              className="flex items-end justify-between gap-3"
+              style={moduleColorStyle(activeMeta.color)}
+            >
+              <div>
+                <p className="text-[11px] font-bold uppercase tracking-wider text-faint">
+                  Cursos en {selectedRoute.group}
                 </p>
-                <div className="space-y-2.5">
-                  {metrics.routeRows.map((row) => {
-                    const meta = GROUP_META[row.group] ?? {
-                      icon: "📦",
-                      color: "slate",
-                      desc: "",
-                    };
-                    const selected = selectedGroup === row.group;
-                    return (
-                      <button
-                        key={row.group}
-                        type="button"
-                        onClick={() => selectGroup(row.group)}
-                        style={moduleColorStyle(meta.color)}
-                        className={`flex w-full flex-col gap-2 rounded-[22px] border px-4 py-3.5 text-left transition-colors sm:flex-row sm:items-center ${
-                          selected
-                            ? "mod-border-40 bg-canvas"
-                            : "border-line bg-canvas/40 hover:border-line hover:bg-canvas/70"
-                        }`}
-                      >
-                        <div className="flex min-w-0 flex-1 items-center gap-3">
-                          <span className="mod-icon-bg flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-lg">
-                            {meta.icon}
-                          </span>
-                          <div className="min-w-0">
-                            <p className="truncate font-semibold text-ink">
-                              {row.group}
-                            </p>
-                            <p className="truncate text-xs text-muted">
-                              {row.mods.length} cursos · {row.exercises}{" "}
-                              ejercicios · {row.done} hechos · {row.active} en
-                              curso
-                            </p>
-                          </div>
-                        </div>
-                        <div className="w-full sm:w-40">
-                          <div className="mb-1 flex justify-between text-[11px] font-semibold">
-                            <span className="text-muted">Avance</span>
-                            <span className="mod-text">{row.progress}%</span>
-                          </div>
-                          <div className="h-1.5 overflow-hidden rounded-full bg-surface-2">
-                            <div
-                              className="mod-progress"
-                              style={{ width: `${row.progress}%` }}
-                            />
-                          </div>
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
+                <p className="mt-1 text-sm text-muted">{activeMeta.desc}</p>
               </div>
-
-              {selectedRoute && activeMeta && (
-                <div className="mt-8">
-                  <div className="mb-3 flex items-end justify-between gap-3">
-                    <div>
-                      <p className="text-[11px] font-bold uppercase tracking-wider text-faint">
-                        Cursos en {selectedRoute.group}
-                      </p>
-                      <p className="text-sm text-muted">{activeMeta.desc}</p>
-                    </div>
-                    <span className="shrink-0 text-sm font-semibold text-brand">
-                      {selectedRoute.progress}%
-                    </span>
-                  </div>
-                  <div className="space-y-2">
-                    {selectedRoute.mods.map((mod) => {
-                      const p = getPercent(mod.key, mod.exercises.length);
-                      const doneCount = Math.round(
-                        (p / 100) * mod.exercises.length,
-                      );
-                      return (
-                        <button
-                          key={mod.key}
-                          type="button"
-                          onClick={() => onStart(mod.key)}
-                          style={moduleColorStyle(mod.color)}
-                          className="flex w-full items-center gap-3 rounded-[20px] border border-line bg-canvas/50 px-3.5 py-3 text-left transition-colors hover:border-brand/30 hover:bg-canvas"
-                        >
-                          <span className="mod-icon-bg flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-lg">
-                            {mod.icon}
-                          </span>
-                          <div className="min-w-0 flex-1">
-                            <div className="flex items-center gap-2">
-                              <p className="truncate text-sm font-semibold text-ink">
-                                {mod.name}
-                              </p>
-                              {p >= 100 && (
-                                <span className="shrink-0 rounded-full border border-brand/30 bg-brand/10 px-2 py-0.5 text-[10px] font-bold text-brand">
-                                  Hecho
-                                </span>
-                              )}
-                            </div>
-                            <p className="mt-0.5 text-[11px] text-muted">
-                              {doneCount}/{mod.exercises.length} ejercicios ·{" "}
-                              {p}%
-                            </p>
-                            <div className="mt-2 h-1 overflow-hidden rounded-full bg-surface-2">
-                              <div
-                                className="mod-progress"
-                                style={{ width: `${p}%` }}
-                              />
-                            </div>
-                          </div>
-                          <span className="shrink-0 text-xs font-semibold text-muted">
-                            Abrir →
-                          </span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
+              <span className="mod-text text-sm font-semibold">
+                {selectedRoute.progress}%
+              </span>
+            </div>
+            <div
+              key={selectedRoute.group}
+              className="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-3"
+            >
+              {selectedRoute.mods.map((mod, i) => (
+                <ModuleCard
+                  key={mod.key}
+                  module={mod}
+                  progress={getPercent(mod.key, mod.exercises.length)}
+                  index={i}
+                  onStart={onStart}
+                />
+              ))}
             </div>
           </section>
-        </div>
+        )}
+      </div>
+
+      {/* Drawer de rutas (overlay, slide desde la izquierda) */}
+      <div
+        className={`fixed inset-0 z-50 transition-opacity duration-300 ${
+          sidebarOpen
+            ? "pointer-events-auto opacity-100"
+            : "pointer-events-none opacity-0"
+        }`}
+        aria-hidden={!sidebarOpen}
+        inert={!sidebarOpen}
+      >
+        <button
+          type="button"
+          className="absolute inset-0 bg-canvas/85 backdrop-blur-sm"
+          aria-label="Cerrar menú de rutas"
+          onClick={() => onSidebarOpenChange(false)}
+        />
+
+        <aside
+          role={sidebarOpen ? "dialog" : undefined}
+          aria-modal={sidebarOpen ? "true" : undefined}
+          aria-label="Menú de rutas"
+          className={`absolute inset-y-0 left-0 flex w-[min(20.5rem,90vw)] flex-col border-r border-line bg-surface-2 shadow-float transition-transform duration-300 ease-out motion-reduce:transition-none ${
+            sidebarOpen ? "translate-x-0" : "-translate-x-full"
+          }`}
+        >
+          <div className="flex shrink-0 items-center gap-2 border-b border-line px-4 py-3">
+            <button
+              type="button"
+              className="icon-btn border border-line"
+              aria-label="Cerrar menú"
+              onClick={() => onSidebarOpenChange(false)}
+            >
+              ←
+            </button>
+            <a
+              href="/"
+              className="icon-btn border border-line"
+              aria-label="Inicio"
+              title="Inicio"
+            >
+              ⌂
+            </a>
+            <div className="min-w-0 flex-1 pl-1">
+              <p className="text-[11px] font-medium uppercase tracking-wide text-faint">
+                Catálogo
+              </p>
+              <p className="truncate text-sm font-semibold text-cream">
+                Menú de aprendizaje
+              </p>
+            </div>
+          </div>
+
+          <nav className="min-h-0 flex-1 overflow-y-auto px-4 py-5">
+            {categories.map((cat) => {
+              const expanded = openCats[cat.id] ?? false;
+              return (
+                <div key={cat.id} className="mb-5">
+                  <button
+                    type="button"
+                    onClick={() => toggleCat(cat.id)}
+                    className="mb-2 flex w-full items-center justify-between rounded-[16px] px-2 py-1.5 text-left transition-colors hover:bg-elevated/60"
+                  >
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-faint">
+                      {cat.label}
+                    </span>
+                    <span className="text-xs text-muted">
+                      {expanded ? "▾" : "▸"}
+                    </span>
+                  </button>
+
+                  {expanded && (
+                    <ul className="relative ml-3 border-l border-line/60 pl-0">
+                      {cat.groups.map((group, gi) => {
+                        const meta = GROUP_META[group] ?? {
+                          icon: "📦",
+                          color: "slate",
+                          desc: "",
+                        };
+                        const row = metrics.routeRows.find(
+                          (r) => r.group === group,
+                        );
+                        const progress = row?.progress ?? 0;
+                        const active = selectedGroup === group;
+                        const done = progress >= 100;
+                        const inProgress = progress > 0 && progress < 100;
+                        const isLast = gi === cat.groups.length - 1;
+
+                        return (
+                          <li key={group} className="relative">
+                            <button
+                              type="button"
+                              onClick={() => selectGroup(group)}
+                              style={moduleColorStyle(meta.color)}
+                              className={`group relative flex w-full items-center gap-3 rounded-[16px] py-2.5 pl-10 pr-2 text-left transition-colors ${
+                                active
+                                  ? "mod-sidebar-item-active"
+                                  : "text-muted hover:bg-elevated/60 hover:text-cream"
+                              }`}
+                            >
+                              {/* Nodo del árbol */}
+                              <span
+                                className={`absolute left-3.5 top-1/2 z-[1] flex h-4 w-4 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full text-[9px] font-bold ${
+                                  done
+                                    ? "bg-brand text-canvas"
+                                    : active
+                                      ? "bg-sky ring-4 ring-sky/20"
+                                      : inProgress
+                                        ? "border-2 border-orangey bg-surface-2"
+                                        : "border border-line bg-surface-2"
+                                }`}
+                                aria-hidden
+                              >
+                                {done ? "✓" : null}
+                              </span>
+                              {!isLast && (
+                                <span
+                                  className="absolute left-3.5 top-[calc(50%+0.8rem)] h-[calc(100%-1.6rem)] w-px -translate-x-1/2 bg-line/60"
+                                  aria-hidden
+                                />
+                              )}
+
+                              <span className="min-w-0 flex-1">
+                                <span
+                                  className={`block truncate text-sm leading-snug ${
+                                    active
+                                      ? "font-semibold text-cream"
+                                      : "font-medium"
+                                  }`}
+                                >
+                                  {group}
+                                </span>
+                                <span className="mt-0.5 block text-[11px] text-faint">
+                                  {row?.mods.length ?? 0} cursos · {progress}%
+                                </span>
+                              </span>
+                            </button>
+
+                            {/* Cursos anidados */}
+                            {active && row && (
+                              <ul className="relative mb-2 ml-5 border-l border-dashed border-line/70 pb-1">
+                                {row.mods.map((mod, mi) => {
+                                  const p = getPercent(
+                                    mod.key,
+                                    mod.exercises.length,
+                                  );
+                                  const modDone = p >= 100;
+                                  const lastMod =
+                                    mi === row.mods.length - 1;
+                                  return (
+                                    <li
+                                      key={mod.key}
+                                      className="relative"
+                                    >
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          onStart(mod.key);
+                                          onSidebarOpenChange(false);
+                                        }}
+                                        className="flex w-full items-center gap-2.5 rounded-[16px] py-2 pl-5 pr-2 text-left text-muted transition-colors hover:bg-elevated/60 hover:text-cream"
+                                      >
+                                        <span
+                                          className={`absolute left-1 top-1/2 z-[1] h-2 w-2 -translate-x-1/2 -translate-y-1/2 rounded-full ${
+                                            modDone
+                                              ? "bg-brand"
+                                              : p > 0
+                                                ? "bg-sky"
+                                                : "border border-line bg-surface-2"
+                                          }`}
+                                          aria-hidden
+                                        />
+                                        {!lastMod && (
+                                          <span
+                                            className="absolute left-1 top-1/2 h-1/2 w-px -translate-x-1/2 border-l border-dashed border-line/70"
+                                            aria-hidden
+                                          />
+                                        )}
+                                        <span className="truncate text-[13px]">
+                                          {mod.icon} {mod.name}
+                                        </span>
+                                        <span className="ml-auto shrink-0 text-[10px] text-muted">
+                                          {p}%
+                                        </span>
+                                      </button>
+                                    </li>
+                                  );
+                                })}
+                              </ul>
+                            )}
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  )}
+                </div>
+              );
+            })}
+          </nav>
+
+          <div className="shrink-0 border-t border-line px-4 py-3">
+            <div className="mb-1.5 flex justify-between text-[11px] font-semibold">
+              <span className="text-muted">Progreso total</span>
+              <span className="text-brand">{metrics.overall}%</span>
+            </div>
+            <div className="h-1.5 overflow-hidden rounded-full bg-elevated">
+              <div
+                className="h-full rounded-full bg-brand transition-[width] duration-500"
+                style={{ width: `${metrics.overall}%` }}
+              />
+            </div>
+          </div>
+        </aside>
       </div>
     </main>
   );
@@ -653,17 +698,19 @@ function MetricTile({
 }) {
   const animated = useCountUp(value);
   return (
-    <div className="rounded-[22px] border border-line bg-canvas/60 px-3 py-3.5 text-center">
+    <div className="metric-tile rounded-[24px] border border-line bg-canvas/60 px-4 py-5 text-center">
       <p
-        className={`text-xl font-semibold tracking-tight sm:text-2xl ${accent ? "text-brand" : "text-ink"}`}
+        className={`text-2xl font-semibold tracking-tight sm:text-3xl ${
+          accent ? "text-brand" : "text-ink"
+        }`}
       >
         {animated}
         {suffix}
       </p>
-      <p className="mt-0.5 text-[10px] font-bold uppercase tracking-wide text-faint">
+      <p className="mt-1 text-[11px] font-bold uppercase tracking-wide text-muted">
         {label}
       </p>
-      {hint && <p className="mt-0.5 text-[10px] text-muted">{hint}</p>}
+      {hint && <p className="mt-0.5 text-[11px] text-muted">{hint}</p>}
     </div>
   );
 }
@@ -691,7 +738,7 @@ function ResumeCard({
   return (
     <div
       style={moduleColorStyle(color)}
-      className="animate-fade-in relative shrink-0 overflow-hidden rounded-[28px] border mod-border-40 bg-surface p-4"
+      className="relative overflow-hidden rounded-[28px] border mod-border-40 bg-surface p-5 sm:p-6"
     >
       <div className="mod-glow pointer-events-none absolute -right-12 -top-12 h-36 w-36 rounded-full blur-3xl" />
       <div className="relative flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -700,7 +747,7 @@ function ResumeCard({
             {icon}
           </span>
           <div className="min-w-0">
-            <p className="mod-text text-[10px] font-bold uppercase tracking-wider">
+            <p className="mod-text text-[11px] font-bold uppercase tracking-wider">
               Continuar
             </p>
             <h3 className="truncate text-[15px] font-semibold text-ink">
@@ -713,12 +760,12 @@ function ResumeCard({
         </div>
         <button
           onClick={onResume}
-          className="btn-primary shrink-0 self-start !min-h-10 !px-4 !text-sm sm:self-auto"
+          className="btn-primary shrink-0 self-start !min-h-11 !px-5 !text-sm sm:self-auto"
         >
           Seguir →
         </button>
       </div>
-      <div className="relative mt-3 h-1.5 overflow-hidden rounded-full bg-surface-2">
+      <div className="relative mt-4 h-2 overflow-hidden rounded-full bg-surface-2">
         <div className="mod-progress" style={{ width: `${width}%` }} />
       </div>
     </div>
