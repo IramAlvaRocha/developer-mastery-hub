@@ -8,6 +8,19 @@
 
 Crear los módulos del curso DVA-C02, con el grupo **AWS** dentro de Cloud en el catálogo.
 
+## Flujo de ramas (obligatorio)
+
+Cada fase se trabaja y sube en **su propia rama**:
+
+1. Crear la rama de la fase desde `Update2` (rama de integración):
+   `git checkout -b feat/aws/fase-N`
+2. Trabajar la fase en esa rama (módulos + integración + calidad).
+3. Al terminar: commit + `git push -u origin feat/aws/fase-N`.
+4. La rama queda lista para PR a `Update2` (o a `main` si se decide).
+5. `Update2` siempre queda limpio y sincronizado.
+
+Fases ya versionadas: `feat/aws/fase-1` (Fundamentos), `feat/aws/fase-2` (Datos y red).
+
 ## Fase 1 (completada ✅) — Fundamentos
 
 | Módulo (slug) | Archivo | Secciones temario | Ejercicios |
