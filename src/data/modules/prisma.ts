@@ -57,6 +57,15 @@ Analogía cotidiana:
 const user = await prisma.user.findUnique({ where: { id: 1 } });`,
     inputs: { INPUT_1: "Schema", INPUT_2: "Migrate", INPUT_3: "Client" },
     completeCode: "Schema | Migrate | Client — las tres piezas del ORM",
+    format: "context-dropdown",
+    contextDropdown: {
+      prompt: "Elige el nombre de cada pieza de Prisma según su responsabilidad.",
+      options: {
+        INPUT_1: ["Schema", "Migrate", "Client"],
+        INPUT_2: ["Schema", "Migrate", "Client"],
+        INPUT_3: ["Schema", "Migrate", "Client"],
+      }
+    }
   },
 
   {
@@ -106,6 +115,14 @@ npm install -D prisma
 npx prisma [INPUT_2]`,
     inputs: { INPUT_1: "client", INPUT_2: "init" },
     completeCode: "npm install @prisma/client && npx prisma init",
+    format: "context-dropdown",
+    contextDropdown: {
+      prompt: "Elige el paquete y el comando correctos para arrancar un proyecto Prisma.",
+      options: {
+        INPUT_1: ["client", "prisma", "schema"],
+        INPUT_2: ["init", "generate", "migrate"],
+      }
+    }
   },
 
   {
@@ -158,8 +175,16 @@ datasource db {
       INPUT_2: "generated",
       INPUT_3: "postgresql",
     },
-    completeCode:
-      'generator provider = "prisma-client" + output + datasource postgresql',
+    completeCode: "generator client { provider = \"prisma-client\" output = \"./generated\" } | datasource db { provider = \"postgresql\" }",
+    format: "context-dropdown",
+    contextDropdown: {
+      prompt: "Elige el provider del generator, el output y el provider de la base de datos.",
+      options: {
+        INPUT_1: ["prisma-client", "prisma-client-js", "postgresql"],
+        INPUT_2: ["generated", "src", "node_modules"],
+        INPUT_3: ["postgresql", "mysql", "sqlite"],
+      }
+    }
   },
 
   {

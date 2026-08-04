@@ -26,20 +26,25 @@ const BASH_EXERCISES_RAW: Exercise[] = [
     tags: ["pwd", "ls", "cd"],
     fileName: "terminal", completed: false,
     explanationText: "La terminal es como explorar una casa a oscuras: pwd te dice en qué cuarto estás, ls enciende la luz para ver qué hay, y cd es caminar a otra habitación.",
-    codeSnippet:
-`# ¿En qué carpeta estoy?
-[INPUT_1]
-
-# Listar el contenido del directorio actual
-[INPUT_2]
-
-# Entrar a la carpeta "proyectos"
-cd [INPUT_3]
-
-# Subir un nivel (a la carpeta padre)
-cd [INPUT_4]`,
-    inputs: { INPUT_1: "pwd", INPUT_2: "ls", INPUT_3: "proyectos", INPUT_4: ".." },
+    codeSnippet: "# Empareja cada comando con su efecto",
+    inputs: {},
     completeCode: "pwd | ls | cd proyectos | cd ..",
+    format: "matching",
+    matching: {
+      prompt: "Conecta cada comando de navegación con lo que hace.",
+      definitions: [
+        "Sube un nivel, a la carpeta padre.",
+        "Lista el contenido del directorio actual.",
+        "Muestra en qué carpeta estás (print working directory).",
+        "Entra a la carpeta llamada 'proyectos'.",
+      ],
+      pairs: [
+        { id: "pwd", term: "pwd", definition: "Muestra en qué carpeta estás (print working directory)." },
+        { id: "ls", term: "ls", definition: "Lista el contenido del directorio actual." },
+        { id: "cd-proyectos", term: "cd proyectos", definition: "Entra a la carpeta llamada 'proyectos'." },
+        { id: "cd-dotdot", term: "cd ..", definition: "Sube un nivel, a la carpeta padre." },
+      ]
+    }
   },
   {
     id: 2, title: "ls a fondo: -l, -a, -h", stars: 1, category: "NAVEGACION",
@@ -71,20 +76,25 @@ ls [INPUT_3]`,
     tags: ["mkdir", "touch", "rm"],
     fileName: "terminal", completed: false,
     explanationText: "mkdir es construir un cajón, touch es meter una hoja en blanco, rm es la trituradora: en la terminal no hay papelera de reciclaje, lo borrado se va para siempre.",
-    codeSnippet:
-`# Crear la carpeta "src"
-[INPUT_1] src
-
-# Crear un archivo vacío index.js
-[INPUT_2] index.js
-
-# Borrar el archivo index.js
-[INPUT_3] index.js
-
-# Borrar la carpeta "src" (estando vacía)
-rmdir src`,
-    inputs: { INPUT_1: "mkdir", INPUT_2: "touch", INPUT_3: "rm" },
+    codeSnippet: "# Empareja cada comando con su efecto",
+    inputs: {},
     completeCode: "mkdir src | touch index.js | rm index.js | rmdir src",
+    format: "matching",
+    matching: {
+      prompt: "Conecta cada comando con lo que hace con archivos y carpetas.",
+      definitions: [
+        "Borra la carpeta 'src' solo si está vacía.",
+        "Crea un archivo vacío llamado index.js.",
+        "Crea una carpeta llamada 'src'.",
+        "Borra el archivo index.js para siempre (sin papelera).",
+      ],
+      pairs: [
+        { id: "mkdir", term: "mkdir src", definition: "Crea una carpeta llamada 'src'." },
+        { id: "touch", term: "touch index.js", definition: "Crea un archivo vacío llamado index.js." },
+        { id: "rm", term: "rm index.js", definition: "Borra el archivo index.js para siempre (sin papelera)." },
+        { id: "rmdir", term: "rmdir src", definition: "Borra la carpeta 'src' solo si está vacía." },
+      ]
+    }
   },
   {
     id: 4, title: "Copiar y mover: cp, mv", stars: 1, category: "NAVEGACION",
@@ -135,20 +145,25 @@ rm [INPUT_3] node_modules`,
     tags: ["cat", "head", "tail", "tail -f"],
     fileName: "terminal", completed: false,
     explanationText: "cat vacía el archivo entero de golpe; head/tail leen solo los extremos (como hojear el inicio o el final de un libro); tail -f es una cámara en directo del log.",
-    codeSnippet:
-`# Mostrar el archivo completo
-[INPUT_1] README.md
-
-# Solo las primeras 20 líneas
-head [INPUT_2] 20 README.md
-
-# Solo las últimas 20 líneas
-[INPUT_3] -n 20 app.log
-
-# Seguir el log EN VIVO mientras se escribe
-tail [INPUT_4] app.log`,
-    inputs: { INPUT_1: "cat", INPUT_2: "-n", INPUT_3: "tail", INPUT_4: ["-f", "--follow"] },
+    codeSnippet: "# Empareja cada comando con su efecto",
+    inputs: {},
     completeCode: "cat | head -n 20 | tail -n 20 | tail -f (streaming)",
+    format: "matching",
+    matching: {
+      prompt: "Conecta cada forma de leer un archivo con lo que muestra.",
+      definitions: [
+        "Sigue el archivo EN VIVO mientras se escribe.",
+        "Muestra solo las primeras 20 líneas.",
+        "Muestra el contenido completo del archivo.",
+        "Muestra solo las últimas 20 líneas.",
+      ],
+      pairs: [
+        { id: "cat", term: "cat README.md", definition: "Muestra el contenido completo del archivo." },
+        { id: "head", term: "head -n 20 app.log", definition: "Muestra solo las primeras 20 líneas." },
+        { id: "tail", term: "tail -n 20 app.log", definition: "Muestra solo las últimas 20 líneas." },
+        { id: "tailf", term: "tail -f app.log", definition: "Sigue el archivo EN VIVO mientras se escribe." },
+      ]
+    }
   },
 
   // ─── BUSQUEDA: find / grep ────────────────────────────────────────────────
@@ -245,17 +260,19 @@ grep -r --[INPUT_3]="*.ts" "TODO" .`,
     tags: ["pipe", "|", "grep"],
     fileName: "terminal", completed: false,
     explanationText: "El pipe es una cinta transportadora: la fábrica A escupe piezas y la fábrica B las recibe sin que toquen el suelo. Así combinas comandos pequeños en herramientas potentes.",
-    codeSnippet:
-`# Contar cuántos archivos hay en la carpeta
-ls [INPUT_1] wc -l
-
-# Filtrar la salida de un log dejando solo las líneas con "ERROR"
-cat app.log [INPUT_2] grep "ERROR"
-
-# Encadenar: de todos los procesos, los que contienen "node"
-ps aux | [INPUT_3] node`,
-    inputs: { INPUT_1: "|", INPUT_2: "|", INPUT_3: "grep" },
-    completeCode: "ls | wc -l | cat x | grep | ps aux | grep node",
+    codeSnippet: "# Ordena la cadena: leer el log → filtrar ERRORES → contarlos",
+    inputs: {},
+    completeCode: "cat app.log | grep \"ERROR\" | wc -l",
+    format: "ordering",
+    ordering: {
+      prompt: "Reconstruye la cadena de pipes que cuenta cuántas líneas con ERROR hay en app.log.",
+      steps: [
+        { id: "wc", label: "wc -l" },
+        { id: "grep", label: "grep \"ERROR\"" },
+        { id: "cat", label: "cat app.log" },
+      ],
+      correctOrder: ["cat", "grep", "wc"],
+    }
   },
   {
     id: 12, title: "Contar y ordenar: sort + uniq", stars: 3, category: "PIPES",
