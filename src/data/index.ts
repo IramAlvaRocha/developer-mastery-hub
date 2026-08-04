@@ -13,6 +13,12 @@ import { AWS_ROUTE53_EXERCISES } from "./modules/aws-route53";
 import { AWS_VPC_EXERCISES } from "./modules/aws-vpc";
 import { AWS_CLOUDFRONT_EXERCISES } from "./modules/aws-cloudfront";
 
+// ─── AWS (Fase 3: Serverless) ──────────────────────────────────────────────
+import { AWS_LAMBDA_EXERCISES } from "./modules/aws-lambda";
+import { AWS_DYNAMODB_EXERCISES } from "./modules/aws-dynamodb";
+import { AWS_API_GATEWAY_EXERCISES } from "./modules/aws-api-gateway";
+import { AWS_MESSAGING_EXERCISES } from "./modules/aws-messaging";
+
 // ─── Buenas Practicas (NUEVOS) ──────────────────────────────────────────────
 import { DOTNET_BEST_PRACTICES } from "./modules/dotnet-best-practices";
 import { REACT_BEST_PRACTICES } from "./modules/react-best-practices";
@@ -161,6 +167,50 @@ export const ALL_MODULES: Module[] = [
     desc: "CDN global con edge locations, orígenes S3/ALB con OAI, caché y TTL, behaviors, invalidaciones, restricción geográfica, URLs firmadas y logs.",
     topics: ["CDN", "Edge", "Cache", "OAI", "Signed URLs"],
     exercises: AWS_CLOUDFRONT_EXERCISES,
+  },
+  {
+    key: "aws-lambda",
+    name: "AWS: Lambda",
+    icon: "⚡",
+    badge: "Serverless",
+    color: "amber",
+    group: "AWS",
+    desc: "Serverless: invocaciones síncronas/asíncronas, DLQ, mapeo de fuentes, permisos, capas, concurrencia, versiones y alias, Lambda@Edge, VPC y límites.",
+    topics: ["Lambda", "Serverless", "DLQ", "Layers", "Concurrency"],
+    exercises: AWS_LAMBDA_EXERCISES,
+  },
+  {
+    key: "aws-dynamodb",
+    name: "AWS: DynamoDB",
+    icon: "📄",
+    badge: "NoSQL",
+    color: "purple",
+    group: "AWS",
+    desc: "Tablas, claves primarias, WCU/RCU, GSI/LSI, PartiQL, bloqueo optimista, DAX, Streams, TTL, transacciones y patrones con S3.",
+    topics: ["DynamoDB", "WCU/RCU", "GSI", "DAX", "Streams"],
+    exercises: AWS_DYNAMODB_EXERCISES,
+  },
+  {
+    key: "aws-api-gateway",
+    name: "AWS: API Gateway",
+    icon: "🚪",
+    badge: "API",
+    color: "rose",
+    group: "AWS",
+    desc: "REST/HTTP/WebSocket APIs, etapas y deploys, canary, integraciones, caché, planes de uso, claves API, CORS, autenticación y arquitectura completa.",
+    topics: ["REST", "WebSocket", "Stages", "CORS", "Auth"],
+    exercises: AWS_API_GATEWAY_EXERCISES,
+  },
+  {
+    key: "aws-messaging",
+    name: "AWS: SQS, SNS & Kinesis",
+    icon: "📬",
+    badge: "Messaging",
+    color: "sky",
+    group: "AWS",
+    desc: "SQS (estándar/FIFO, visibilidad, DLQ, retraso), SNS pub/sub, patrón Fan Out, Kinesis (streams, Firehose), EventBridge y comparativas.",
+    topics: ["SQS", "SNS", "Kinesis", "FIFO", "EventBridge"],
+    exercises: AWS_MESSAGING_EXERCISES,
   },
 
   // ─── BUENAS PRACTICAS (orden back -> front) ───────────────────────────────
