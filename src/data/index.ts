@@ -7,6 +7,12 @@ import { AWS_STORAGE_EXERCISES } from "./modules/aws-storage";
 import { AWS_ELB_ASG_EXERCISES } from "./modules/aws-elb-asg";
 import { AWS_S3_EXERCISES } from "./modules/aws-s3";
 
+// ─── AWS (Fase 2: Datos y red) ─────────────────────────────────────────────
+import { AWS_RDS_EXERCISES } from "./modules/aws-rds";
+import { AWS_ROUTE53_EXERCISES } from "./modules/aws-route53";
+import { AWS_VPC_EXERCISES } from "./modules/aws-vpc";
+import { AWS_CLOUDFRONT_EXERCISES } from "./modules/aws-cloudfront";
+
 // ─── Buenas Practicas (NUEVOS) ──────────────────────────────────────────────
 import { DOTNET_BEST_PRACTICES } from "./modules/dotnet-best-practices";
 import { REACT_BEST_PRACTICES } from "./modules/react-best-practices";
@@ -111,6 +117,50 @@ export const ALL_MODULES: Module[] = [
     desc: "Buckets y objetos, políticas de bucket, website hosting, versionado, replicación, clases de almacenamiento, ciclo de vida, cifrado, CORS y URLs pre-firmadas.",
     topics: ["S3", "Buckets", "Glacier", "Cifrado", "Presigned"],
     exercises: AWS_S3_EXERCISES,
+  },
+  {
+    key: "aws-rds",
+    name: "AWS: RDS, Aurora & ElastiCache",
+    icon: "🗄️",
+    badge: "Databases",
+    color: "sky",
+    group: "AWS",
+    desc: "RDS gestionado, réplicas de lectura vs Multi-AZ, Aurora, RDS Proxy, ElastiCache (Redis/Memcached) y MemoryDB.",
+    topics: ["RDS", "Aurora", "Read Replicas", "ElastiCache", "Proxy"],
+    exercises: AWS_RDS_EXERCISES,
+  },
+  {
+    key: "aws-route53",
+    name: "AWS: Route 53 & DNS",
+    icon: "🧭",
+    badge: "Networking",
+    color: "green",
+    group: "AWS",
+    desc: "DNS, registros A/CNAME/Alias, TTL, zonas alojadas y políticas de enrutamiento (simple, ponderada, latencia, failover, geolocalización, geoproximidad, multivalor).",
+    topics: ["DNS", "Alias", "TTL", "Routing", "Health Checks"],
+    exercises: AWS_ROUTE53_EXERCISES,
+  },
+  {
+    key: "aws-vpc",
+    name: "AWS: VPC Fundamentos",
+    icon: "🕸️",
+    badge: "Networking",
+    color: "cyan",
+    group: "AWS",
+    desc: "VPC y CIDR, subredes públicas/privadas, Internet Gateway, NAT, route tables, Security Groups vs NACL, Flow Logs, Peering, Endpoints y arquitectura de tres niveles.",
+    topics: ["VPC", "Subnets", "IGW", "NAT", "NACL"],
+    exercises: AWS_VPC_EXERCISES,
+  },
+  {
+    key: "aws-cloudfront",
+    name: "AWS: CloudFront CDN",
+    icon: "🌐",
+    badge: "CDN",
+    color: "blue",
+    group: "AWS",
+    desc: "CDN global con edge locations, orígenes S3/ALB con OAI, caché y TTL, behaviors, invalidaciones, restricción geográfica, URLs firmadas y logs.",
+    topics: ["CDN", "Edge", "Cache", "OAI", "Signed URLs"],
+    exercises: AWS_CLOUDFRONT_EXERCISES,
   },
 
   // ─── BUENAS PRACTICAS (orden back -> front) ───────────────────────────────

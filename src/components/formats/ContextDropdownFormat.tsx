@@ -15,13 +15,14 @@ export default function ContextDropdownFormat({
 }: FormatBaseProps) {
   const dropdown = exercise.contextDropdown;
   if (!dropdown) return null;
+  const dropdownOptions = dropdown.options;
 
   const lang = detectLang(exercise.fileName);
   const lines = exercise.codeSnippet.split("\n");
 
   function renderSelect(num: string, lineIdx: number) {
     const key = `INPUT_${num}`;
-    const choices = dropdown.options[key] ?? [];
+    const choices = dropdownOptions[key] ?? [];
     const expected = primaryAnswer(exercise.inputs[key] ?? "");
     const value = userAnswers[key] ?? "";
     const invalid = incorrectKeys.has(key);
