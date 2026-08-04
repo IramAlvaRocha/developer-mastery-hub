@@ -258,6 +258,8 @@ export default function ModuleMenu({
         duration: 0.6,
         stagger: 0.08,
         ease: "power3.out",
+        overwrite: "auto",
+        clearProps: "all",
       });
       gsap.from(".metric-tile", {
         y: 16,
@@ -266,9 +268,18 @@ export default function ModuleMenu({
         stagger: 0.05,
         delay: 0.25,
         ease: "power2.out",
+        overwrite: "auto",
+        clearProps: "all",
       });
     }, root);
-    return () => ctx.revert();
+    return () => {
+      ctx.revert();
+      root.querySelectorAll<HTMLElement>("[data-reveal], .metric-tile").forEach(
+        (el) => {
+          gsap.set(el, { clearProps: "all" });
+        },
+      );
+    };
   }, []);
 
   // Re-anima la grid al cambiar de ruta.
@@ -276,15 +287,27 @@ export default function ModuleMenu({
     const root = rootRef.current;
     if (!root || prefersReducedMotion()) return;
     const ctx = gsap.context(() => {
-      gsap.from(".course-card", {
-        y: 24,
-        opacity: 0,
-        duration: 0.5,
-        stagger: 0.06,
-        ease: "power2.out",
-      });
+      gsap.fromTo(
+        ".course-card",
+        { y: 24, opacity: 0 },
+        {
+          y: 0,
+          opacity: 1,
+          duration: 0.5,
+          stagger: 0.06,
+          ease: "power2.out",
+          overwrite: "auto",
+          clearProps: "all",
+        },
+      );
     }, root);
-    return () => ctx.revert();
+    return () => {
+      ctx.revert();
+      // Nunca dejar cards invisibles si el tween se cancela a medias.
+      root.querySelectorAll<HTMLElement>(".course-card").forEach((el) => {
+        gsap.set(el, { clearProps: "all" });
+      });
+    };
   }, [selectedGroup]);
 
   // Escape cierra el drawer de rutas.
