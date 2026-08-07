@@ -23,6 +23,10 @@ import { AWS_MESSAGING_EXERCISES } from "./modules/aws-messaging";
 import { DOTNET_BEST_PRACTICES } from "./modules/dotnet-best-practices";
 import { REACT_BEST_PRACTICES } from "./modules/react-best-practices";
 
+// ─── SOLID & Clean Code ─────────────────────────────────────────────────────
+import { CLEAN_CODE_EXERCISES } from "./modules/clean-code";
+import { SOLID_EXERCISES } from "./modules/solid";
+
 // ─── Catalogo migrado ───────────────────────────────────────────────────────
 import {
   VUE_EXERCISES,
@@ -235,6 +239,30 @@ export const ALL_MODULES: Module[] = [
     desc: "Estructura feature-based, Axios + interceptores, TanStack Query, unwrap del ApiResponse, Zod, Zustand y auth — espejo del back.",
     topics: ["TanStack", "Axios", "unwrap", "Zod", "Zustand"],
     exercises: REACT_BEST_PRACTICES,
+  },
+
+  // ─── SOLID & CLEAN CODE ──────────────────────────────────────────────────
+  {
+    key: "clean-code",
+    name: "Clean Code & Deuda Técnica",
+    icon: "🧹",
+    badge: "Calidad",
+    color: "violet",
+    group: "SOLID & Clean Code",
+    desc: "Deuda técnica y sus 4 cuadrantes, nombres expresivos y según tipo de dato, clases, funciones con intención y el principio DRY — con la voz del curso DevTalles.",
+    topics: ["Deuda técnica", "Nombres", "Funciones", "DRY", "Refactorización"],
+    exercises: CLEAN_CODE_EXERCISES,
+  },
+  {
+    key: "solid",
+    name: "Principios SOLID",
+    icon: "🧱",
+    badge: "Arquitectura",
+    color: "indigo",
+    group: "SOLID & Clean Code",
+    desc: "STUPID y code smells, acoplamiento/cohesión, y los 5 principios: SRP, OCP, LSP, ISP y DIP — con detección de violaciones y refactorizaciones reales.",
+    topics: ["SRP", "OCP", "LSP", "ISP", "DIP", "STUPID"],
+    exercises: SOLID_EXERCISES,
   },
 
   // ─── FRONTEND (ecosistema Vue) ────────────────────────────────────────────
