@@ -40,6 +40,7 @@ export default function MasteryHub() {
     setLastVisited,
     exportProgress,
     importProgress,
+    lastPersistError,
   } = useProgress(moduleKeys);
   const { toasts, showToast, dismissToast } = useToasts();
 
@@ -90,6 +91,21 @@ export default function MasteryHub() {
       /* ignore */
     }
   }, [sidebarCollapsed]);
+
+  // Aviso "Suscríbete para guardar tu progreso": se muestra una vez por cada
+  // bloqueo de RLS al persistir un ejercicio completado (Fase 5).
+  const lastPersistErrorShownRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (
+      lastPersistError &&
+      lastPersistError !== lastPersistErrorShownRef.current
+    ) {
+      lastPersistErrorShownRef.current = lastPersistError;
+      showToast("info", lastPersistError);
+    } else if (!lastPersistError) {
+      lastPersistErrorShownRef.current = null;
+    }
+  }, [lastPersistError, showToast]);
 
   const currentModule = useMemo(
     () => modules.find((m) => m.key === currentSubject),
