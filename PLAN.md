@@ -15,7 +15,9 @@
 | Registro | **Abierto** (cualquiera puede crear cuenta; admin se promueve manualmente) |
 | Catálogo | Dos vistas: **"Catálogo"** (todos los módulos publicados) y **"Mis Cursos"** (solo los suscritos) |
 | Suscripción | El usuario **se inscribe** a un curso desde el catálogo; solo los suscritos aparecen en "Mis Cursos" |
-| Progreso | Migración automática de `localStorage` → Supabase en el primer login |
+| Acceso a ejercicios | **Cualquier autenticado puede hacer ejercicios** de módulos publicados, sin suscripción |
+| Guardar progreso | **Solo los suscritos guardan progreso en la nube.** Sin suscripción, se practica en sesión/local pero nada se persiste en Supabase (RLS bloquea el INSERT en `progress`) |
+| Migración local→nube | Al **suscribirse** a un módulo, el progreso local de ese módulo (`mastery_hub_<key>`) se migra/mergea a Supabase |
 | Despliegue | Indefinido → arquitectura **estática + cliente Supabase**, desplegable en cualquier hosting |
 
 ## Arquitectura
@@ -99,8 +101,9 @@ de muestra), y la app de aprendizaje (`/aprender`) exige sesión.
 - `enrolled_at` timestamptz DEFAULT now()
 - `last_opened_at` timestamptz NULL (para ordenar "Continuar")
 - **Propósito:** alimenta la vista **"Mis Cursos"** (solo módulos suscritos) y permite
-  un botón "Suscribirse" en el catálogo. El progreso (`progress`) solo aplica a cursos
-  con enrollment (RLS valida la suscripción antes de escribir progreso).
+  un botón "Suscribirse" en el catálogo. **El progreso solo se guarda si hay
+  enrollment**: la RLS de `progress` exige `EXISTS (enrollment del usuario+curso)` en
+  su policy de INSERT/UPDATE. Quien practica sin suscribirse NO guarda progreso.
 
 ### `progress` — ejercicios completados por usuario
 - PK compuesta: `(user_id, module_key, exercise_ref)`
@@ -108,6 +111,9 @@ de muestra), y la app de aprendizaje (`/aprender`) exige sesión.
 - `module_key` text FK → `modules(key)` ON DELETE CASCADE
 - `exercise_ref` int NOT NULL (se valida que exista en `exercises` con ese `module_key`)
 - `completed_at` timestamptz DEFAULT now()
+- **RLS escritura:** solo si `auth.uid() = user_id` **Y** existe
+  `(auth.uid(), module_key)` en `enrollments`. Sin enrollment → el INSERT falla con
+  RLS (el cliente lo maneja mostrando "Suscríbete para guardar tu progreso").
 
 ### `user_state` — "Continuar donde lo dejaste"
 - `user_id` uuid PK → `profiles(id)` ON DELETE CASCADE
@@ -120,7 +126,8 @@ de muestra), y la app de aprendizaje (`/aprender`) exige sesión.
 | `profiles` | el usuario solo su fila; admin todas | el usuario solo su fila |
 | `modules` / `exercises` | autenticados donde `is_published = true`; admin ve todo | solo `admin` (INSERT/UPDATE/DELETE) |
 | `enrollments` | solo el propio usuario | solo el propio usuario (insert/delete de su fila) |
-| `progress` / `user_state` | solo el propio usuario | solo el propio usuario; `progress` además exige enrollment del curso (o policy con subquery) |
+| `progress` | solo el propio usuario | solo el propio usuario **Y solo si existe enrollment** de `(auth.uid(), module_key)`; sin suscripción el INSERT/UPDATE/DELETE falla |
+| `user_state` | solo el propio usuario | solo el propio usuario |
 
 ## 2. Autenticación
 
@@ -151,10 +158,17 @@ botón "Continuar".
 - **Mis Cursos**: filtro/pestaña en `ModuleMenu` (nuevo `ROUTE_CATEGORIES` id
   `"mis-cursos"`) que solo renderiza los módulos en `enrollments` del usuario.
   Si no hay suscripciones, muestra un empty state con CTA al catálogo.
+- **Práctica sin suscripción (DECISIÓN validada):** cualquier autenticado puede abrir
+  un módulo publicado y hacer ejercicios **sin suscribirse**. En ese caso:
+  - La corrección (correcto/incorrecto) funciona igual.
+  - El progreso **NO** se guarda en la nube (la RLS de `progress` lo bloquea).
+  - La UI muestra un aviso persistente: **"Suscríbete para guardar tu progreso"**,
+    con botón que inserta el `enrollment` y, a partir de ahí, el progreso se guarda.
+  - Si el usuario no suscrito ya tenía progreso local (`mastery_hub_<key>`), al
+    suscribirse ese progreso se migra/mergea a Supabase.
 - **Datos**: `useEnrollments()` (hook nuevo) — carga los `module_key` suscritos,
   con caché en localStorage y SWR (mismo patrón que `useModules`). `markComplete`
-  de un ejercicio verifica que exista enrollment; si no, la inserta automáticamente
-  (comportamiento sin fricción).
+  solo escribe en `progress` si existe enrollment; si no, no persiste y la UI avisa.
 - **Orden**: "Mis Cursos" ordena por `last_opened_at` DESC (lo más reciente primero).
 
 ## 4. Migración de contenido (`scripts/seed.ts`)
@@ -179,10 +193,14 @@ botón "Continuar".
   `markComplete`, `getPercent`, `lastVisited`, `setLastVisited`, export/import) pero
   leyendo/escribiendo `progress` y `user_state` en Supabase. UI optimista + sync en
   segundo plano.
-- **Migración de progreso local (NUEVO en v2):** en el primer login, si existe
-  progreso en `localStorage` (`mastery_hub_*`), se hace **upsert merge** en
-  `progress` (unión de IDs completados) y se marca el flag de migrado. Así los
-  usuarios actuales no pierden su avance. Export/import JSON se conserva como backup.
+- **Regla de suscripción (DECISIÓN validada):** `markComplete` solo persiste en
+  Supabase si existe el enrollment. Si el usuario no está suscrito, `markComplete`
+  actualiza el estado en memoria (y opcionalmente en localStorage efímero) pero **no**
+  inserta en `progress`; la UI muestra "Suscríbete para guardar tu progreso".
+- **Migración local→nube por módulo (v2):** cuando el usuario se **suscribe** a un
+  módulo, si existe progreso local de ese módulo (`mastery_hub_<key>`), se hace
+  **upsert merge** en `progress` (unión de IDs completados). Así el usuario conserva
+  lo que practicó antes de suscribirse. Export/import JSON se conserva como backup.
 - **Formato de respuestas (v2):** el cliente serializa/deserializa `format_payload`
   a los tipos de `src/lib/types.ts` (`PredictionExercise`, `OrderingExercise`, etc.).
   `evaluateFormat` no cambia.
