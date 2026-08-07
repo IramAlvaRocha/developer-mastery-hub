@@ -9,7 +9,6 @@ import {
   readUrlLocation,
   type UrlLocation,
 } from "@/lib/urlLocation";
-import { readAuthProfile, type AuthProfile } from "@/lib/authStub";
 import { getModuleFormats } from "@/lib/formatMeta";
 import type { ExerciseFormat } from "@/lib/types";
 import ModuleMenu from "./ModuleMenu";
@@ -17,6 +16,7 @@ import ExerciseSidebar from "./ExerciseSidebar";
 import ExerciseWorkspace from "./ExerciseWorkspace";
 import SettingsModal from "./SettingsModal";
 import Toasts from "./Toasts";
+import UserMenu from "./auth/UserMenu";
 
 const MODULE_KEYS = ALL_MODULES.map((m) => m.key);
 const ROUTES_SIDEBAR_KEY = "dmh-routes-sidebar-open";
@@ -26,7 +26,6 @@ export default function MasteryHub() {
   const [currentSubject, setCurrentSubject] = useState<string>("menu");
   const [activeIndex, setActiveIndex] = useState(0);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [profile, setProfile] = useState<AuthProfile | null>(null);
   const [routesSidebarOpen, setRoutesSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [formatFilter, setFormatFilter] = useState<ExerciseFormat | null>(null);
@@ -48,10 +47,6 @@ export default function MasteryHub() {
   const closeMobileMenu = useCallback(() => {
     mobileMenuButtonRef.current?.focus();
     setIsMobileMenuOpen(false);
-  }, []);
-
-  useEffect(() => {
-    setProfile(readAuthProfile());
   }, []);
 
   useEffect(() => {
@@ -340,24 +335,7 @@ export default function MasteryHub() {
           >
             ⚙
           </button>
-          {profile && (
-            <span
-              className="hidden h-9 w-9 items-center justify-center overflow-hidden rounded-full border border-line sm:inline-flex"
-              title={profile.name}
-            >
-              {profile.avatarDataUrl ? (
-                <img
-                  src={profile.avatarDataUrl}
-                  alt=""
-                  className="h-full w-full object-cover"
-                />
-              ) : (
-                <span className="text-xs font-bold text-lilac">
-                  {profile.name.slice(0, 1).toUpperCase()}
-                </span>
-              )}
-            </span>
-          )}
+          <UserMenu />
           {inModule && (
             <button
               ref={mobileMenuButtonRef}

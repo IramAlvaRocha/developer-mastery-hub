@@ -1,10 +1,6 @@
-import { useEffect, useRef, useState } from "react";
-import {
-  clearAuthProfile,
-  readAuthProfile,
-  saveAuthProfile,
-  type AuthProfile,
-} from "@/lib/authStub";
+import { useEffect, useRef } from "react";
+import { useAuth } from "@/lib/auth/AuthContext";
+import { saveAuthProfile } from "@/lib/authStub";
 
 interface Props {
   open: boolean;
@@ -21,15 +17,10 @@ export default function SettingsModal({
   onExportProgress,
   onImportProgress,
 }: Props) {
-  const [profile, setProfile] = useState<AuthProfile | null>(null);
+  const { user, isDemoMode, refreshProfile, signOut } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const titleRef = useRef<HTMLHeadingElement>(null);
-
-  useEffect(() => {
-    if (!open) return;
-    setProfile(readAuthProfile());
-  }, [open]);
 
   useEffect(() => {
     if (!open) return;
@@ -83,13 +74,16 @@ export default function SettingsModal({
     reader.readAsText(file);
   }
 
-  function handleAvatar(file: File | null) {
-    if (!file || !profile) return;
+  async function handleAvatar(file: File | null) {
+    if (!file || !user || !isDemoMode) return;
     const reader = new FileReader();
-    reader.onload = () => {
-      const next = { ...profile, avatarDataUrl: String(reader.result) };
-      saveAuthProfile(next);
-      setProfile(next);
+    reader.onload = async () => {
+      saveAuthProfile({
+        email: user.email,
+        name: user.displayName ?? (user.email.split("@")[0] || "Dev"),
+        avatarDataUrl: String(reader.result),
+      });
+      await refreshProfile();
       onToast("success", "Imagen de perfil actualizada (local).");
     };
     reader.readAsDataURL(file);
@@ -128,57 +122,79 @@ export default function SettingsModal({
         <div className="space-y-5">
           <section className="rounded-[24px] border border-line bg-surface-2 p-4">
             <p className="mb-3 text-sm font-semibold text-ink">Perfil</p>
-            {profile ? (
+            {user ? (
               <div className="flex items-center gap-3">
                 <button
                   type="button"
-                  className="relative h-14 w-14 overflow-hidden rounded-full border border-line"
-                  onClick={() => avatarInputRef.current?.click()}
-                  aria-label="Cambiar imagen"
+                  className="relative h-14 w-14 shrink-0 overflow-hidden rounded-full border border-line disabled:opacity-100"
+                  onClick={() => {
+                    if (isDemoMode) avatarInputRef.current?.click();
+                  }}
+                  disabled={!isDemoMode}
+                  aria-label={
+                    isDemoMode
+                      ? "Cambiar imagen de perfil"
+                      : "Avatar de perfil"
+                  }
+                  title={
+                    isDemoMode ? "Cambiar imagen (solo modo demo)" : undefined
+                  }
                 >
-                  {profile.avatarDataUrl ? (
+                  {user.avatarUrl ? (
                     <img
-                      src={profile.avatarDataUrl}
+                      src={user.avatarUrl}
                       alt=""
                       className="h-full w-full object-cover"
                     />
                   ) : (
                     <span className="flex h-full w-full items-center justify-center bg-lilac/20 text-lg font-bold text-lilac">
-                      {profile.name.slice(0, 1).toUpperCase()}
+                      {(user.displayName ?? user.email ?? "?").slice(0, 1).toUpperCase()}
                     </span>
                   )}
                 </button>
                 <div className="min-w-0 flex-1">
-                  <p className="truncate font-medium text-ink">{profile.name}</p>
-                  <p className="truncate text-xs text-muted">{profile.email}</p>
-                  <button
-                    type="button"
-                    className="mt-1 text-xs text-danger"
-                    onClick={() => {
-                      clearAuthProfile();
-                      setProfile(null);
-                      onToast("info", "Sesión local cerrada.");
-                    }}
-                  >
-                    Cerrar sesión demo
-                  </button>
+                  <p className="truncate font-medium text-ink">
+                    {user.displayName ?? user.email}
+                  </p>
+                  <p className="truncate text-xs text-muted">{user.email}</p>
+                  {isDemoMode ? (
+                    <p className="mt-1 text-[12px] text-lilac">
+                      Avatar editable solo en modo demo.
+                    </p>
+                  ) : (
+                    <p className="mt-1 text-[12px] text-faint">
+                      Avatar y nombre los gestiona tu cuenta Supabase.
+                    </p>
+                  )}
                 </div>
                 <input
                   ref={avatarInputRef}
                   type="file"
                   accept="image/*"
                   className="hidden"
-                  onChange={(e) => handleAvatar(e.target.files?.[0] ?? null)}
+                  onChange={(e) => void handleAvatar(e.target.files?.[0] ?? null)}
                 />
               </div>
             ) : (
               <p className="text-sm leading-relaxed text-muted">
-                Aún no hay sesión. Usa Login / Registro en la{" "}
-                <a href="/" className="text-brand">
-                  landing
+                Aún no hay sesión.{" "}
+                <a href="/login" className="text-brand">
+                  Inicia sesión
                 </a>{" "}
-                (UI lista; auth real después).
+                para ver tu perfil.
               </p>
+            )}
+            {user && (
+              <button
+                type="button"
+                className="mt-3 w-full rounded-full border border-line px-3 py-2 text-sm font-semibold text-danger transition-colors hover:bg-danger/10"
+                onClick={() => {
+                  void signOut();
+                  onToast("info", "Sesión cerrada.");
+                }}
+              >
+                Cerrar sesión
+              </button>
             )}
           </section>
 

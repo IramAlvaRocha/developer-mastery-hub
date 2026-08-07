@@ -1,0 +1,18 @@
+---
+import Base from "@/layouts/Base.astro";
+import LoginForm from "@/components/auth/LoginForm.tsx";
+---
+
+<Base title="Iniciar sesión — Developer Mastery Hub" bodyClass="is-landing">
+  <main class="flex min-h-screen items-center justify-center px-4 py-12">
+    <div class="w-full max-w-md">
+      <a
+        href="/"
+        class="mb-5 inline-flex items-center gap-1.5 text-sm font-semibold text-muted transition-colors hover:text-cream"
+      >
+        ← Volver al inicio
+      </a>
+      <LoginForm client:load />
+    </div>
+  </main>
+</Base>
