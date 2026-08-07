@@ -4,13 +4,13 @@ interface Props {
 
 export default function TheoryTab({ theory }: Props) {
   return (
-    <div className="space-y-4">
-      <div className="rounded-[28px] border border-line bg-surface p-5 sm:p-6">
+    <div className="mx-auto max-w-prose">
+      <div className="rounded-[24px] bg-canvas/40 p-4 sm:p-6">
         <p className="section-eyebrow text-cream">{"{ Teoría }"}</p>
-        <h4 className="mt-1 text-lg font-semibold tracking-tight text-cream">
+        <h2 className="mt-1 text-lg font-semibold tracking-tight text-cream sm:text-xl">
           Fundamentos teóricos
-        </h4>
-        <div className="mt-4 space-y-3 rounded-[24px] border border-line bg-canvas p-4 text-[14px] leading-relaxed text-muted sm:p-5">
+        </h2>
+        <div className="mt-4 space-y-3 text-[14px] leading-relaxed text-muted">
           <Markdown source={theory} />
         </div>
       </div>

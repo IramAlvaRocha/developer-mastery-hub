@@ -31,7 +31,13 @@ function LoginFormInner({
 }: LoginFormProps) {
   const { user, loading, isDemoMode, signInWithEmail, signInWithGoogle, signUp } =
     useAuth();
-  const [mode, setMode] = useState<"login" | "register">("login");
+  const [mode, setMode] = useState<"login" | "register">(() => {
+    // Soporta /login?mode=register para que el landing enlace directo al registro.
+    if (typeof window === "undefined") return "login";
+    return new URLSearchParams(window.location.search).get("mode") === "register"
+      ? "register"
+      : "login";
+  });
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);

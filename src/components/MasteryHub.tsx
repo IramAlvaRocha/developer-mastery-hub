@@ -324,7 +324,7 @@ export default function MasteryHub() {
             <span className="block truncate text-base font-semibold tracking-tight text-cream sm:text-lg">
               Mastery Hub
             </span>
-            <p className="truncate text-[12px] font-medium text-muted">
+            <p className="hidden truncate text-[12px] font-medium text-muted sm:block">
               {inModule
                 ? currentModule.name
                 : "Catálogo · práctica guiada"}
@@ -362,8 +362,14 @@ export default function MasteryHub() {
             </a>
           )}
           {inModule && (
-            <button onClick={goBackToMenu} className="btn-secondary !min-h-10 !px-4 !text-sm">
-              ← Menú
+            <button
+              onClick={goBackToMenu}
+              className="btn-secondary !min-h-10 !px-0 !text-sm max-sm:h-11 max-sm:w-11 sm:!px-5"
+              aria-label="Volver al menú"
+              title="Volver al menú"
+            >
+              ←
+              <span className="hidden sm:inline"> Menú</span>
             </button>
           )}
           {inModule && (
@@ -459,6 +465,7 @@ export default function MasteryHub() {
                 <ExerciseWorkspace
                   key={`${currentModule.key}-${activeExercise.id}`}
                   exercise={activeExercise}
+                  moduleKey={currentModule.key}
                   moduleName={currentModule.name}
                   color={color}
                   alreadyCompleted={isCompleted(
