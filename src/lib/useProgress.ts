@@ -48,8 +48,7 @@ export function useProgress(moduleKeys: string[]) {
   useEffect(() => {
     setProgress(readAll(moduleKeys));
     setLastVisitedState(readLast());
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [moduleKeys]);
 
   const setLastVisited = useCallback((key: string, index: number) => {
     setLastVisitedState((prev) => {

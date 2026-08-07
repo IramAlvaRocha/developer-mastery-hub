@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ALL_MODULES, MODULE_GROUPS } from "@/data";
+import { useModules } from "@/lib/useModules";
 import { runViewTransition } from "@/lib/viewTransition";
 import { useProgress } from "@/lib/useProgress";
 import { useToasts } from "@/lib/useToasts";
@@ -18,11 +18,13 @@ import SettingsModal from "./SettingsModal";
 import Toasts from "./Toasts";
 import UserMenu from "./auth/UserMenu";
 
-const MODULE_KEYS = ALL_MODULES.map((m) => m.key);
 const ROUTES_SIDEBAR_KEY = "dmh-routes-sidebar-open";
 const EXERCISE_SIDEBAR_KEY = "dmh-exercise-sidebar-collapsed";
 
 export default function MasteryHub() {
+  const { modules, groups, loading } = useModules();
+  const moduleKeys = useMemo(() => modules.map((m) => m.key), [modules]);
+
   const [currentSubject, setCurrentSubject] = useState<string>("menu");
   const [activeIndex, setActiveIndex] = useState(0);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -38,7 +40,7 @@ export default function MasteryHub() {
     setLastVisited,
     exportProgress,
     importProgress,
-  } = useProgress(MODULE_KEYS);
+  } = useProgress(moduleKeys);
   const { toasts, showToast, dismissToast } = useToasts();
 
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -90,8 +92,8 @@ export default function MasteryHub() {
   }, [sidebarCollapsed]);
 
   const currentModule = useMemo(
-    () => ALL_MODULES.find((m) => m.key === currentSubject),
-    [currentSubject],
+    () => modules.find((m) => m.key === currentSubject),
+    [modules, currentSubject],
   );
 
   const exercises = currentModule?.exercises ?? [];
@@ -177,7 +179,7 @@ export default function MasteryHub() {
 
   const applyUrlToState = useCallback(() => {
     const { module, exerciseId } = readUrlLocation();
-    const mod = module ? ALL_MODULES.find((m) => m.key === module) : undefined;
+    const mod = module ? modules.find((m) => m.key === module) : undefined;
     if (!mod) {
       setCurrentSubject("menu");
       setActiveIndex(0);
@@ -191,7 +193,7 @@ export default function MasteryHub() {
     setCurrentSubject(mod.key);
     setActiveIndex(index);
     setFormatFilter(null);
-  }, []);
+  }, [modules]);
 
   useEffect(() => {
     applyUrlToState();
@@ -352,17 +354,21 @@ export default function MasteryHub() {
 
       <div className="relative flex flex-1 overflow-hidden">
         {!inModule ? (
-          <ModuleMenu
-            modules={ALL_MODULES}
-            groups={MODULE_GROUPS}
-            getPercent={getPercent}
-            onStart={startSubject}
-            onResume={(key, index) => startSubject(key, index)}
-            lastVisited={lastVisited}
-            onToast={showToast}
-            sidebarOpen={routesSidebarOpen}
-            onSidebarOpenChange={setRoutesSidebarOpen}
-          />
+          loading && modules.length === 0 ? (
+            <ModuleMenuSkeleton />
+          ) : (
+            <ModuleMenu
+              modules={modules}
+              groups={groups}
+              getPercent={getPercent}
+              onStart={startSubject}
+              onResume={(key, index) => startSubject(key, index)}
+              lastVisited={lastVisited}
+              onToast={showToast}
+              sidebarOpen={routesSidebarOpen}
+              onSidebarOpenChange={setRoutesSidebarOpen}
+            />
+          )
         ) : (
           <>
             <ExerciseSidebar
@@ -429,6 +435,41 @@ export default function MasteryHub() {
 
       <Toasts toasts={toasts} onDismiss={dismissToast} />
     </div>
+  );
+}
+
+/** Skeleton del catálogo mientras la capa de datos carga por primera vez. */
+function ModuleMenuSkeleton() {
+  return (
+    <main
+      className="relative flex flex-1 flex-col overflow-y-auto"
+      aria-busy="true"
+      aria-label="Cargando catálogo"
+    >
+      <div className="mx-auto w-full max-w-[1280px] px-4 py-10 sm:px-6 sm:py-14">
+        <div className="shimmer-loading h-4 w-28 rounded-full" />
+        <div className="shimmer-loading mt-3 h-10 w-72 max-w-full rounded-2xl" />
+        <div className="shimmer-loading mt-3 h-5 w-[480px] max-w-full rounded-full" />
+        <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-6">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="shimmer-loading h-24 rounded-[24px]" />
+          ))}
+        </div>
+        <div className="mt-8 flex gap-2 overflow-x-auto pb-1">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div
+              key={i}
+              className="shimmer-loading h-9 w-32 shrink-0 rounded-full"
+            />
+          ))}
+        </div>
+        <div className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="shimmer-loading h-40 rounded-[28px]" />
+          ))}
+        </div>
+      </div>
+    </main>
   );
 }
 
