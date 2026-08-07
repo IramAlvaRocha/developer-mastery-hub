@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useModules } from "@/lib/useModules";
 import { runViewTransition } from "@/lib/viewTransition";
 import { useProgress } from "@/lib/useProgress";
+import { useEnrollments } from "@/lib/useEnrollments";
 import { useToasts } from "@/lib/useToasts";
 import {
   buildSearch,
@@ -41,7 +42,16 @@ export default function MasteryHub() {
     exportProgress,
     importProgress,
     lastPersistError,
+    syncModule,
   } = useProgress(moduleKeys);
+  const {
+    enrolledKeys,
+    loading: enrollmentsLoading,
+    lastOpenedAt,
+    enroll,
+    unenroll,
+    touchLastOpened,
+  } = useEnrollments(syncModule);
   const { toasts, showToast, dismissToast } = useToasts();
 
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -110,6 +120,30 @@ export default function MasteryHub() {
   const currentModule = useMemo(
     () => modules.find((m) => m.key === currentSubject),
     [modules, currentSubject],
+  );
+
+  const handleEnroll = useCallback(
+    async (key: string) => {
+      const ok = await enroll(key);
+      if (ok) {
+        showToast("success", "Curso añadido a Mis Cursos");
+      } else {
+        showToast("error", "No se pudo suscribir al curso");
+      }
+    },
+    [enroll, showToast],
+  );
+
+  const handleUnenroll = useCallback(
+    async (key: string) => {
+      const ok = await unenroll(key);
+      if (ok) {
+        showToast("info", "Suscripción eliminada");
+      } else {
+        showToast("error", "No se pudo quitar la suscripción");
+      }
+    },
+    [unenroll, showToast],
   );
 
   const exercises = currentModule?.exercises ?? [];
@@ -190,8 +224,20 @@ export default function MasteryHub() {
         currentModule.key,
         realIndex >= 0 ? realIndex : activeIndex,
       );
+      // Marca el curso como reciente en "Mis Cursos" (solo si está suscrito).
+      if (enrolledKeys.includes(currentModule.key)) {
+        void touchLastOpened(currentModule.key);
+      }
     }
-  }, [currentSubject, activeIndex, currentModule, filteredExercises, setLastVisited]);
+  }, [
+    currentSubject,
+    activeIndex,
+    currentModule,
+    filteredExercises,
+    setLastVisited,
+    enrolledKeys,
+    touchLastOpened,
+  ]);
 
   const applyUrlToState = useCallback(() => {
     const { module, exerciseId } = readUrlLocation();
@@ -383,6 +429,11 @@ export default function MasteryHub() {
               onToast={showToast}
               sidebarOpen={routesSidebarOpen}
               onSidebarOpenChange={setRoutesSidebarOpen}
+              enrolledKeys={enrolledKeys}
+              enrollmentsLoading={enrollmentsLoading}
+              lastOpenedAt={lastOpenedAt}
+              onEnroll={handleEnroll}
+              onUnenroll={handleUnenroll}
             />
           )
         ) : (
