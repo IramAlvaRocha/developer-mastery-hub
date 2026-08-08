@@ -1,10 +1,8 @@
 ---
 import Base from "@/layouts/Base.astro";
-import MasteryHub from "@/components/MasteryHub.tsx";
+import AuthGateApp from "@/components/auth/AuthGateApp.tsx";
 ---
 
 <Base title="Aprender — Developer Mastery Hub" bodyClass="is-app h-full">
-  <div class="h-full">
-    <MasteryHub client:load />
-  </div>
+  <AuthGateApp client:load />
 </Base>

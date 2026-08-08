@@ -10,6 +10,7 @@ import {
 } from "@/lib/useReducedMotion";
 import { runViewTransition } from "@/lib/viewTransition";
 import ModuleCard from "./ModuleCard";
+import MyCourses from "./MyCourses";
 
 interface Props {
   modules: Module[];
@@ -21,6 +22,11 @@ interface Props {
   onToast: (type: "success" | "error" | "info", message: string) => void;
   sidebarOpen: boolean;
   onSidebarOpenChange: (open: boolean) => void;
+  enrolledKeys?: string[];
+  enrollmentsLoading?: boolean;
+  lastOpenedAt?: Record<string, string>;
+  onEnroll?: (key: string) => Promise<void> | void;
+  onUnenroll?: (key: string) => Promise<void> | void;
 }
 
 const GROUP_META: Record<string, { icon: string; color: string; desc: string }> =
@@ -79,6 +85,11 @@ const GROUP_META: Record<string, { icon: string; color: string; desc: string }> 
 
 const ROUTE_CATEGORIES: { id: string; label: string; groups: string[] }[] = [
   {
+    id: "mis-cursos",
+    label: "Mis Cursos",
+    groups: [],
+  },
+  {
     id: "practices",
     label: "Buenas prácticas",
     groups: ["Buenas Practicas"],
@@ -120,6 +131,11 @@ export default function ModuleMenu({
   lastVisited,
   sidebarOpen,
   onSidebarOpenChange,
+  enrolledKeys = [],
+  enrollmentsLoading = false,
+  lastOpenedAt,
+  onEnroll,
+  onUnenroll,
 }: Props) {
   const rootRef = useRef<HTMLElement>(null);
 
@@ -133,14 +149,18 @@ export default function ModuleMenu({
 
   const categories = useMemo(
     () =>
-      ROUTE_CATEGORIES.map((cat) => ({
-        ...cat,
-        groups: cat.groups.filter((g) => availableGroups.includes(g)),
-      })).filter((cat) => cat.groups.length > 0),
+      ROUTE_CATEGORIES.map((cat) => {
+        if (cat.id === "mis-cursos") return { ...cat, groups: [] };
+        return {
+          ...cat,
+          groups: cat.groups.filter((g) => availableGroups.includes(g)),
+        };
+      }).filter((cat) => cat.id === "mis-cursos" || cat.groups.length > 0),
     [availableGroups],
   );
 
   const [selectedGroup, setSelectedGroup] = useState<string | null>(null);
+  const [view, setView] = useState<"catalog" | "my-courses">("catalog");
   const [openCats, setOpenCats] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
@@ -180,7 +200,14 @@ export default function ModuleMenu({
   }
 
   function selectGroup(group: string) {
-    runViewTransition(() => setSelectedGroup(group));
+    runViewTransition(() => {
+      setSelectedGroup(group);
+      setView("catalog");
+    });
+  }
+
+  function selectMyCourses() {
+    runViewTransition(() => setView("my-courses"));
   }
 
   function toggleCat(id: string) {
@@ -328,98 +355,139 @@ export default function ModuleMenu({
       className="relative flex flex-1 flex-col overflow-y-auto"
     >
       <div className="mx-auto w-full max-w-[1280px] px-4 py-10 sm:px-6 sm:py-14">
-        {/* Hero del catálogo */}
-        <section data-reveal>
-          <p className="section-eyebrow text-cream">{"{ Catálogo }"}</p>
-          <h1 className="mt-2 text-[clamp(2.2rem,5vw,3.6rem)] font-semibold leading-[1.05] tracking-tight text-cream">
-            Elige tu ruta
-          </h1>
-          <p className="mt-3 max-w-2xl text-[clamp(1rem,2.2vw,1.2rem)] leading-relaxed text-muted">
-            Rutas por disciplina. Elige un grupo y entra a sus cursos.
-          </p>
-        </section>
+        {view === "catalog" ? (
+          <>
+            {/* Hero del catálogo */}
+            <section data-reveal>
+              <p className="section-eyebrow text-cream">{"{ Catálogo }"}</p>
+              <h1 className="mt-2 text-[clamp(2.2rem,5vw,3.6rem)] font-semibold leading-[1.05] tracking-tight text-cream">
+                Elige tu ruta
+              </h1>
+              <p className="mt-3 max-w-2xl text-[clamp(1rem,2.2vw,1.2rem)] leading-relaxed text-muted">
+                Rutas por disciplina. Elige un grupo y entra a sus cursos.
+              </p>
+            </section>
 
-        {/* Continuar donde lo dejaste */}
-        {resume && (
-          <div data-reveal className="mt-8 sm:mt-10">
-            <ResumeCard
-              icon={resume.mod.icon}
-              color={resume.mod.color}
-              moduleName={resume.mod.name}
-              exerciseTitle={resume.ex.title}
-              stepLabel={
-                resume.ex.step != null
-                  ? `Paso ${resume.ex.step}`
-                  : `Ejercicio ${resume.index + 1}`
-              }
-              total={resume.mod.exercises.length}
-              percent={resume.percent}
-              onResume={() => onResume(resume.mod.key, resume.index)}
-            />
-          </div>
+            {/* Continuar donde lo dejaste */}
+            {resume && (
+              <div data-reveal className="mt-8 sm:mt-10">
+                <ResumeCard
+                  icon={resume.mod.icon}
+                  color={resume.mod.color}
+                  moduleName={resume.mod.name}
+                  exerciseTitle={resume.ex.title}
+                  stepLabel={
+                    resume.ex.step != null
+                      ? `Paso ${resume.ex.step}`
+                      : `Ejercicio ${resume.index + 1}`
+                  }
+                  total={resume.mod.exercises.length}
+                  percent={resume.percent}
+                  onResume={() => onResume(resume.mod.key, resume.index)}
+                />
+              </div>
+            )}
+
+            {/* Métricas */}
+            <section className="mt-8 sm:mt-10">
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-6">
+                <MetricTile
+                  label="Progreso"
+                  value={metrics.overall}
+                  suffix="%"
+                  accent
+                />
+                <MetricTile label="Rutas" value={metrics.totalGroups} />
+                <MetricTile label="Cursos" value={metrics.totalModules} />
+                <MetricTile
+                  label="Ejercicios"
+                  value={metrics.doneExercises}
+                  hint={`de ${metrics.totalExercises}`}
+                />
+                <MetricTile
+                  label="Completados"
+                  value={metrics.modulesDone}
+                  hint="cursos"
+                />
+                <MetricTile
+                  label="En curso"
+                  value={metrics.modulesInProgress}
+                  hint="cursos"
+                />
+              </div>
+            </section>
+
+            {/* Empty state: primer uso */}
+            {metrics.overall === 0 && !resume && firstModule && (
+              <div
+                data-reveal
+                className="mt-6 rounded-[28px] border border-brand/25 bg-brand/5 p-6 sm:p-8"
+              >
+                <p className="section-eyebrow text-cream">
+                  {"{ Empieza por aquí }"}
+                </p>
+                <h2 className="mt-2 text-xl font-semibold text-cream sm:text-2xl">
+                  Todo listo para tu primer desafío
+                </h2>
+                <p className="mt-2 max-w-xl text-sm leading-relaxed text-muted">
+                  Abre el primer módulo de una ruta para empezar con la teoría y
+                  tu primer desafío guiado.
+                </p>
+                <button
+                  type="button"
+                  className="btn-filled-soft mt-5 !min-h-11"
+                  onClick={() => onStart(firstModule.key)}
+                >
+                  Empezar {firstModule.name} →
+                </button>
+              </div>
+            )}
+          </>
+        ) : (
+          <MyCourses
+            modules={modules}
+            enrolledKeys={enrolledKeys}
+            lastVisited={lastVisited}
+            lastOpenedAt={lastOpenedAt}
+            getPercent={getPercent}
+            onStart={onStart}
+            onResume={onResume}
+            onExploreCatalog={() => {
+              setView("catalog");
+              setSelectedGroup(availableGroups[0] ?? null);
+            }}
+            onUnenroll={onUnenroll}
+            loading={enrollmentsLoading}
+          />
         )}
 
-        {/* Métricas */}
-        <section className="mt-8 sm:mt-10">
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-6">
-            <MetricTile
-              label="Progreso"
-              value={metrics.overall}
-              suffix="%"
-              accent
-            />
-            <MetricTile label="Rutas" value={metrics.totalGroups} />
-            <MetricTile label="Cursos" value={metrics.totalModules} />
-            <MetricTile
-              label="Ejercicios"
-              value={metrics.doneExercises}
-              hint={`de ${metrics.totalExercises}`}
-            />
-            <MetricTile
-              label="Completados"
-              value={metrics.modulesDone}
-              hint="cursos"
-            />
-            <MetricTile
-              label="En curso"
-              value={metrics.modulesInProgress}
-              hint="cursos"
-            />
-          </div>
-        </section>
-
-        {/* Empty state: primer uso */}
-        {metrics.overall === 0 && !resume && firstModule && (
-          <div
-            data-reveal
-            className="mt-6 rounded-[28px] border border-brand/25 bg-brand/5 p-6 sm:p-8"
-          >
-            <p className="section-eyebrow text-cream">
-              {"{ Empieza por aquí }"}
-            </p>
-            <h2 className="mt-2 text-xl font-semibold text-cream sm:text-2xl">
-              Todo listo para tu primer desafío
-            </h2>
-            <p className="mt-2 max-w-xl text-sm leading-relaxed text-muted">
-              Abre el primer módulo de una ruta para empezar con la teoría y tu
-              primer desafío guiado.
-            </p>
-            <button
-              type="button"
-              className="btn-filled-soft mt-5 !min-h-11"
-              onClick={() => onStart(firstModule.key)}
-            >
-              Empezar {firstModule.name} →
-            </button>
-          </div>
-        )}
-
-        {/* Filtro por ruta */}
+        {/* Filtro por ruta (visible en ambas vistas) */}
         <div
-          className="mt-8 flex gap-2 overflow-x-auto pb-1 sm:flex-wrap sm:overflow-visible sm:pb-0"
+          className={`flex gap-2 overflow-x-auto pb-1 sm:flex-wrap sm:overflow-visible sm:pb-0 ${
+            view === "catalog" ? "mt-8" : "mt-10"
+          }`}
           role="group"
-          aria-label="Filtrar catálogo por ruta"
+          aria-label="Navegar entre Mis Cursos y las rutas del catálogo"
         >
+          <button
+            type="button"
+            onClick={selectMyCourses}
+            aria-pressed={view === "my-courses"}
+            style={moduleColorStyle("sky")}
+            className={`inline-flex shrink-0 items-center gap-2 rounded-full border px-3.5 py-2 text-[12px] font-semibold transition-colors ${
+              view === "my-courses"
+                ? "mod-chip-active"
+                : "border-line bg-canvas/40 text-muted hover:text-cream"
+            }`}
+          >
+            <span aria-hidden>🎓</span>
+            <span>Mis Cursos</span>
+            {view === "my-courses" && (
+              <span className="mod-text text-[11px] font-bold">
+                · {enrolledKeys.length}
+              </span>
+            )}
+          </button>
           {availableGroups.map((group) => {
             const meta = GROUP_META[group] ?? {
               icon: "📦",
@@ -428,7 +496,7 @@ export default function ModuleMenu({
             };
             const row = metrics.routeRows.find((r) => r.group === group);
             const progress = row?.progress ?? 0;
-            const active = selectedGroup === group;
+            const active = view === "catalog" && selectedGroup === group;
             return (
               <button
                 key={group}
@@ -455,7 +523,7 @@ export default function ModuleMenu({
         </div>
 
         {/* Cursos del grupo seleccionado */}
-        {selectedRoute && activeMeta && (
+        {view === "catalog" && selectedRoute && activeMeta && (
           <section className="mt-8">
             <div
               className="flex items-end justify-between gap-3"
@@ -482,6 +550,10 @@ export default function ModuleMenu({
                   progress={getPercent(mod.key, mod.exercises.length)}
                   index={i}
                   onStart={onStart}
+                  showEnroll
+                  enrolled={enrolledKeys.includes(mod.key)}
+                  onEnroll={onEnroll}
+                  onUnenroll={onUnenroll}
                 />
               ))}
             </div>
@@ -543,6 +615,45 @@ export default function ModuleMenu({
 
           <nav className="min-h-0 flex-1 overflow-y-auto px-4 py-5">
             {categories.map((cat) => {
+              if (cat.id === "mis-cursos") {
+                const active = view === "my-courses";
+                return (
+                  <div key={cat.id} className="mb-5">
+                    <button
+                      type="button"
+                      onClick={selectMyCourses}
+                      className={`flex w-full items-center gap-3 rounded-[16px] py-2.5 pl-2 pr-2 text-left transition-colors ${
+                        active
+                          ? "mod-sidebar-item-active"
+                          : "text-muted hover:bg-elevated/60 hover:text-cream"
+                      }`}
+                    >
+                      <span
+                        className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[9px] font-bold ${
+                          active
+                            ? "bg-brand text-canvas"
+                            : "border border-line bg-surface-2"
+                        }`}
+                        aria-hidden
+                      >
+                        {active ? "★" : null}
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span
+                          className={`block text-sm leading-snug ${
+                            active ? "font-semibold text-cream" : "font-medium"
+                          }`}
+                        >
+                          {cat.label}
+                        </span>
+                        <span className="mt-0.5 block text-[11px] text-faint">
+                          {enrolledKeys.length} cursos
+                        </span>
+                      </span>
+                    </button>
+                  </div>
+                );
+              }
               const expanded = openCats[cat.id] ?? false;
               return (
                 <div key={cat.id} className="mb-5">
@@ -571,7 +682,8 @@ export default function ModuleMenu({
                           (r) => r.group === group,
                         );
                         const progress = row?.progress ?? 0;
-                        const active = selectedGroup === group;
+                        const active =
+                          view === "catalog" && selectedGroup === group;
                         const done = progress >= 100;
                         const inProgress = progress > 0 && progress < 100;
                         const isLast = gi === cat.groups.length - 1;

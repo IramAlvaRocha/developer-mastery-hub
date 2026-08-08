@@ -1,89 +1,196 @@
 # Developer Mastery Hub 🎓
 
-Plataforma interactiva de preparación para entrevistas de **Desarrollador Full Stack Senior**, construida con **Astro 5 + React 19 (islas) + Tailwind CSS 4**.
+Plataforma interactiva de preparación para entrevistas de **Desarrollador Full Stack Senior**: ejercicios de código con inputs inline, formatos interactivos y terminal simulada, con progreso en la nube y panel de administración.
 
-## Buenas Prácticas (NUEVO — en orden de construcción back → front)
+**Stack:** Astro 6 (estático) · React 19 (islas) · Tailwind CSS 4 · TypeScript strict · GSAP · Supabase (Postgres + Auth + RLS).
 
-Dos módulos secuenciados como "Paso N", basados en un proyecto real (`ProductosCrud`) y su `AGENTS.md`:
+## Características
 
-| Módulo | Pasos | Temas Clave |
-|--------|-------|-------------|
-| 🟣 .NET Backend Best Practices | 22 | Clean Architecture, DDD, CQRS (MediatR), Result Pattern, Value Objects, Domain Events, EF Core (Query Filters, RowVersion), FluentValidation, Exception Middleware, JWT, permisos por claims, Rate Limiting |
-| ⚛️ React Frontend Best Practices | 22 | Estructura feature-based, env/alias, contrato `ApiResponse<T>`, Axios + interceptores (401/429), `TokenManager` en memoria, `unwrap`/`ApiError`, `ApiService` base, TanStack Query (keys, `useQuery`/`useMutation`), `AuthContext`, rutas protegidas, React Hook Form + Zod, Zustand, React Compiler |
+- **Desafíos de código con inputs inline**: rellena campos `[INPUT_N]` directamente sobre el snippet.
+- **Formatos interactivos**: predicción de salida, ordenar pasos, elegir snippet, bug hunt, emparejar, completar huecos y Verdadero/Falso.
+- **Terminal simulada (Bash)**: practica comandos en un shell con filesystem en memoria.
+- **Teoría por ejercicio**: referencia y pistas contextuales para no quedarte bloqueado.
+- **Módulos por pasos**: los módulos de buenas prácticas se recorren como "Paso 1 → Paso N" (back → front).
+- **Mis Cursos**: suscríbete a módulos, consulta tu progreso y continúa donde lo dejaste.
+- **Progreso en la nube**: localStorage como capa local optimista (scoped por usuario) + Supabase como fuente de verdad con sesión. *Cualquier autenticado practica, pero solo los suscritos guardan progreso en la nube*.
+- **Panel admin `/admin`**: CRUD de módulos y ejercicios, publicar/despublicar, reordenar y editar payloads de formatos como JSON. Solo accesible con rol `admin`.
+- **Seguridad**: Row Level Security en las 6 tablas, roles verificados en servidor y validación de `console.*` en hooks de git.
 
-Cada paso del back tiene su contraparte en el front (ej. `ApiResponse` en C# ↔ interface en TS, Rate Limiting ↔ retry de 429).
+## Stack tecnológico
 
-## Catálogo completo (migrado a Astro)
+| Capa | Tecnología |
+|------|------------|
+| Framework | Astro 6 (output estático) |
+| UI | React 19 con islas `client:load` (`@astrojs/react`) |
+| Estilos | Tailwind CSS 4 vía PostCSS (`@tailwindcss/postcss` + `postcss.config.mjs`) + tokens de `src/styles/global.css` |
+| Tipado | TypeScript strict (alias `@/*`) |
+| Animación | GSAP |
+| Backend | Supabase: Postgres, Auth (email/pass + Google), PostgREST, Row Level Security |
+| Package manager | Bun |
 
-| Grupo | Módulos |
-|-------|---------|
-| Buenas Practicas | .NET Backend Best Practices, React Frontend Best Practices |
-| Frontend | Vue 3, Pinia, Nuxt 3, Vuetify 3 |
-| Backend & Datos | Node.js Setup, Node.js, Prisma ORM, EF Core, SQL Server |
-| Cloud & Serverless | Google Cloud Platform, Firebase |
-| DevOps & Git | Git & DevOps, Git Flow/Monorepos, Bash & Terminal, Docker & K8s |
-| APIs & Seguridad | Axios/Fetch, Security (OAuth2/JWT), Vulnerabilidades & Secure Coding (OWASP Top 10) |
-| Testing & Calidad | Vitest, E2E (Cypress/Playwright), Calidad de Código |
-| TypeScript | Primitivos, Interfaces, Types & Unions, Funciones, Generics, Enums, Discriminated Unions, Utility Types |
-| TS Arrays | map, filter, reduce, find, some/every, sort, extras |
+## Arquitectura
 
-## Funcionalidades
+```
+┌─ Cliente (Astro estático) ────────────────────────────────┐
+│  /           Landing público                              │
+│  /login      LoginForm (email/contraseña + Google)        │
+│  /aprender   AuthGate + MasteryHub (islas React)          │
+│  /admin      AdminGateApp (requiere rol admin)            │
+└───────────────────────────────┬───────────────────────────┘
+                    HTTPS (anon key + sesión JWT)
+┌─ Supabase ────────────────────▼───────────────────────────┐
+│  Postgres + RLS + Auth + PostgREST                        │
+│  profiles · modules · exercises · enrollments             │
+│  progress · user_state                                    │
+└────────────────────────────────────────────────────────────┘
+```
 
-- **Desafíos de código con inputs inline**: rellena campos `[INPUT_N]` directamente sobre el snippet (reemplaza los antiguos comentarios `/*respuesta*/`).
-- **Terminal simulada (Bash)**: practica comandos en un shell con filesystem en memoria antes de completar el desafío.
-- **Teoría por ejercicio (Bash)**: referencia de comandos y pistas contextuales para no quedarte bloqueado.
-- **Secuencia por pasos**: los módulos de buenas prácticas se recorren como "Paso 1 → Paso 22".
-- **Mentoría con Gemini IA**: análisis técnico y pistas contextuales por ejercicio.
-- **Chatbot de IA**: preguntas libres sobre el módulo activo.
-- **Progreso persistente**: guardado automático en `localStorage`.
+El sitio es 100 % estático: Astro genera `dist/` y cada página monta sus islas React, que hablan con Supabase a través de la anon key. La RLS garantiza que cada usuario solo lee/escribe sus propios datos y que solo los admins modifican el catálogo.
 
-## Cómo Usar
+## Requisitos
+
+- **Bun** (>= 1.x) como package manager (también es compatible con Node 18+).
+- **Cuenta de Supabase gratuita** (https://supabase.com) para el backend (auth, datos y RLS).
+
+## Configuración (Setup)
+
+### 1. Instalar dependencias
 
 ```bash
-bun install      # instala dependencias con Bun
-bun run dev      # servidor de desarrollo (http://localhost:4321)
-bun run build    # build estático a /dist
-bun run preview  # previsualiza el build
+bun install
 ```
 
-### 🔒 Seguridad y Git Hooks (Validación Nativa)
+### 2. Crear el proyecto en Supabase
 
-Para evitar que se realicen commits con `console.log` o código de depuración en la consola, se cuenta con una validación nativa sin librerías externas.
-
-Para activar los hooks automáticamente en tu entorno Git, ejecuta:
+Crea un proyecto nuevo en el dashboard de Supabase y copia sus credenciales a un archivo `.env` en la raíz del repo:
 
 ```bash
-git config core.hooksPath .githooks
+PUBLIC_SUPABASE_URL=https://<proyecto>.supabase.co
+PUBLIC_SUPABASE_ANON_KEY=eyJ...   # anon key (pública; es segura gracias a la RLS)
+SUPABASE_SERVICE_ROLE_KEY=eyJ...  # SOLO para scripts/seed.ts — nunca la expongas en el frontend
 ```
 
-También puedes ejecutar la verificación de seguridad manualmente en cualquier momento:
+- `<proyecto>` es el subdominio de tu proyecto de Supabase (reemplázalo por el tuyo).
+- El archivo `.env` **no se commitea** (está en `.gitignore`).
+- Sin `.env`: la app corre en **modo demo** en desarrollo (permite probar la UI sin credenciales) y en producción muestra *"Servicio no configurado"* (fail-closed, no permite el acceso).
+
+### 3. Aplicar el esquema de la base de datos
+
+Abre el **SQL Editor** del dashboard de Supabase y ejecuta el contenido de `supabase/schema.sql`. Es idempotente y crea:
+
+- Las 6 tablas: `profiles`, `modules`, `exercises`, `enrollments`, `progress`, `user_state`.
+- Las políticas de **Row Level Security** (lectura de catálogo publicado, datos propios, escrituras solo con suscripción, admin total).
+- El trigger que crea el perfil automáticamente al registrarse un usuario.
+
+### 4. Configurar Google OAuth (opcional pero recomendado)
+
+1. Crea unas credenciales OAuth en Google Cloud Console (tipo "Web application").
+2. En Supabase: **Dashboard → Authentication → Providers → Google**, pega el Client ID y Client Secret.
+3. La redirect URL es `https://<proyecto>.supabase.co/auth/v1/callback`.
+
+### 5. Sembrar el catálogo
 
 ```bash
-bun run security-check
+bun run seed
 ```
 
-(Opcional) Configura tu API Key de Gemini en el menú para habilitar las funciones de IA.
+Migra los **55 módulos / ~790 ejercicios** de `src/data/` a las tablas `modules` y `exercises` (upsert idempotente, seguro para re-ejecutar; usa la `SUPABASE_SERVICE_ROLE_KEY` para saltarse la RLS).
 
-## Stack Tecnológico
+### 6. Promover la primera cuenta a admin
 
-- **Astro 5** (output estático, islas de React)
-- **React 19** (`@astrojs/react`)
-- **Tailwind CSS 4** (`@tailwindcss/vite`)
-- **TypeScript** (strict, alias `@/*`)
-- **Gemini AI API** (opcional, para mentoría)
+Regístrate desde `/login` y, una vez creado el perfil, promueve tu cuenta en el SQL Editor:
 
-## Estructura
+```sql
+UPDATE profiles SET role = 'admin' WHERE email = 'tu@email.com';
+```
+
+El panel `/admin` (CRUD de módulos y ejercicios) solo es visible para usuarios con `role = 'admin'`.
+
+### 7. Arrancar
+
+```bash
+bun run dev      # http://localhost:4321
+```
+
+## Scripts útiles
+
+| Comando | Descripción |
+|---------|-------------|
+| `bun run dev` | Servidor de desarrollo (`http://localhost:4321`) |
+| `bun run build` | Build estático a `dist/` |
+| `bun run preview` | Previsualiza el build estático |
+| `bun run seed` | Migra el catálogo a Supabase (upsert idempotente) |
+| `bun run security-check` | Valida que los archivos staged no contengan `console.*` |
+| `bun run setup:hooks` | Activa los git hooks (`git config core.hooksPath .githooks`) |
+| `bun scripts/security-check.js --all` | Valida todos los archivos fuente (excluye `src/data/`, contenido educativo) |
+
+## Seguridad
+
+- **Row Level Security** en las 6 tablas: el rol `anon` no tiene acceso a los datos y cada usuario autenticado solo ve/edita sus propias filas (o el catálogo publicado).
+- **Regla de suscripción**: la RLS de `progress` exige un `enrollments` activo para INSERT/UPDATE — el cliente lo refleja con el aviso *"Suscríbete para guardar tu progreso"*.
+- **Admin real en servidor**: `public.is_admin()` es una función `SECURITY DEFINER` que lee el rol desde `profiles`; el role del cliente nunca se toma de `localStorage` (se resuelve siempre vía el perfil).
+- **Service role key** solo se usa en `scripts/seed.ts` (nunca en el frontend).
+- **Headers y CSP** en producción (`public/_headers` + meta CSP en `Base.astro`).
+- **Sin `console.log`**: hook de git + `bun run security-check` rechazan commits con llamadas a consola.
+- Recomendado: `bun audit` periódico para revisar vulnerabilidades de dependencias.
+
+## Estructura del proyecto
 
 ```
+postcss.config.mjs      # Tailwind 4 vía PostCSS (compatible Astro 6 / Vite 8)
+supabase/
+  schema.sql            # tablas + RLS + trigger de perfil (idempotente)
+scripts/
+  seed.ts               # migra el catálogo a Supabase
+  security-check.js     # valida ausencia de console.*
 src/
-  components/   # islas React (MasteryHub, ExerciseWorkspace, ChallengeCode, ...)
   data/
-    index.ts    # ALL_MODULES + MODULE_GROUPS
-    modules/    # un archivo .ts por módulo de ejercicios
-  layouts/      # Base.astro
-  lib/          # types, gemini, useProgress, useToasts
-  pages/        # index.astro
-  styles/       # global.css (Tailwind + safelist de colores)
+    index.ts            # ALL_MODULES + MODULE_GROUPS (55 módulos)
+    modules/            # un archivo .ts por módulo (ejercicios legacy y con formato)
+    enrichment/         # módulos de buenas prácticas (back/front, por pasos)
+  lib/
+    supabase.ts         # cliente singleton + isSupabaseConfigured
+    auth/               # AuthContext, authStub
+    useModules.ts       # catálogo (estático/demo o Supabase)
+    useProgress.ts      # progreso local (scoped) + nube + migración al suscribirse
+    useEnrollments.ts   # Mis Cursos
+    useAdmin.ts         # CRUD admin de módulos/ejercicios
+    formatMeta.ts       # metadatos de formatos interactivos
+    formatValidation.ts # validación de payloads de formato (panel admin)
+    shell/simulator.ts  # terminal simulada (Bash)
+    types.ts            # Exercise, Module, formatos
+    answers.ts          # ExpectedAnswer e isAnswerCorrect
+    moduleColors.ts     # paleta por módulo (.mod-*)
+    useToasts.ts        # sistema de toasts
+    useReducedMotion.ts # fallback prefers-reduced-motion
+  components/
+    auth/               # AuthGate, AuthGateApp, LoginForm, UserMenu
+    admin/              # AdminPanel, ModuleEditor, ExerciseEditor, ConfirmDialog…
+    formats/            # renderers de formatos interactivos
+    landing/            # Hero, TechMarquee, LearnSections…
+    MasteryHub.tsx      # shell de /aprender
+    ExerciseWorkspace.tsx  # workspace del ejercicio
+    ChallengeCode.tsx   # código con inputs inline [INPUT_N]
+    SimulatedTerminal.tsx  # terminal simulada
+    TheoryTab.tsx       # teoría del ejercicio
+    SolutionPanel.tsx   # solución / código de referencia
+    ExerciseSidebar.tsx # lista de ejercicios del módulo
+    ModuleMenu.tsx      # catálogo de módulos
+    ModuleCard.tsx      # tarjeta de módulo
+    MyCourses.tsx       # Mis Cursos
+    SettingsModal.tsx   # ajustes (perfil, exportar/importar progreso)
+    Toasts.tsx          # notificaciones
+  pages/
+    index.astro         # landing público
+    login.astro         # LoginForm
+    aprender.astro      # AuthGateApp (MasteryHub)
+    admin.astro         # AdminGateApp (requireAdmin)
+  layouts/
+    Base.astro          # shell HTML + tokens + CSP (prod)
+  styles/
+    global.css          # design tokens (@theme) + clases .ui-card, .btn-*, .mod-*
+public/
+  _headers              # headers de seguridad (Netlify)
 ```
 
 ## Licencia

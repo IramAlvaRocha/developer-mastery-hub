@@ -79,7 +79,7 @@ export default function Toasts({ toasts, onDismiss }: Props) {
     <div
       role="status"
       aria-live="polite"
-      className="pointer-events-none fixed right-4 top-4 z-[60] flex w-full max-w-xs flex-col items-end gap-2"
+      className="pointer-events-none fixed right-4 top-4 z-[80] flex w-full max-w-xs flex-col items-end gap-2"
     >
       {toasts.map((toast) => (
         <ToastItem key={toast.id} toast={toast} onDismiss={onDismiss} />

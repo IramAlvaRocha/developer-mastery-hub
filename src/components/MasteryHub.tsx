@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ALL_MODULES, MODULE_GROUPS } from "@/data";
+import { useModules } from "@/lib/useModules";
 import { runViewTransition } from "@/lib/viewTransition";
 import { useProgress } from "@/lib/useProgress";
+import { useEnrollments } from "@/lib/useEnrollments";
 import { useToasts } from "@/lib/useToasts";
 import {
   buildSearch,
@@ -9,7 +10,6 @@ import {
   readUrlLocation,
   type UrlLocation,
 } from "@/lib/urlLocation";
-import { readAuthProfile, type AuthProfile } from "@/lib/authStub";
 import { getModuleFormats } from "@/lib/formatMeta";
 import type { ExerciseFormat } from "@/lib/types";
 import ModuleMenu from "./ModuleMenu";
@@ -17,16 +17,18 @@ import ExerciseSidebar from "./ExerciseSidebar";
 import ExerciseWorkspace from "./ExerciseWorkspace";
 import SettingsModal from "./SettingsModal";
 import Toasts from "./Toasts";
+import UserMenu from "./auth/UserMenu";
 
-const MODULE_KEYS = ALL_MODULES.map((m) => m.key);
 const ROUTES_SIDEBAR_KEY = "dmh-routes-sidebar-open";
 const EXERCISE_SIDEBAR_KEY = "dmh-exercise-sidebar-collapsed";
 
 export default function MasteryHub() {
+  const { modules, groups, loading } = useModules();
+  const moduleKeys = useMemo(() => modules.map((m) => m.key), [modules]);
+
   const [currentSubject, setCurrentSubject] = useState<string>("menu");
   const [activeIndex, setActiveIndex] = useState(0);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [profile, setProfile] = useState<AuthProfile | null>(null);
   const [routesSidebarOpen, setRoutesSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [formatFilter, setFormatFilter] = useState<ExerciseFormat | null>(null);
@@ -39,7 +41,17 @@ export default function MasteryHub() {
     setLastVisited,
     exportProgress,
     importProgress,
-  } = useProgress(MODULE_KEYS);
+    lastPersistError,
+    syncModule,
+  } = useProgress(moduleKeys);
+  const {
+    enrolledKeys,
+    loading: enrollmentsLoading,
+    lastOpenedAt,
+    enroll,
+    unenroll,
+    touchLastOpened,
+  } = useEnrollments(syncModule);
   const { toasts, showToast, dismissToast } = useToasts();
 
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -48,10 +60,6 @@ export default function MasteryHub() {
   const closeMobileMenu = useCallback(() => {
     mobileMenuButtonRef.current?.focus();
     setIsMobileMenuOpen(false);
-  }, []);
-
-  useEffect(() => {
-    setProfile(readAuthProfile());
   }, []);
 
   useEffect(() => {
@@ -94,9 +102,48 @@ export default function MasteryHub() {
     }
   }, [sidebarCollapsed]);
 
+  // Aviso "Suscríbete para guardar tu progreso": se muestra una vez por cada
+  // bloqueo de RLS al persistir un ejercicio completado (Fase 5).
+  const lastPersistErrorShownRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (
+      lastPersistError &&
+      lastPersistError !== lastPersistErrorShownRef.current
+    ) {
+      lastPersistErrorShownRef.current = lastPersistError;
+      showToast("info", lastPersistError);
+    } else if (!lastPersistError) {
+      lastPersistErrorShownRef.current = null;
+    }
+  }, [lastPersistError, showToast]);
+
   const currentModule = useMemo(
-    () => ALL_MODULES.find((m) => m.key === currentSubject),
-    [currentSubject],
+    () => modules.find((m) => m.key === currentSubject),
+    [modules, currentSubject],
+  );
+
+  const handleEnroll = useCallback(
+    async (key: string) => {
+      const ok = await enroll(key);
+      if (ok) {
+        showToast("success", "Curso añadido a Mis Cursos");
+      } else {
+        showToast("error", "No se pudo suscribir al curso");
+      }
+    },
+    [enroll, showToast],
+  );
+
+  const handleUnenroll = useCallback(
+    async (key: string) => {
+      const ok = await unenroll(key);
+      if (ok) {
+        showToast("info", "Suscripción eliminada");
+      } else {
+        showToast("error", "No se pudo quitar la suscripción");
+      }
+    },
+    [unenroll, showToast],
   );
 
   const exercises = currentModule?.exercises ?? [];
@@ -177,12 +224,24 @@ export default function MasteryHub() {
         currentModule.key,
         realIndex >= 0 ? realIndex : activeIndex,
       );
+      // Marca el curso como reciente en "Mis Cursos" (solo si está suscrito).
+      if (enrolledKeys.includes(currentModule.key)) {
+        void touchLastOpened(currentModule.key);
+      }
     }
-  }, [currentSubject, activeIndex, currentModule, filteredExercises, setLastVisited]);
+  }, [
+    currentSubject,
+    activeIndex,
+    currentModule,
+    filteredExercises,
+    setLastVisited,
+    enrolledKeys,
+    touchLastOpened,
+  ]);
 
   const applyUrlToState = useCallback(() => {
     const { module, exerciseId } = readUrlLocation();
-    const mod = module ? ALL_MODULES.find((m) => m.key === module) : undefined;
+    const mod = module ? modules.find((m) => m.key === module) : undefined;
     if (!mod) {
       setCurrentSubject("menu");
       setActiveIndex(0);
@@ -196,7 +255,7 @@ export default function MasteryHub() {
     setCurrentSubject(mod.key);
     setActiveIndex(index);
     setFormatFilter(null);
-  }, []);
+  }, [modules]);
 
   useEffect(() => {
     applyUrlToState();
@@ -265,7 +324,7 @@ export default function MasteryHub() {
             <span className="block truncate text-base font-semibold tracking-tight text-cream sm:text-lg">
               Mastery Hub
             </span>
-            <p className="truncate text-[12px] font-medium text-muted">
+            <p className="hidden truncate text-[12px] font-medium text-muted sm:block">
               {inModule
                 ? currentModule.name
                 : "Catálogo · práctica guiada"}
@@ -303,8 +362,14 @@ export default function MasteryHub() {
             </a>
           )}
           {inModule && (
-            <button onClick={goBackToMenu} className="btn-secondary !min-h-10 !px-4 !text-sm">
-              ← Menú
+            <button
+              onClick={goBackToMenu}
+              className="btn-secondary !min-h-10 !px-0 !text-sm max-sm:h-11 max-sm:w-11 sm:!px-5"
+              aria-label="Volver al menú"
+              title="Volver al menú"
+            >
+              ←
+              <span className="hidden sm:inline"> Menú</span>
             </button>
           )}
           {inModule && (
@@ -340,24 +405,7 @@ export default function MasteryHub() {
           >
             ⚙
           </button>
-          {profile && (
-            <span
-              className="hidden h-9 w-9 items-center justify-center overflow-hidden rounded-full border border-line sm:inline-flex"
-              title={profile.name}
-            >
-              {profile.avatarDataUrl ? (
-                <img
-                  src={profile.avatarDataUrl}
-                  alt=""
-                  className="h-full w-full object-cover"
-                />
-              ) : (
-                <span className="text-xs font-bold text-lilac">
-                  {profile.name.slice(0, 1).toUpperCase()}
-                </span>
-              )}
-            </span>
-          )}
+          <UserMenu />
           {inModule && (
             <button
               ref={mobileMenuButtonRef}
@@ -374,17 +422,26 @@ export default function MasteryHub() {
 
       <div className="relative flex flex-1 overflow-hidden">
         {!inModule ? (
-          <ModuleMenu
-            modules={ALL_MODULES}
-            groups={MODULE_GROUPS}
-            getPercent={getPercent}
-            onStart={startSubject}
-            onResume={(key, index) => startSubject(key, index)}
-            lastVisited={lastVisited}
-            onToast={showToast}
-            sidebarOpen={routesSidebarOpen}
-            onSidebarOpenChange={setRoutesSidebarOpen}
-          />
+          loading && modules.length === 0 ? (
+            <ModuleMenuSkeleton />
+          ) : (
+            <ModuleMenu
+              modules={modules}
+              groups={groups}
+              getPercent={getPercent}
+              onStart={startSubject}
+              onResume={(key, index) => startSubject(key, index)}
+              lastVisited={lastVisited}
+              onToast={showToast}
+              sidebarOpen={routesSidebarOpen}
+              onSidebarOpenChange={setRoutesSidebarOpen}
+              enrolledKeys={enrolledKeys}
+              enrollmentsLoading={enrollmentsLoading}
+              lastOpenedAt={lastOpenedAt}
+              onEnroll={handleEnroll}
+              onUnenroll={handleUnenroll}
+            />
+          )
         ) : (
           <>
             <ExerciseSidebar
@@ -408,6 +465,7 @@ export default function MasteryHub() {
                 <ExerciseWorkspace
                   key={`${currentModule.key}-${activeExercise.id}`}
                   exercise={activeExercise}
+                  moduleKey={currentModule.key}
                   moduleName={currentModule.name}
                   color={color}
                   alreadyCompleted={isCompleted(
@@ -451,6 +509,41 @@ export default function MasteryHub() {
 
       <Toasts toasts={toasts} onDismiss={dismissToast} />
     </div>
+  );
+}
+
+/** Skeleton del catálogo mientras la capa de datos carga por primera vez. */
+function ModuleMenuSkeleton() {
+  return (
+    <main
+      className="relative flex flex-1 flex-col overflow-y-auto"
+      aria-busy="true"
+      aria-label="Cargando catálogo"
+    >
+      <div className="mx-auto w-full max-w-[1280px] px-4 py-10 sm:px-6 sm:py-14">
+        <div className="shimmer-loading h-4 w-28 rounded-full" />
+        <div className="shimmer-loading mt-3 h-10 w-72 max-w-full rounded-2xl" />
+        <div className="shimmer-loading mt-3 h-5 w-[480px] max-w-full rounded-full" />
+        <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-6">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="shimmer-loading h-24 rounded-[24px]" />
+          ))}
+        </div>
+        <div className="mt-8 flex gap-2 overflow-x-auto pb-1">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div
+              key={i}
+              className="shimmer-loading h-9 w-32 shrink-0 rounded-full"
+            />
+          ))}
+        </div>
+        <div className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="shimmer-loading h-40 rounded-[28px]" />
+          ))}
+        </div>
+      </div>
+    </main>
   );
 }
 

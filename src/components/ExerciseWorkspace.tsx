@@ -3,6 +3,7 @@ import gsap from "gsap";
 import type { Exercise, ExerciseFormat } from "@/lib/types";
 import { isAnswerCorrect } from "@/lib/answers";
 import { evaluateFormat } from "@/lib/formatVerification";
+import { clearAnswers, readAnswers, writeAnswers } from "@/lib/answerStorage";
 import { moduleColorStyle } from "@/lib/moduleColors";
 import { usePrefersReducedMotion } from "@/lib/useReducedMotion";
 import { FORMAT_LABELS, type FormatOption } from "@/lib/formatMeta";
@@ -21,6 +22,7 @@ interface TabDef {
 
 interface Props {
   exercise: Exercise;
+  moduleKey: string;
   moduleName: string;
   color: string;
   alreadyCompleted: boolean;
@@ -37,6 +39,7 @@ interface Props {
 
 export default function ExerciseWorkspace({
   exercise,
+  moduleKey,
   moduleName,
   color,
   alreadyCompleted,
@@ -53,28 +56,50 @@ export default function ExerciseWorkspace({
   const [activeTab, setActiveTab] = useState<Tab>(
     exercise.theory ? "theory" : exercise.simulation ? "terminal" : "challenge",
   );
-  const [userAnswers, setUserAnswers] = useState<Record<string, string>>({});
+  const [userAnswers, setUserAnswers] = useState<Record<string, string>>(() =>
+    readAnswers(moduleKey, exercise.id),
+  );
   const [incorrectKeys, setIncorrectKeys] = useState<Set<string>>(new Set());
   const [solved, setSolved] = useState(alreadyCompleted);
   const [celebrate, setCelebrate] = useState(false);
+  const codeNavTimerRef = useRef<number | null>(null);
 
   const isFirst = index === 0;
   const isLast = index === total - 1;
 
+  // Al cambiar de ejercicio, recarga las respuestas guardadas (nunca `{}`).
   useEffect(() => {
     setActiveTab(
       exercise.theory ? "theory" : exercise.simulation ? "terminal" : "challenge",
     );
-    setUserAnswers({});
     setIncorrectKeys(new Set());
+    setUserAnswers(readAnswers(moduleKey, exercise.id));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [exercise.id, exercise.theory, exercise.simulation, moduleKey]);
+
+  // `alreadyCompleted` solo refleja el progreso en el padre: no toca respuestas.
+  useEffect(() => {
     setSolved(alreadyCompleted);
-  }, [exercise.id, exercise.theory, exercise.simulation, alreadyCompleted]);
+  }, [alreadyCompleted]);
+
+  // Guarda las respuestas de los huecos en sessionStorage.
+  useEffect(() => {
+    writeAnswers(moduleKey, exercise.id, userAnswers);
+  }, [moduleKey, exercise.id, userAnswers]);
 
   useEffect(() => {
     if (!celebrate) return;
     const t = setTimeout(() => setCelebrate(false), 1600);
     return () => clearTimeout(t);
   }, [celebrate]);
+
+  useEffect(() => {
+    return () => {
+      if (codeNavTimerRef.current != null) {
+        window.clearTimeout(codeNavTimerRef.current);
+      }
+    };
+  }, []);
 
   function handleAnswerChange(key: string, value: string) {
     setUserAnswers((prev) => ({ ...prev, [key]: value }));
@@ -87,9 +112,28 @@ export default function ExerciseWorkspace({
     });
   }
 
+  const reduceMotion = usePrefersReducedMotion();
+
   function resetChallenge() {
+    clearAnswers(moduleKey, exercise.id);
     setUserAnswers({});
     setIncorrectKeys(new Set());
+  }
+
+  // Tras verificar correcto, deja que la celebración (1600ms) tome protagonismo
+  // y navega a Solución; con prefers-reduced-motion cambia al instante.
+  function goToSolution() {
+    if (codeNavTimerRef.current != null) {
+      window.clearTimeout(codeNavTimerRef.current);
+    }
+    if (reduceMotion) {
+      setActiveTab("code");
+      return;
+    }
+    codeNavTimerRef.current = window.setTimeout(() => {
+      setActiveTab("code");
+      codeNavTimerRef.current = null;
+    }, 650);
   }
 
   function verify() {
@@ -107,7 +151,7 @@ export default function ExerciseWorkspace({
         onComplete(exercise.id);
         onToast("success", `¡Correcto! "${exercise.title}" completado.`);
         if (isNew) setCelebrate(true);
-        setActiveTab("code");
+        goToSolution();
       } else {
         setIncorrectKeys(new Set(result.incorrectKeys));
         const n = result.incorrectKeys.length;
@@ -143,7 +187,7 @@ export default function ExerciseWorkspace({
       onComplete(exercise.id);
       onToast("success", `¡Correcto! "${exercise.title}" completado.`);
       if (isNew) setCelebrate(true);
-      setActiveTab("code");
+      goToSolution();
     } else {
       setIncorrectKeys(wrong);
       const n = wrong.size;
@@ -175,7 +219,6 @@ export default function ExerciseWorkspace({
 
   const positionPercent = total > 0 ? ((index + 1) / total) * 100 : 0;
   const colorStyle = moduleColorStyle(color);
-  const reduceMotion = usePrefersReducedMotion();
 
   // ── Tabs visibles ─────────────────────────────────────────────────────────
   const tabs = useMemo<TabDef[]>(() => {
@@ -335,7 +378,7 @@ export default function ExerciseWorkspace({
         />
       </div>
 
-      <div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden px-4 py-4 md:px-6 md:py-6">
+      <div ref={panelRef} className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden">
         {/* Anuncio de navegación para lectores de pantalla */}
         <p
           aria-live="polite"
@@ -345,13 +388,13 @@ export default function ExerciseWorkspace({
         >
           Ejercicio {index + 1} de {total}: {exercise.title}
         </p>
-        {/* Card unificada: hero + tabs + panel con scroll único */}
-        <div className="mx-auto flex min-h-full w-full max-w-5xl flex-col overflow-hidden rounded-[28px] border border-line bg-surface">
-          {/* Hero integrado como cabecera de la card */}
+        {/* Workspace sobre canvas: hero + tabs + paneles con scroll único */}
+        <div className="mx-auto flex min-h-full w-full max-w-5xl flex-col">
+          {/* Hero como sección propia, al estilo landing */}
           <section
             ref={heroRef}
             style={colorStyle}
-            className="relative shrink-0 overflow-hidden p-5 sm:p-6"
+            className="relative shrink-0 overflow-hidden border-b border-line px-4 py-6 sm:px-6 sm:py-8"
           >
             <div
               className="pointer-events-none absolute -right-10 -top-10 h-40 w-40 rounded-full opacity-40 blur-3xl"
@@ -407,8 +450,8 @@ export default function ExerciseWorkspace({
             </div>
           </section>
 
-          {/* TabSlider + filtro de formato */}
-          <div className="flex flex-wrap items-center gap-2 border-t border-line px-4 py-3 sm:px-5">
+          {/* TabSlider autocontenido + filtro de formato */}
+          <div className="flex flex-wrap items-center gap-2 px-4 py-4 sm:px-6">
             <div
               ref={tabListRef}
               role="tablist"
@@ -471,35 +514,33 @@ export default function ExerciseWorkspace({
             </div>
           </div>
 
-          {/* Panel con el scroll único del workspace */}
-          <div ref={panelRef} className="min-h-0 flex-1 overflow-y-auto border-t border-line">
-            <div
-              data-panel
-              role="tabpanel"
-              id="panel-challenge"
-              aria-labelledby="tab-challenge"
-              tabIndex={activeTab === "challenge" ? 0 : -1}
-              className={activeTab === "challenge" ? "flex min-h-full flex-col" : "hidden"}
-            >
-              <div className="px-4 pt-4 sm:px-5 sm:pt-5">
-                <div
-                  style={colorStyle}
-                  className="rounded-[24px] border border-line border-l-[3px] mod-task-border bg-surface-2/50 px-4 py-3.5"
-                >
-                  <p className="text-[11px] font-bold uppercase tracking-wide text-muted">
-                    Tu tarea
-                  </p>
-                  <p className="mt-1.5 text-[15px] leading-relaxed text-cream/95">
-                    {instruction}
-                  </p>
-                </div>
-              </div>
-
+          {/* Paneles sobre canvas; solo código y terminal conservan caja dev-tool */}
+          <div
+            data-panel
+            role="tabpanel"
+            id="panel-challenge"
+            aria-labelledby="tab-challenge"
+            tabIndex={activeTab === "challenge" ? 0 : -1}
+            className={activeTab === "challenge" ? "flex min-h-full min-w-0 flex-col px-4 pb-6 sm:px-6 sm:pb-8" : "hidden"}
+          >
               <div
                 style={colorStyle}
-                className="mt-4 flex flex-1 flex-col bg-canvas sm:mt-5"
+                className="rounded-[24px] border border-line border-l-[3px] mod-task-border bg-surface-2/50 px-4 py-3.5"
               >
-                <div className="flex flex-col gap-2 border-t border-line bg-surface-2 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+                <p className="text-[11px] font-bold uppercase tracking-wide text-muted">
+                  Tu tarea
+                </p>
+                <p className="mt-1.5 text-[15px] leading-relaxed text-cream/95">
+                  {instruction}
+                </p>
+              </div>
+
+              {/* Caja dev-tool: solo el código conserva el marco de ventana */}
+              <div
+                style={colorStyle}
+                className="mt-4 flex min-h-0 flex-1 flex-col overflow-hidden rounded-[24px] border border-line bg-canvas sm:mt-5"
+              >
+                <div className="flex flex-col gap-2 border-b border-line bg-surface-2 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
                   <div className="flex min-w-0 items-center gap-2.5">
                     <span className="flex gap-1" aria-hidden>
                       <span className="h-2 w-2 rounded-full bg-[#ff5f57]" />
@@ -520,7 +561,7 @@ export default function ExerciseWorkspace({
                     {moduleName}
                   </span>
                 </div>
-                <div style={colorStyle} className="flex-1 p-4 sm:p-5">
+                <div style={colorStyle} className="min-w-0 flex-1 p-4 sm:p-5">
                   {exercise.format ? (
                     <ExerciseFormatView
                       exercise={exercise}
@@ -555,7 +596,7 @@ export default function ExerciseWorkspace({
                 tabIndex={activeTab === "theory" ? 0 : -1}
                 className={activeTab === "theory" ? "outline-none" : "hidden"}
               >
-                <div className="p-4 sm:p-5">
+                <div className="px-4 pb-6 sm:px-6 sm:pb-8">
                   <TheoryTab theory={exercise.theory} />
                 </div>
               </div>
@@ -570,7 +611,7 @@ export default function ExerciseWorkspace({
                 tabIndex={activeTab === "terminal" ? 0 : -1}
                 className={activeTab === "terminal" ? "outline-none" : "hidden"}
               >
-                <div className="p-4 sm:p-5">
+                <div className="px-4 pb-6 sm:px-6 sm:pb-8">
                   <SimulatedTerminal
                     scenario={exercise.simulation}
                     resetKey={`${exercise.id}-${exercise.category}`}
@@ -587,29 +628,28 @@ export default function ExerciseWorkspace({
               tabIndex={activeTab === "code" ? 0 : -1}
               className={activeTab === "code" ? "outline-none" : "hidden"}
             >
-              <div className="p-4 sm:p-5">
+              <div className="px-4 pb-6 sm:px-6 sm:pb-8">
                 <SolutionPanel exercise={exercise} color={color} />
               </div>
             </div>
           </div>
         </div>
-      </div>
 
       <footer className="shrink-0 border-t border-line bg-canvas/90 backdrop-blur-md">
-        <div className="mx-auto w-full max-w-5xl px-4 py-3 md:px-6">
+        <div className="mx-auto w-full max-w-5xl overflow-x-hidden px-4 py-3 md:px-6">
           <div className="flex items-center gap-2">
             <div className="flex min-w-0 items-center gap-2">
               <button
                 onClick={onPrev}
                 disabled={isFirst}
-                className="btn-secondary !min-h-11 !px-3 !text-sm sm:!px-5"
+                className="btn-secondary !min-h-11 !px-0 !text-sm max-sm:h-11 max-sm:w-11 sm:!px-5"
                 aria-label="Ejercicio anterior"
               >
                 ←<span className="hidden sm:inline"> Anterior</span>
               </button>
-              <span className="shrink-0 text-[13px] font-medium text-muted">
+              <span className="shrink-0 text-[12px] font-medium text-muted">
                 <span className="text-cream">{index + 1}</span>
-                <span className="text-faint"> / {total}</span>
+                <span className="text-muted"> / {total}</span>
               </span>
               {solved && (
                 <span className="hidden shrink-0 items-center gap-1 rounded-full border border-brand/30 bg-brand/10 px-2.5 py-0.5 text-[11px] font-semibold text-brand sm:inline-flex">
@@ -638,7 +678,7 @@ export default function ExerciseWorkspace({
               <button
                 onClick={onNext}
                 disabled={isLast}
-                className="btn-primary !min-h-11 !px-3 !text-sm sm:!px-5"
+                className="btn-primary !min-h-11 !px-0 !text-sm max-sm:h-11 max-sm:w-11 sm:!px-5"
                 aria-label="Siguiente ejercicio"
               >
                 <span className="hidden sm:inline">Siguiente </span>→
@@ -646,7 +686,7 @@ export default function ExerciseWorkspace({
             </div>
           </div>
 
-          <div className="mt-2 flex justify-center">
+          <div className="mt-2 hidden justify-center sm:flex">
             <KeyboardHints />
           </div>
         </div>
