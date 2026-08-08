@@ -136,7 +136,11 @@ function main() {
 function getAllSourceFiles() {
   try {
     const output = execSync('git ls-files "src/*.js" "src/*.ts" "src/*.jsx" "src/*.tsx" "src/*.astro"', { encoding: 'utf-8' });
-    return output.split('\n').map((f) => f.trim()).filter(Boolean);
+    return output
+      .split('\n')
+      .map((f) => f.trim())
+      .filter(Boolean)
+      .filter((f) => !f.startsWith('src/data/'));
   } catch {
     return [];
   }

@@ -161,6 +161,15 @@ ALTER TABLE public.enrollments ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.progress    ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.user_state  ENABLE ROW LEVEL SECURITY;
 
+-- Fase 8 (B4): FORCE RLS para que las políticas se apliquen también a los
+-- privilegios del owner (defensa en profundidad si se usan credenciales owner).
+ALTER TABLE public.profiles    FORCE ROW LEVEL SECURITY;
+ALTER TABLE public.modules     FORCE ROW LEVEL SECURITY;
+ALTER TABLE public.exercises   FORCE ROW LEVEL SECURITY;
+ALTER TABLE public.enrollments FORCE ROW LEVEL SECURITY;
+ALTER TABLE public.progress    FORCE ROW LEVEL SECURITY;
+ALTER TABLE public.user_state  FORCE ROW LEVEL SECURITY;
+
 -- profiles: SELECT solo la propia fila (o admin); UPDATE solo la propia fila.
 DROP POLICY IF EXISTS profiles_select_own_or_admin ON public.profiles;
 CREATE POLICY profiles_select_own_or_admin ON public.profiles
@@ -228,7 +237,13 @@ CREATE POLICY enrollments_select_own ON public.enrollments
 DROP POLICY IF EXISTS enrollments_insert_own ON public.enrollments;
 CREATE POLICY enrollments_insert_own ON public.enrollments
   FOR INSERT TO authenticated
-  WITH CHECK (auth.uid() = user_id);
+  WITH CHECK (
+    auth.uid() = user_id
+    AND EXISTS (
+      SELECT 1 FROM public.modules m
+      WHERE m.key = enrollments.module_key AND m.is_published
+    )
+  );
 
 DROP POLICY IF EXISTS enrollments_update_own ON public.enrollments;
 CREATE POLICY enrollments_update_own ON public.enrollments
@@ -316,3 +331,16 @@ GRANT UPDATE (display_name, avatar_url) ON public.profiles TO authenticated;
 -- enrollments: UPDATE solo permite tocar last_opened_at.
 REVOKE UPDATE ON public.enrollments FROM authenticated;
 GRANT UPDATE (last_opened_at) ON public.enrollments TO authenticated;
+
+-- ----------------------------------------------------------------------------
+-- 7. Fase 8 (B4): acceso anónimo nulo
+-- ----------------------------------------------------------------------------
+-- La app solo accede a los datos autenticada (el landing es estático); el
+-- rol `anon` (clave anon-key) no debe poder leer/escribir ninguna tabla.
+REVOKE ALL ON public.profiles,
+            public.modules,
+            public.exercises,
+            public.enrollments,
+            public.progress,
+            public.user_state
+  FROM anon;

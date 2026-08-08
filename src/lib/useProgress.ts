@@ -4,8 +4,11 @@ import { useAuth } from "@/lib/auth/AuthContext";
 
 // ──────────────────────────────────────────────────────────────────────────
 // Progreso persistente (Fase 5 — nube).
-// localStorage sigue siendo la capa local optimista (`mastery_hub_<key>` y
-// `mastery_hub_last`): la UI funciona al instante, en modo demo y sin red.
+// localStorage sigue siendo la capa local optimista (`mastery_hub_<uid>_<key>`
+// y `mastery_hub_last_<uid>`, scoped por usuario — Fase 8 M3): la UI funciona
+// al instante, en modo demo y sin red. Las claves sin scope (legacy) se
+// migran UNA vez al primer uso con un uid y se borran, para que un navegador
+// compartido no contamine el progreso de otros usuarios.
 // Cuando hay Supabase + sesión, además se sincroniza con `progress` y
 // `user_state` mediante merge ADITIVO (nunca borra). Regla de negocio:
 // "cualquier autenticado practica, pero solo suscritos guardan progreso" —
@@ -37,12 +40,22 @@ interface UserStateRow {
   updated_at: string | null;
 }
 
-function readAll(keys: string[]): ProgressMap {
+/** Clave de un módulo: scoped por uid; sin uid, fallback a la clave legacy. */
+function moduleKey(moduleKey: string, uid: string | null): string {
+  return uid ? `${PREFIX}${uid}_${moduleKey}` : PREFIX + moduleKey;
+}
+
+/** Clave de "último visitado": scoped por uid; sin uid, fallback legacy. */
+function lastKey(uid: string | null): string {
+  return uid ? `${LAST_KEY}_${uid}` : LAST_KEY;
+}
+
+function readAll(keys: string[], uid: string | null): ProgressMap {
   const map: ProgressMap = {};
   if (typeof localStorage === "undefined") return map;
   for (const key of keys) {
     try {
-      const raw = localStorage.getItem(PREFIX + key);
+      const raw = localStorage.getItem(moduleKey(key, uid));
       map[key] = raw ? (JSON.parse(raw) as number[]) : [];
     } catch {
       map[key] = [];
@@ -51,30 +64,66 @@ function readAll(keys: string[]): ProgressMap {
   return map;
 }
 
-function readLast(): LastVisited | null {
+function readLast(uid: string | null): LastVisited | null {
   if (typeof localStorage === "undefined") return null;
   try {
-    const raw = localStorage.getItem(LAST_KEY);
+    const raw = localStorage.getItem(lastKey(uid));
     return raw ? (JSON.parse(raw) as LastVisited) : null;
   } catch {
     return null;
   }
 }
 
-function writeModule(key: string, ids: number[]) {
+function writeModule(uid: string | null, key: string, ids: number[]) {
   try {
-    localStorage.setItem(PREFIX + key, JSON.stringify(ids));
+    localStorage.setItem(moduleKey(key, uid), JSON.stringify(ids));
   } catch {
     /* almacenamiento no disponible */
   }
 }
 
-function writeLast(value: LastVisited) {
+function writeLast(uid: string | null, value: LastVisited) {
   try {
-    localStorage.setItem(LAST_KEY, JSON.stringify(value));
+    localStorage.setItem(lastKey(uid), JSON.stringify(value));
   } catch {
     /* almacenamiento no disponible */
   }
+}
+
+function removeLocal(key: string) {
+  if (typeof localStorage === "undefined") return;
+  try {
+    localStorage.removeItem(key);
+  } catch {
+    /* almacenamiento no disponible */
+  }
+}
+
+/**
+ * Fase 8 (M3): migración única legacy → scoped.
+ * Si existe progreso bajo las claves sin scope (`mastery_hub_<key>`) y aún no
+ * hay datos scoped para `uid`, copia el progreso a las claves scoped y BORRA
+ * las legacy para que no contaminen a otros usuarios del navegador compartido.
+ * Devuelve el progreso legacy migrado (o vacío si no había nada que migrar).
+ */
+function migrateLegacyToScoped(
+  uid: string,
+  moduleKeys: string[],
+): { local: ProgressMap; localLast: LastVisited | null } {
+  const legacyAll = readAll(moduleKeys, null);
+  const legacyLast = readLast(null);
+  const hasLegacy =
+    legacyLast !== null ||
+    Object.values(legacyAll).some((ids) => ids.length > 0);
+  if (!hasLegacy) return { local: {}, localLast: null };
+
+  for (const [key, ids] of Object.entries(legacyAll)) {
+    if (ids.length > 0) writeModule(uid, key, ids);
+  }
+  if (legacyLast) writeLast(uid, legacyLast);
+  for (const key of moduleKeys) removeLocal(PREFIX + key);
+  removeLocal(LAST_KEY);
+  return { local: legacyAll, localLast: legacyLast };
 }
 
 /** Unión (aditiva) de lo local con las filas de `progress` de la nube. */
@@ -217,23 +266,45 @@ export function useProgress(moduleKeys: string[]) {
   );
 
   // Carga inicial: lo local al instante (UI) y, con sesión, merge + migración.
+  // Fase 8 (M3): el progreso local se lee con scope por uid; si no existe
+  // todavía y hay claves legacy (pre-scope), se migran una sola vez.
   useEffect(() => {
-    const local = readAll(moduleKeys);
-    const localLast = readLast();
+    const uid = user?.id ?? null;
+
+    let local: ProgressMap;
+    let localLast: LastVisited | null;
+    if (uid) {
+      const scoped = readAll(moduleKeys, uid);
+      const scopedLast = readLast(uid);
+      const hasScoped =
+        scopedLast !== null ||
+        Object.values(scoped).some((ids) => ids.length > 0);
+      if (hasScoped) {
+        local = scoped;
+        localLast = scopedLast;
+      } else {
+        const migrated = migrateLegacyToScoped(uid, moduleKeys);
+        local = migrated.local;
+        localLast = migrated.localLast;
+      }
+    } else {
+      // Sin sesión: fallback a las claves sin scope (por seguridad).
+      local = readAll(moduleKeys, null);
+      localLast = readLast(null);
+    }
+
     progressRef.current = local;
     setProgress(local);
     setLastVisitedState(localLast);
 
     const supabase = getSupabase();
-    const uid = user?.id;
+    userIdRef.current = uid;
     if (!supabase || !uid || uid.startsWith("demo:")) {
-      userIdRef.current = null;
       unsyncedRef.current = [];
       setUnsyncedModules([]);
       setLastPersistError(null);
       return;
     }
-    userIdRef.current = uid;
     let active = true;
 
     void (async () => {
@@ -248,7 +319,7 @@ export function useProgress(moduleKeys: string[]) {
         progressRef.current = merged;
         setProgress(merged);
         for (const [key, ids] of Object.entries(merged)) {
-          if (ids.length > 0) writeModule(key, ids);
+          if (ids.length > 0) writeModule(uid, key, ids);
         }
       } catch {
         /* sin red: se queda con lo local */
@@ -272,7 +343,7 @@ export function useProgress(moduleKeys: string[]) {
           };
           setLastVisitedState((prev) => {
             if (prev && prev.at >= cloudVisited.at) return prev;
-            writeLast(cloudVisited);
+            writeLast(uid, cloudVisited);
             return cloudVisited;
           });
         }
@@ -298,7 +369,7 @@ export function useProgress(moduleKeys: string[]) {
       setLastVisitedState((prev) => {
         if (prev && prev.key === key && prev.index === index) return prev;
         const next: LastVisited = { key, index, at: Date.now() };
-        writeLast(next);
+        writeLast(userIdRef.current, next);
         void persistLastVisited(key, index);
         return next;
       });
@@ -319,7 +390,7 @@ export function useProgress(moduleKeys: string[]) {
       const next = [...current, exerciseId];
       const nextMap = { ...progressRef.current, [moduleKey]: next };
       progressRef.current = nextMap;
-      writeModule(moduleKey, next);
+      writeModule(userIdRef.current, moduleKey, next);
       setProgress(nextMap);
       void persistToCloud(moduleKey, exerciseId);
     },
@@ -373,7 +444,7 @@ export function useProgress(moduleKeys: string[]) {
         );
         const union = Array.from(new Set([...(merged[key] ?? []), ...ids]));
         merged[key] = union;
-        writeModule(key, union);
+        writeModule(userIdRef.current, key, union);
         if (union.length > (progressRef.current[key]?.length ?? 0)) {
           void syncModule(key);
         }
@@ -384,7 +455,7 @@ export function useProgress(moduleKeys: string[]) {
       const last = (parsed as { lastVisited?: LastVisited }).lastVisited;
       if (last && typeof last.key === "string" && typeof last.index === "number") {
         setLastVisitedState(last);
-        writeLast(last);
+        writeLast(userIdRef.current, last);
       }
       return true;
     },

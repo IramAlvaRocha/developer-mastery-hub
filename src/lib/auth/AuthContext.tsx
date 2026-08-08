@@ -72,7 +72,10 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [supabase] = useState<SupabaseClient | null>(() => getSupabase());
-  const isDemoMode = !supabase;
+  // Fase 8 (M4): fail-closed — el demo solo está disponible en desarrollo.
+  // En producción sin credenciales la app NO cae a modo demo (AuthGate
+  // muestra "Servicio no configurado" en vez de saltarse el login).
+  const isDemoMode = !supabase && !import.meta.env.PROD;
   const [user, setUser] = useState<AuthUser | null>(null);
   const [role, setRole] = useState<AuthRole | null>(null);
   const [loading, setLoading] = useState<boolean>(() => !isDemoMode);
@@ -89,6 +92,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .eq("id", userId)
         .maybeSingle();
       if (error) {
+        // Fase 8 (M2): permite reintentar ante un fallo de red puntual en vez
+        // de degradar al usuario a `student` de forma permanente.
+        profileUserIdRef.current = null;
         setRole("student");
         return;
       }
@@ -99,7 +105,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Restaura la sesión al montar (modo Supabase).
   useEffect(() => {
-    if (!supabase) return;
+    if (!supabase) {
+      // Producción sin credenciales: sin cliente no hay sesión que restaurar.
+      setLoading(false);
+      return;
+    }
     let active = true;
 
     const applyUser = (u: User | undefined) => {
@@ -117,10 +127,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const raw = localStorage.getItem(SESSION_CACHE_KEY);
       if (raw) {
-        const parsed = JSON.parse(raw) as { user?: AuthUser; role?: AuthRole };
+        // Fase 8 (M1): la caché guarda SOLO { user } — el role nunca viene de
+        // localStorage (se obtiene siempre vía loadProfile desde profiles).
+        const parsed = JSON.parse(raw) as { user?: AuthUser };
         if (parsed.user?.id) {
           setUser(parsed.user);
-          setRole(parsed.role === "admin" ? "admin" : "student");
         }
       }
     } catch {
@@ -146,9 +157,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, [supabase, loadProfile]);
 
-  // Restaura el perfil local del stub (modo demo).
+  // Restaura el perfil local del stub (solo en modo demo; Fase 8 M4: en
+  // producción el stub nunca debe crear sesión).
   useEffect(() => {
-    if (supabase) return;
+    if (!isDemoMode) return;
     const stub = readAuthProfile();
     if (stub) {
       setUser({
@@ -159,25 +171,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
       setRole("student");
     }
-  }, [supabase]);
+  }, [isDemoMode]);
 
-  // Caché local de user/role para arranque rápido (solo Supabase).
+  // Caché local del usuario para arranque rápido (solo Supabase). El role NO
+  // se cachea (Fase 8 M1): siempre se resuelve vía loadProfile.
   useEffect(() => {
     if (!supabase) return;
     try {
       if (user) {
-        localStorage.setItem(SESSION_CACHE_KEY, JSON.stringify({ user, role }));
+        localStorage.setItem(SESSION_CACHE_KEY, JSON.stringify({ user }));
       } else {
         localStorage.removeItem(SESSION_CACHE_KEY);
       }
     } catch {
       /* ignore */
     }
-  }, [supabase, user, role]);
+  }, [supabase, user]);
 
   const signInWithEmail = useCallback(
     async (email: string, password: string): Promise<AuthResult> => {
-      if (!supabase) {
+      if (isDemoMode) {
         const clean = email.trim();
         if (!clean) return { error: "Introduce un email." };
         const name = clean.split("@")[0] || "Demo";
@@ -191,29 +204,38 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setRole("student");
         return { error: null };
       }
+      if (!supabase) {
+        return { error: "Servicio no configurado: faltan las credenciales de Supabase." };
+      }
       const { error } = await supabase.auth.signInWithPassword({
         email: email.trim(),
         password,
       });
       return error ? { error: error.message } : { error: null };
     },
-    [supabase],
+    [supabase, isDemoMode],
   );
 
   const signInWithGoogle = useCallback(async (): Promise<AuthResult> => {
-    if (!supabase) {
+    if (isDemoMode) {
       return signInWithEmail("demo@developer-mastery-hub.local", "demo");
+    }
+    if (!supabase) {
+      return { error: "Servicio no configurado: faltan las credenciales de Supabase." };
     }
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: { redirectTo: `${window.location.origin}/aprender` },
     });
     return error ? { error: error.message } : { error: null };
-  }, [supabase, signInWithEmail]);
+  }, [supabase, isDemoMode, signInWithEmail]);
 
   const signUp = useCallback(
     async (email: string, password: string): Promise<AuthResult> => {
-      if (!supabase) return signInWithEmail(email, password);
+      if (isDemoMode) return signInWithEmail(email, password);
+      if (!supabase) {
+        return { error: "Servicio no configurado: faltan las credenciales de Supabase." };
+      }
       const { data, error } = await supabase.auth.signUp({
         email: email.trim(),
         password,
@@ -228,21 +250,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
       return { error: null };
     },
-    [supabase, signInWithEmail],
+    [supabase, isDemoMode, signInWithEmail],
   );
 
   const signOut = useCallback(async () => {
-    if (!supabase) {
+    if (isDemoMode) {
       clearAuthProfile();
       setUser(null);
       setRole(null);
       return;
     }
+    if (!supabase) return;
     await supabase.auth.signOut();
-  }, [supabase]);
+  }, [supabase, isDemoMode]);
 
   const refreshProfile = useCallback(async () => {
-    if (!supabase) {
+    if (isDemoMode) {
       const stub = readAuthProfile();
       if (stub) {
         setUser({
@@ -255,6 +278,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
       return;
     }
+    if (!supabase) return;
     const {
       data: { session },
     } = await supabase.auth.getSession();
@@ -263,7 +287,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(userFromSupabase(session.user));
       await loadProfile(uid);
     }
-  }, [supabase, loadProfile]);
+  }, [supabase, isDemoMode, loadProfile]);
 
   const value = useMemo<AuthContextValue>(
     () => ({

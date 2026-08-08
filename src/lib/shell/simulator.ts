@@ -566,7 +566,7 @@ export function executeCommand(state: ShellState, rawInput: string): ShellResult
       const pattern = nameFlag >= 0 ? args[nameFlag + 1]?.replace(/^"|"$/g, "") : "*";
       function walk(path: string, node: FsNode) {
         const base = path.split("/").pop() ?? "";
-        const glob = pattern.replace(/\*/g, ".*");
+        const glob = pattern.replace(/[.+?^${}()|[\]\\]/g, "\\$&").replace(/\*/g, ".*");
         if (node.type === "file" && new RegExp(`^${glob}$`).test(base)) out.push(path);
         if (node.type === "dir") {
           if (args.includes("-type") && args[args.indexOf("-type") + 1] === "d" && path !== "/") {

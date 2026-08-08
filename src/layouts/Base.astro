@@ -24,6 +24,14 @@ const { title = "Developer Mastery Hub", bodyClass = "is-app" } = Astro.props;
       href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,600&family=JetBrains+Mono:wght@400;500&display=swap"
       rel="stylesheet"
     />
+    {
+      import.meta.env.PROD && (
+        <meta
+          http-equiv="Content-Security-Policy"
+          content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' https://*.supabase.co wss://*.supabase.co; base-uri 'self'; form-action 'self'; object-src 'none'"
+        />
+      )
+    }
     <title>{title}</title>
   </head>
   <body class={`bg-canvas text-ink font-sans antialiased ${bodyClass}`}>
