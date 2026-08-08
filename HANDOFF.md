@@ -46,7 +46,7 @@ SUPABASE_SERVICE_ROLE_KEY=eyJ...  # service_role (SOLO para scripts/seed.ts)
 
 ## 2. Estado del proyecto — Qué está hecho
 
-### Backend (Supabase) — fases 1-6 completadas ✅
+### Backend (Supabase) — fases 1-8 completadas ✅
 
 | Fase | Qué | Commit | Detalle |
 |---|---|---|---|
@@ -58,6 +58,14 @@ SUPABASE_SERVICE_ROLE_KEY=eyJ...  # service_role (SOLO para scripts/seed.ts)
 | 5 | Progreso remoto | `152536f` | `useProgress.ts` (nube + local optimista + migración) |
 | 6 | Mis Cursos | `6ae6574` | `useEnrollments.ts`, `MyCourses.tsx`, botones Suscribirse/Continuar |
 | UI | Rediseño workspace | `9fc97f9` | Calificación **9.3/10** por design-director |
+| 7 | Panel admin `/admin` | *pendiente commit* | `AdminPanel.tsx` + editores + `useAdmin.ts` + `admin.astro` con AuthGate `requireAdmin`. CRUD módulos/ejercicios, publish/unpublish, reordenar. RLS `is_admin()` ya lista (no se tocó schema). Coherencia visual **9.0/10** por design-director. Build limpio. |
+| 8 | Auditoría OWASP | *pendiente commit* | Reporte `security-auditor`: **0 críticas / 0 altas / 5 medias / 4 bajas**. Veredicto "con condiciones". Aplicados fixes M1-M5, B1-B4, I3 (ver §9). |
+| 9 | Docs README | *pendiente commit* | `README.md` reescrito (Fase 9): setup completo (env, schema.sql, Google OAuth, seed, promover admin), arquitectura, seguridad, estructura. Sin menciones a IA (gemini.ts quedó huérfana). |
+| Deps | **Astro 5 → 6 upgrade** | *pendiente commit* | `astro@6.4.8` + `@astrojs/react@6.0.2` + Tailwind vía **PostCSS** (`postcss.config.mjs`, el plugin Vite no es compatible con Vite 8/Rolldown). `bun audit`: **16 → 5 vulns** (1 high js-yaml sin fix en 4.x; 2 mod + 1 low astro XSS no aplicable; 1 low esbuild dev-only). Build y preview OK. |
+
+> ⚠️ Fases 7, 8, 9 y el upgrade de Astro están implementados y validados localmente pero **aún sin commit** en `plan-backend`.
+> ⚠️ La auditoría tocó `supabase/schema.sql` (B2 + B4): hay que **re-ejecutar el script en Supabase**
+> (SQL Editor) para que los cambios de RLS surtan efecto en la BD real.
 
 ### Módulos de contenido ✅
 - **55 módulos / ~790 ejercicios** en `src/data/modules/*.ts` (incluye SOLID & Clean Code
@@ -76,17 +84,21 @@ SUPABASE_SERVICE_ROLE_KEY=eyJ...  # service_role (SOLO para scripts/seed.ts)
 
 | Fase | Qué | Prioridad | Notas |
 |---|---|---|---|
-| **7** | **Panel admin `/admin`** | ⏳ Siguiente | CRUD de módulos y ejercicios, publish/unpublish, reordenar. Requiere `role='admin'` (RLS ya lista). Componente `AdminPanel.tsx` + página `admin.astro` con AuthGate `requireAdmin`. |
-| **8** | **Auditoría OWASP** | ⏳ Luego | Ejecutar agente `security-auditor` sobre todo lo construido antes de cualquier release. |
-| **9** | **Docs README** | ⏳ Al final | Setup completo: env, Google OAuth, seed, promover admin. |
+| ~~**7**~~ | **Panel admin `/admin`** | ✅ Hecho | CRUD de módulos y ejercicios, publish/unpublish, reordenar. `AdminPanel.tsx` + editores + `useAdmin.ts` + `admin.astro` con AuthGate `requireAdmin`. Sin commit aún. |
+| ~~**8**~~ | **Auditoría OWASP** | ✅ Hecho | `security-auditor`: 0 críticas/altas. Veredicto "con condiciones". Fixes M1-M5, B1-B4, I3 aplicados. Re-ejecutar `schema.sql` en Supabase. Sin commit aún. |
+| ~~**9**~~ | **Docs README** | ✅ Hecho | `README.md` reescrito: env, schema.sql, Google OAuth, seed, promover admin. Sin commit aún. |
+| ~~Deps~~ | **Astro 5 → 6** | ✅ Hecho | Upgrade + Tailwind vía PostCSS. `bun audit`: 16 → 5 vulns residuales (ver §9). Sin commit aún. |
 | Post-v1 | Ideas backlog (PLAN.md §12) | 🧠 Futuro | Certificados, rachas, repaso espaciado, búsqueda, leaderboard, PWA. |
+| ⚠️ Residual | **`bun audit` — 5 vulns** | 🧠 Opcional | 1 high js-yaml (sin fix en 4.x; Astro 7 lo arrastra igual por `@astrojs/internal-helpers`), 2 mod + 1 low astro XSS (no aplicable: sin view transitions ni spread attrs), 1 low esbuild (solo dev). Astro 7.2.0 los limpiaría (otro major). |
+| ⚠️ Gap plan | **Vista previa en vivo** del editor de ejercicios (PLAN §6) | 🧠 Opcional | El `ExerciseEditor` no tiene preview en vivo; mejora post-v1 opcional. |
 
 ### Pendientes menores anotados por los agentes
 - `tsc --noEmit` tiene **errores pre-existentes** (no de nuestro trabajo): `scripts/seed.ts`,
-  `src/lib/shell/simulator.ts`, `src/data/modules/ef-core-architecture.ts` (falta `@types/node`).
-- `LandingShell.tsx` ya migró a enlaces `/login` (sin modales demo).
+  `src/data/modules/ef-core-architecture.ts` (falta `@types/node`).
 - Verificar visualmente el workspace en navegador real (auto-nav 650ms + celebración).
 - En modo demo, el orden de Mis Cursos por `last_opened_at` no sobrevive recargas.
+- `security-check --all` ya pasa (Fase 8 B3 excluye `src/data/**`). Los `console.*` que había
+  en `src/data/modules/*.ts` son contenido educativo (strings), no código ejecutable.
 
 ---
 
@@ -97,7 +109,7 @@ SUPABASE_SERVICE_ROLE_KEY=eyJ...  # service_role (SOLO para scripts/seed.ts)
 │  /            → Landing público (Hero, TechMarquee, CTA /login)│
 │  /login       → LoginForm (email+pass / Google / modo demo)    │
 │  /aprender    → AuthGateApp (AuthProvider+AuthGate+MasteryHub) │
-│  /admin       → (pendiente Fase 7) AuthGate requireAdmin       │
+│  /admin       → AdminGateApp (AuthProvider+AuthGate requireAdmin)│
 └───────────────────────────────────────────────────────────────┘
                  │ HTTPS (auth + datos)
 ┌─ Supabase ────────────────────────────────────────────────────┐
@@ -121,6 +133,10 @@ src/components/auth/              # AuthGate, AuthGateApp, LoginForm, UserMenu
 src/components/MyCourses.tsx      # vista Mis Cursos
 src/components/ExerciseWorkspace.tsx  # el workspace (rediseñado)
 src/components/SolutionPanel.tsx  # solución sin cards (callout sage + acento)
+src/components/admin/             # Fase 7: AdminPanel, ModuleEditor, ExerciseEditor,
+                                   # ConfirmDialog, PublishSwitch, useFocusTrap
+src/lib/useAdmin.ts               # Fase 7: CRUD admin de módulos/ejercicios
+src/lib/formatValidation.ts       # Fase 8 M5: valida payloads de formatos antes de persistir
 src/data/index.ts                 # ALL_MODULES (55 módulos)
 ```
 
@@ -166,7 +182,12 @@ git checkout plan-backend && git pull origin plan-backend
 3. **Crear `.env`** (pedir credenciales a Iram o copiarlas del Dashboard de Supabase)
 4. `bun run dev` y abrir `http://localhost:4321` (o el puerto que diga Astro)
 5. Verificar que al hacer login real aparecen los módulos de la BD (no el modo demo)
-6. Continuar con la **Fase 7: Panel admin `/admin`**
+6. Probar el **panel admin** (`/admin`): promover tu cuenta con
+   `UPDATE profiles SET role = 'admin' WHERE email = 'tu@email.com';`, entrar en `/admin`,
+   y probar crear/editar/despublicar/reordenar un módulo o ejercicio.
+7. **Re-ejecutar `supabase/schema.sql`** en Supabase (SQL Editor) para activar los cambios
+   de RLS de la Fase 8 (B2: enrollments en módulos publicados; B4: FORCE RLS + REVOKE anon).
+8. Continuar con la **Fase 9: Docs README**.
 
 ### Para probar el login real en la BD:
 - Si `Auth Settings → Confirm email` está activo, el registro pide confirmación por correo.
@@ -191,3 +212,36 @@ git checkout plan-backend && git pull origin plan-backend
    porque Cloudflare del plan gratis bloquea contenido educativo legítimo.
 7. **UI workspace**: sin card envolvente, paneles sobre canvas, auto-nav a Solución
    retrasado 650ms tras el check, respuestas persistidas en sessionStorage.
+8. **Panel admin (Fase 7)**: no se tocó RLS (usa `is_admin()` existente); el admin ve todo
+   (sin filtro `is_published`). En modo demo el panel muestra un aviso (AuthGate deja pasar
+   en demo, así que AdminPanel maneja el `isDemoMode`). Los payloads de formatos se editan
+   como **JSON** (`inputs` y `format_payload`), no con formularios por formato. El reorden
+   intercambia `position` entre adyacentes (2 UPDATEs). Borrar módulo = cascada (ejercicios,
+   enrollments, progress).
+
+---
+
+## 9. Fase 8 — Seguridad (reporte `security-auditor` y fixes aplicados)
+
+### Resultado de la auditoría (2026-08-07)
+- **0 críticas · 0 altas · 5 medias · 4 bajas · 3 info** → veredicto **CON CONDICIONES**.
+- Confirmado OK: RLS 6/6 tablas, regla de negocio "suscrito guarda progreso" forzada server-side,
+  sin auto-escalada de rol, `is_admin()` con SECURITY DEFINER + `search_path=''`, sin SQLi/XSS/
+  inyección, sin service_role en el bundle, anon key pública = riesgo aceptado (RLS la protege).
+
+### Fixes aplicados (dev-executor, mismo sesión que Fase 7)
+| Fix | Archivo | Qué |
+|---|---|---|
+| M1 | `AuthContext.tsx` | La caché de sesión ya NO guarda `role` (solo `{user}`); el role siempre sale de `loadProfile` → no falsificable desde localStorage. |
+| M2 | `AuthContext.tsx`, `AuthGate.tsx` | `requireAdmin` no redirige mientras `role === null` (carrera); `loadProfile` reintenta ante error; el 403 tiene botón "Reintentar" (`refreshProfile`). |
+| M3 | `useProgress.ts` | Claves de progreso scoped por usuario (`mastery_hub_<uid>_<key>`), migración única legacy→scoped con borrado → sin contaminación en navegador compartido. |
+| M4 | `AuthContext.tsx`, `AuthGate.tsx` | `isDemoMode` solo en dev (`!supabase && !import.meta.env.PROD`); en prod sin credenciales la app es fail-closed (`NotConfigured`). |
+| M5 | `formatValidation.ts` (nuevo), `ExerciseEditor.tsx` | Valida el payload de cada formato (7 reglas) antes de persistir desde el admin → no rompe el catálogo. |
+| B2 | `schema.sql` | `enrollments_insert_own` exige módulo publicado. |
+| B4 | `schema.sql` | `FORCE ROW LEVEL SECURITY` en las 6 tablas + `REVOKE ALL ... FROM anon`. |
+| B1 | `public/_headers` (nuevo), `Base.astro` | Headers nosniff/Referrer-Policy/X-Frame-Options + CSP meta solo en PROD (`script-src 'self' 'unsafe-inline'` porque Astro inyecta scripts inline de hidratación). |
+| B3 | `scripts/security-check.js` | `--all` excluye `src/data/**` (falsos positivos = contenido educativo). |
+| I3 | `simulator.ts` | Glob de `find` escapa metachar de regex (evita SyntaxError). |
+
+> ⚠️ **Acción requerida**: re-ejecutar `supabase/schema.sql` en Supabase (SQL Editor) para
+> activar B2/B4 en la BD real. El build y `security-check --all` pasan limpios.
