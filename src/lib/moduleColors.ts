@@ -23,7 +23,8 @@ export type ModuleColorName =
   | "amber"
   | "pink"
   | "violet"
-  | "indigo";
+  | "indigo"
+  | "red";
 
 export interface ModulePalette {
   /** Equivalente Tailwind *-500 */
@@ -52,6 +53,7 @@ const PALETTES: Record<ModuleColorName, ModulePalette> = {
   pink: { rgb: "236 72 153", rgbLight: "244 114 182" },
   violet: { rgb: "139 92 246", rgbLight: "167 139 250" },
   indigo: { rgb: "99 102 241", rgbLight: "129 140 248" },
+  red: { rgb: "239 68 68", rgbLight: "248 113 113" },
 };
 
 export function getModulePalette(color: string): ModulePalette {

@@ -87,6 +87,23 @@ export default function UserMenu() {
                   </span>
                 </div>
               </div>
+              {role === "admin" && (
+                <>
+                  <div className="mx-2 my-1 border-t border-line-soft" />
+                  <a
+                    href="/admin"
+                    role="menuitem"
+                    onClick={() => setOpen(false)}
+                    className="flex w-full items-center gap-2 rounded-full px-3 py-2 text-left text-sm font-semibold text-brand transition-colors hover:bg-brand/10"
+                  >
+                    <span aria-hidden className="text-base">
+                      ◆
+                    </span>
+                    Panel admin
+                  </a>
+                </>
+              )}
+              <div className="mx-2 my-1 border-t border-line-soft" />
               <button
                 type="button"
                 role="menuitem"
