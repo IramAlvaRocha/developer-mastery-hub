@@ -299,7 +299,7 @@ export default function MasteryHub() {
 
   return (
     <div className="relative flex h-full flex-col overflow-hidden">
-      <header className="flex shrink-0 items-center gap-3 border-b border-line/80 bg-canvas/90 px-4 py-3 backdrop-blur-md md:gap-4 md:px-6">
+      <header className="flex shrink-0 items-center gap-3 border-b border-line/80 bg-canvas/90 px-4 py-3 md:gap-4 md:px-6">
         {!inModule && (
           <button
             type="button"

@@ -69,7 +69,7 @@ export default function UserMenu() {
       {open && (
         <div
           role="menu"
-          className="absolute right-0 top-[calc(100%+8px)] z-50 w-64 rounded-[24px] border border-line bg-surface p-2 shadow-float animate-fade-in"
+          className="isolate absolute right-0 top-[calc(100%+8px)] z-50 w-64 rounded-[24px] border border-line bg-surface p-2 shadow-float animate-fade-in"
         >
           {user ? (
             <>
