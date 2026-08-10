@@ -5,6 +5,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useAuth } from "@/lib/auth/AuthContext";
+import BrandMark from "@/components/brand/BrandMark";
 
 export default function UserMenu() {
   const { user, role, isDemoMode, signOut } = useAuth();
@@ -96,9 +97,7 @@ export default function UserMenu() {
                     onClick={() => setOpen(false)}
                     className="flex w-full items-center gap-2 rounded-full px-3 py-2 text-left text-sm font-semibold text-brand transition-colors hover:bg-brand/10"
                   >
-                    <span aria-hidden className="text-base">
-                      ◆
-                    </span>
+                    <BrandMark className="h-5 w-5" />
                     Panel admin
                   </a>
                 </>

@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 214 48" role="img" aria-labelledby="title">
+  <title id="title">Mastery Hub</title>
+  <path d="M18 10H11v28h7M30 10h7v28h-7" fill="none" stroke="#fffce1" stroke-width="3.5" stroke-linecap="square" stroke-linejoin="miter"/>
+  <path d="M29 8 19 40" fill="none" stroke="#0ae448" stroke-width="4" stroke-linecap="square"/>
+  <text x="56" y="31" fill="#fffce1" font-family="DM Sans, Arial, sans-serif" font-size="20" font-weight="700" letter-spacing="-.5">Mastery <tspan fill="#0ae448">Hub</tspan></text>
+</svg>
