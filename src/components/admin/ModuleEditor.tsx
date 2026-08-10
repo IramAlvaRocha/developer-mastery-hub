@@ -6,6 +6,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { getModulePalette } from "@/lib/moduleColors";
+import { courseKeyFromGroup } from "@/lib/courseCatalog";
 import type { AdminModule, ModuleInput } from "@/lib/useAdmin";
 import PublishSwitch from "./PublishSwitch";
 import { useFocusTrap } from "./useFocusTrap";
@@ -56,6 +57,9 @@ export default function ModuleEditor({
     badge: module?.badge ?? "",
     color: module?.color ?? "emerald",
     group: module?.group ?? "",
+    courseKey:
+      module?.courseKey ??
+      (module?.group ? courseKeyFromGroup(module.group) : ""),
     description: module?.desc ?? "",
     topics: module?.topics.join(", ") ?? "",
     isPublished: module?.isPublished ?? true,
@@ -104,6 +108,8 @@ export default function ModuleEditor({
       badge: form.badge.trim(),
       color: form.color,
       group: form.group.trim(),
+      courseKey:
+        form.courseKey.trim() || courseKeyFromGroup(form.group.trim()),
       description: form.description.trim(),
       topics: form.topics
         .split(",")
@@ -248,6 +254,21 @@ export default function ModuleEditor({
                   onChange={(e) => set("group", e.target.value)}
                   placeholder="ej. AWS"
                 />
+              </label>
+
+              <label className="block">
+                <span className="mb-1.5 block text-sm font-semibold text-ink">
+                  Curso padre
+                </span>
+                <input
+                  className="input-field"
+                  value={form.courseKey}
+                  onChange={(e) => set("courseKey", e.target.value)}
+                  placeholder="ej. aws"
+                />
+                <span className="mt-1 block text-xs text-faint">
+                  Una inscripción a este curso habilita el módulo completo.
+                </span>
               </label>
             </div>
 
