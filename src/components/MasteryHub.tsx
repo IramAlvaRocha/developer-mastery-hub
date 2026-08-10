@@ -10,13 +10,10 @@ import {
   readUrlLocation,
   type UrlLocation,
 } from "@/lib/urlLocation";
-import { getModuleFormats } from "@/lib/formatMeta";
 import { courseKeyForModule } from "@/lib/courseCatalog";
-import type { ExerciseFormat } from "@/lib/types";
 import LearningDashboard from "./LearningDashboard";
 import ExerciseSidebar from "./ExerciseSidebar";
 import ExerciseWorkspace from "./ExerciseWorkspace";
-import SettingsModal from "./SettingsModal";
 import Toasts from "./Toasts";
 import UserMenu from "./auth/UserMenu";
 import BrandMark from "./brand/BrandMark";
@@ -47,7 +44,6 @@ export default function MasteryHub() {
   const [activeIndex, setActiveIndex] = useState(0);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [formatFilter, setFormatFilter] = useState<ExerciseFormat | null>(null);
 
   const {
     isCompleted,
@@ -55,13 +51,10 @@ export default function MasteryHub() {
     getPercent,
     lastVisited,
     setLastVisited,
-    exportProgress,
-    importProgress,
     lastPersistError,
   } = useProgress(moduleKeys);
   const { toasts, showToast, dismissToast } = useToasts();
 
-  const [settingsOpen, setSettingsOpen] = useState(false);
   const mobileMenuButtonRef = useRef<HTMLButtonElement>(null);
 
   const closeMobileMenu = useCallback(() => {
@@ -72,8 +65,8 @@ export default function MasteryHub() {
   useEffect(() => {
     try {
       const saved = localStorage.getItem(EXERCISE_SIDEBAR_KEY);
-      // Solo restaura el colapso en desktop.
-      if (saved === "1" && window.matchMedia("(min-width: 1024px)").matches) {
+      // Solo restaura el colapso cuando la sidebar deja de ser un drawer.
+      if (saved === "1" && window.matchMedia("(min-width: 768px)").matches) {
         setSidebarCollapsed(true);
       }
     } catch {
@@ -110,17 +103,7 @@ export default function MasteryHub() {
   );
 
   const exercises = currentModule?.exercises ?? [];
-  const formats = useMemo(
-    () => (currentModule ? getModuleFormats(currentModule.exercises) : []),
-    [currentModule],
-  );
-  const filteredExercises = useMemo(
-    () =>
-      formatFilter
-        ? exercises.filter((ex) => ex.format === formatFilter)
-        : exercises,
-    [exercises, formatFilter],
-  );
+  const filteredExercises = exercises;
   const activeExercise = filteredExercises[activeIndex] ?? filteredExercises[0];
   const color = currentModule?.color ?? "blue";
 
@@ -136,7 +119,6 @@ export default function MasteryHub() {
       setCurrentSubject(key);
       setActiveIndex(index);
       setIsMobileMenuOpen(false);
-      setFormatFilter(null);
     });
   }
 
@@ -150,17 +132,6 @@ export default function MasteryHub() {
   function selectExercise(index: number) {
     setActiveIndex(index);
     setIsMobileMenuOpen(false);
-  }
-
-  function changeFormatFilter(next: ExerciseFormat | null) {
-    const prevId = filteredExercises[activeIndex]?.id;
-    setFormatFilter(next);
-    if (prevId == null) return;
-    const list = next
-      ? exercises.filter((ex) => ex.format === next)
-      : exercises;
-    const pos = list.findIndex((ex) => ex.id === prevId);
-    setActiveIndex(pos >= 0 ? pos : 0);
   }
 
   const goNext = useCallback(() => {
@@ -230,7 +201,6 @@ export default function MasteryHub() {
     }
     setCurrentSubject(mod.key);
     setActiveIndex(index);
-    setFormatFilter(null);
   }, [modules, enrolledKeys]);
 
   useEffect(() => {
@@ -334,39 +304,17 @@ export default function MasteryHub() {
               <span className="hidden sm:inline"> Menú</span>
             </button>
           )}
-          {inModule && (
+          {inModule && sidebarCollapsed && (
             <button
-              onClick={() => setSidebarCollapsed((v) => !v)}
+              onClick={() => setSidebarCollapsed(false)}
               className="icon-btn hidden border border-line md:inline-flex"
-              aria-label="Mostrar/ocultar lista de ejercicios"
-              aria-expanded={!sidebarCollapsed}
-              title={
-                sidebarCollapsed
-                  ? "Mostrar lista de ejercicios"
-                  : "Ocultar lista de ejercicios"
-              }
+              aria-label="Mostrar lista de ejercicios"
+              aria-expanded="false"
+              title="Mostrar lista de ejercicios"
             >
-              {sidebarCollapsed ? "☰" : "▤"}
+              ☰
             </button>
           )}
-          {inModule && (
-            <button
-              onClick={shareCurrent}
-              className="icon-btn border border-line"
-              aria-label="Compartir ejercicio"
-              title="Compartir ejercicio"
-            >
-              🔗
-            </button>
-          )}
-          <button
-            onClick={() => setSettingsOpen(true)}
-            className="icon-btn border border-line"
-            aria-label="Configuración"
-            title="Configuración"
-          >
-            ⚙
-          </button>
           <UserMenu />
           {inModule && (
             <button
@@ -410,6 +358,7 @@ export default function MasteryHub() {
               collapsed={sidebarCollapsed}
               onSelect={selectExercise}
               onClose={closeMobileMenu}
+              onCollapse={() => setSidebarCollapsed(true)}
             />
 
             <div
@@ -429,18 +378,14 @@ export default function MasteryHub() {
                   )}
                   index={activeIndex}
                   total={filteredExercises.length}
-                  formats={formats}
-                  formatFilter={formatFilter}
-                  onFormatFilterChange={changeFormatFilter}
                   onPrev={goPrev}
                   onNext={goNext}
                   onComplete={(id) => markComplete(currentModule.key, id)}
+                  onShare={shareCurrent}
                   onToast={showToast}
                 />
               ) : (
-                <ExerciseFilterEmpty
-                  onClear={() => changeFormatFilter(null)}
-                />
+                <ExerciseFilterEmpty />
               )}
             </div>
 
@@ -453,14 +398,6 @@ export default function MasteryHub() {
           </>
         )}
       </div>
-
-      <SettingsModal
-        open={settingsOpen}
-        onClose={() => setSettingsOpen(false)}
-        onToast={showToast}
-        onExportProgress={exportProgress}
-        onImportProgress={importProgress}
-      />
 
       <Toasts toasts={toasts} onDismiss={dismissToast} />
     </div>
@@ -502,8 +439,8 @@ function ModuleMenuSkeleton() {
   );
 }
 
-/** Defensa: filtro de formato sin resultados dentro del módulo (no vuelve al catálogo). */
-function ExerciseFilterEmpty({ onClear }: { onClear: () => void }) {
+/** Defensa para módulos publicados sin ejercicios disponibles. */
+function ExerciseFilterEmpty() {
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-y-auto overflow-x-hidden px-4 py-4 md:px-6 md:py-6">
       <div className="mx-auto flex min-h-full w-full max-w-5xl flex-col items-center justify-center rounded-[28px] border border-line bg-surface p-8 text-center sm:p-12">
@@ -512,19 +449,14 @@ function ExerciseFilterEmpty({ onClear }: { onClear: () => void }) {
         </span>
         <p className="section-eyebrow mt-4 text-cream">{"{ Sin ejercicios }"}</p>
         <h1 className="mt-2 text-xl font-semibold tracking-tight text-cream sm:text-2xl">
-          No hay ejercicios de este formato en este módulo
+          Este módulo todavía no tiene ejercicios
         </h1>
         <p className="mt-2 max-w-md text-[15px] leading-relaxed text-muted">
-          Quita el filtro de tipo de ejercicio para ver todos los desafíos del
-          módulo.
+          Vuelve a tus cursos y elige otro módulo mientras se publica el contenido.
         </p>
-        <button
-          type="button"
-          onClick={onClear}
-          className="btn-filled-soft mt-6 !min-h-11"
-        >
-          Ver todos los ejercicios
-        </button>
+        <a href="/aprender" className="btn-filled-soft mt-6 !min-h-11">
+          Volver a mis cursos
+        </a>
       </div>
     </div>
   );

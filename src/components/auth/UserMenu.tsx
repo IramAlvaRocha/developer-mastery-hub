@@ -41,7 +41,7 @@ export default function UserMenu() {
         ref={toggleRef}
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="flex items-center gap-2 rounded-full border border-line py-1 pl-1 pr-2.5 transition-colors hover:border-brand/40"
+        className="flex h-11 w-11 items-center justify-center gap-2 rounded-full border border-line p-0 transition-colors hover:border-brand/40 sm:h-auto sm:w-auto sm:justify-start sm:py-1 sm:pl-1 sm:pr-2.5"
         aria-haspopup="menu"
         aria-expanded={open}
         aria-label="Menú de usuario"

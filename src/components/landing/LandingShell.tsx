@@ -16,15 +16,15 @@ export default function LandingShell() {
             <BrandMark showWordmark className="h-10 w-auto" />
           </a>
 
-          <nav className="hidden items-center gap-1 md:flex">
-            <a href="#aprender" className="btn-ghost">
-              Qué aprender
+          <nav className="hidden items-center gap-1 md:flex" aria-label="Navegación principal">
+            <a href="/cursos" className="btn-ghost">
+              Cursos
+            </a>
+            <a href="#rutas" className="btn-ghost">
+              Áreas
             </a>
             <a href="#tecnologias" className="btn-ghost">
               Tecnologías
-            </a>
-            <a href="/aprender" className="btn-ghost">
-              Catálogo
             </a>
           </nav>
 
@@ -33,13 +33,12 @@ export default function LandingShell() {
               Login
             </a>
             <a
-              href="/login?mode=register"
-              className="btn-secondary !min-h-10 !px-4 !text-sm"
+              href="/cursos"
+              className="btn-primary !min-h-10 whitespace-nowrap !px-3 !text-sm sm:!px-4"
+              aria-label="Explorar cursos"
             >
-              Registro
-            </a>
-            <a href="/aprender" className="btn-primary !min-h-10 !px-4 !text-sm">
-              Empezar
+              <span className="sm:hidden">Cursos</span>
+              <span className="hidden sm:inline">Explorar cursos</span>
             </a>
             <button
               type="button"
@@ -55,12 +54,15 @@ export default function LandingShell() {
         {mobileOpen && (
           <div className="border-t border-line px-4 py-3 md:hidden">
             <div className="flex flex-col gap-1">
+              <a href="/cursos" className="btn-ghost justify-start">
+                Cursos
+              </a>
               <a
-                href="#aprender"
+                href="#rutas"
                 className="btn-ghost justify-start"
                 onClick={() => setMobileOpen(false)}
               >
-                Qué aprender
+                Áreas
               </a>
               <a
                 href="#tecnologias"
@@ -69,14 +71,11 @@ export default function LandingShell() {
               >
                 Tecnologías
               </a>
-              <a href="/aprender" className="btn-ghost justify-start">
-                Catálogo
-              </a>
               <a href="/login" className="btn-ghost justify-start">
-                Login
+                Iniciar sesión
               </a>
               <a href="/login?mode=register" className="btn-ghost justify-start">
-                Registro
+                Crear cuenta
               </a>
             </div>
           </div>

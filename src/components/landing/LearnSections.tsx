@@ -8,6 +8,7 @@ type TechIcon = { slug: string; color: string; label: string; src?: string };
 
 const TRACKS: {
   label: string;
+  courseKey: string;
   color: string;
   accent: string;
   title: string;
@@ -16,6 +17,7 @@ const TRACKS: {
 }[] = [
   {
     label: "Frontend",
+    courseKey: "frontend",
     color: "text-sky",
     accent: "#00bae2",
     title: "React, Vue y UI moderna",
@@ -28,6 +30,7 @@ const TRACKS: {
   },
   {
     label: "Backend",
+    courseKey: "backend-data",
     color: "text-orangey",
     accent: "#ff8709",
     title: ".NET y Node con criterio",
@@ -40,6 +43,7 @@ const TRACKS: {
   },
   {
     label: "Datos",
+    courseKey: "backend-data",
     color: "text-lilac",
     accent: "#9d95ff",
     title: "Prisma, EF Core y SQL",
@@ -52,6 +56,7 @@ const TRACKS: {
   },
   {
     label: "TypeScript",
+    courseKey: "typescript",
     color: "text-pink",
     accent: "#fec5fb",
     title: "Tipos que trabajan por ti",
@@ -63,6 +68,7 @@ const TRACKS: {
   },
   {
     label: "DevOps",
+    courseKey: "devops-git",
     color: "text-brand",
     accent: "#0ae448",
     title: "Git, Docker y calidad",
@@ -75,12 +81,13 @@ const TRACKS: {
   },
   {
     label: "Cloud",
+    courseKey: "aws",
     color: "text-butter",
     accent: "#f5e6a3",
-    title: "GCP y serverless",
-    body: "Servicios gestionados, IAM y patrones cloud para ir más allá del localhost.",
+    title: "AWS, cloud y serverless",
+    body: "IAM, cómputo, datos y patrones serverless para ir más allá del localhost.",
     icons: [
-      { slug: "googlecloud", color: "4285F4", label: "GCP" },
+      { slug: "aws", color: "FF9900", label: "AWS", src: "/logos/aws.svg" },
       { slug: "firebase", color: "FFCA28", label: "Firebase" },
       { slug: "netlify", color: "00C7B7", label: "Netlify" },
     ],
@@ -120,13 +127,13 @@ export default function LearnSections() {
 
   return (
     <section
-      id="aprender"
+      id="rutas"
       ref={rootRef}
       className="mx-auto max-w-[1280px] px-4 py-20 sm:px-6 sm:py-28"
     >
-      <p className="section-eyebrow">{"{ Qué puedes aprender }"}</p>
+      <p className="section-eyebrow">{"{ Áreas de aprendizaje }"}</p>
       <h2 className="mt-2 max-w-3xl text-[clamp(2rem,5vw,3.6rem)] font-semibold leading-[1.08] tracking-tight text-cream">
-        Rutas claras. Color por disciplina. Práctica de verdad.
+        Construye criterio en todo el stack.
       </h2>
 
       <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
@@ -171,10 +178,10 @@ export default function LearnSections() {
               {track.body}
             </p>
             <a
-              href="/aprender"
+              href={`/cursos/${track.courseKey}`}
               className="btn-secondary mt-5 self-start !min-h-10 !px-5 !text-sm"
             >
-              Explorar
+              Ver cursos
             </a>
           </article>
         ))}
