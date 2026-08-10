@@ -19,9 +19,23 @@ CREATE TABLE IF NOT EXISTS public.profiles (
   created_at   timestamptz NOT NULL DEFAULT now()
 );
 
--- Catálogo de cursos. `description` mapea el campo `desc` del modelo TS.
+-- Cursos padre (los grupos históricos del catálogo).
+CREATE TABLE IF NOT EXISTS public.courses (
+  key          text PRIMARY KEY,
+  name         text NOT NULL,
+  description  text,
+  icon         text,
+  color        text,
+  position     int NOT NULL DEFAULT 0,
+  is_published boolean NOT NULL DEFAULT true,
+  updated_at   timestamptz NOT NULL DEFAULT now()
+);
+
+-- Módulos/temas pertenecientes a un curso padre.
+-- `description` mapea el campo `desc` del modelo TS.
 CREATE TABLE IF NOT EXISTS public.modules (
   key          text PRIMARY KEY,
+  course_key   text NOT NULL REFERENCES public.courses(key) ON UPDATE CASCADE ON DELETE RESTRICT,
   name         text NOT NULL,
   icon         text,
   badge        text,
@@ -33,6 +47,75 @@ CREATE TABLE IF NOT EXISTS public.modules (
   is_published boolean NOT NULL DEFAULT true,
   updated_at   timestamptz NOT NULL DEFAULT now()
 );
+
+-- Compatibilidad al re-ejecutar este esquema sobre la versión anterior.
+ALTER TABLE public.modules ADD COLUMN IF NOT EXISTS course_key text;
+
+WITH grouped_modules AS (
+  SELECT DISTINCT
+    COALESCE("group", 'Otros') AS group_name,
+    CASE COALESCE("group", 'Otros')
+      WHEN 'AWS' THEN 'aws'
+      WHEN 'Buenas Practicas' THEN 'best-practices'
+      WHEN 'SOLID & Clean Code' THEN 'solid-clean-code'
+      WHEN 'Frontend' THEN 'frontend'
+      WHEN 'Backend & Datos' THEN 'backend-data'
+      WHEN 'Cloud & Serverless' THEN 'cloud-serverless'
+      WHEN 'DevOps & Git' THEN 'devops-git'
+      WHEN 'APIs & Seguridad' THEN 'apis-security'
+      WHEN 'Testing & Calidad' THEN 'testing-quality'
+      WHEN 'TypeScript' THEN 'typescript'
+      WHEN 'TS Arrays' THEN 'typescript-arrays'
+      ELSE 'course-' || substr(md5(COALESCE("group", 'Otros')), 1, 12)
+    END AS course_key
+  FROM public.modules
+)
+INSERT INTO public.courses (key, name, position, is_published)
+SELECT
+  gm.course_key,
+  gm.group_name,
+  COALESCE((
+    SELECT min(m.position)
+    FROM public.modules m
+    WHERE COALESCE(m."group", 'Otros') = gm.group_name
+  ), 0),
+  true
+FROM grouped_modules gm
+ON CONFLICT (key) DO NOTHING;
+
+UPDATE public.modules
+SET course_key = CASE COALESCE("group", 'Otros')
+  WHEN 'AWS' THEN 'aws'
+  WHEN 'Buenas Practicas' THEN 'best-practices'
+  WHEN 'SOLID & Clean Code' THEN 'solid-clean-code'
+  WHEN 'Frontend' THEN 'frontend'
+  WHEN 'Backend & Datos' THEN 'backend-data'
+  WHEN 'Cloud & Serverless' THEN 'cloud-serverless'
+  WHEN 'DevOps & Git' THEN 'devops-git'
+  WHEN 'APIs & Seguridad' THEN 'apis-security'
+  WHEN 'Testing & Calidad' THEN 'testing-quality'
+  WHEN 'TypeScript' THEN 'typescript'
+  WHEN 'TS Arrays' THEN 'typescript-arrays'
+  ELSE 'course-' || substr(md5(COALESCE("group", 'Otros')), 1, 12)
+END
+WHERE course_key IS NULL;
+
+ALTER TABLE public.modules ALTER COLUMN course_key SET NOT NULL;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint
+    WHERE conname = 'modules_course_key_fkey'
+      AND conrelid = 'public.modules'::regclass
+  ) THEN
+    ALTER TABLE public.modules
+      ADD CONSTRAINT modules_course_key_fkey
+      FOREIGN KEY (course_key) REFERENCES public.courses(key)
+      ON UPDATE CASCADE ON DELETE RESTRICT;
+  END IF;
+END;
+$$;
 
 -- Ejercicios por módulo.
 -- `format` = ExerciseFormat (prediction, ordering, snippet-pick, bug-hunt,
@@ -75,9 +158,42 @@ CREATE TABLE IF NOT EXISTS public.enrollments (
   PRIMARY KEY (user_id, module_key)
 );
 
+-- Inscripciones al curso padre. La tabla anterior se conserva temporalmente
+-- para migrar datos y mantener compatibilidad con clientes aún no actualizados.
+CREATE TABLE IF NOT EXISTS public.course_enrollments (
+  user_id        uuid NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+  course_key     text NOT NULL REFERENCES public.courses(key) ON UPDATE CASCADE ON DELETE CASCADE,
+  enrolled_at    timestamptz NOT NULL DEFAULT now(),
+  last_opened_at timestamptz,
+  PRIMARY KEY (user_id, course_key)
+);
+
+INSERT INTO public.course_enrollments (
+  user_id, course_key, enrolled_at, last_opened_at
+)
+SELECT e.user_id, m.course_key, min(e.enrolled_at), max(e.last_opened_at)
+FROM public.enrollments e
+JOIN public.modules m ON m.key = e.module_key
+GROUP BY e.user_id, m.course_key
+ON CONFLICT (user_id, course_key) DO UPDATE
+SET enrolled_at = LEAST(
+      public.course_enrollments.enrolled_at,
+      EXCLUDED.enrolled_at
+    ),
+    last_opened_at = CASE
+      WHEN public.course_enrollments.last_opened_at IS NULL
+        THEN EXCLUDED.last_opened_at
+      WHEN EXCLUDED.last_opened_at IS NULL
+        THEN public.course_enrollments.last_opened_at
+      ELSE GREATEST(
+        public.course_enrollments.last_opened_at,
+        EXCLUDED.last_opened_at
+      )
+    END;
+
 -- Ejercicios completados por usuario.
--- Regla: "cualquier autenticado practica, pero solo suscritos guardan progreso"
--- (se fuerza en la RLS con EXISTS contra enrollments, ver sección 5).
+-- El progreso existente conserva sus claves; las nuevas escrituras requieren
+-- inscripción al curso padre (ver sección 5).
 CREATE TABLE IF NOT EXISTS public.progress (
   user_id      uuid NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
   module_key   text NOT NULL REFERENCES public.modules(key) ON DELETE CASCADE,
@@ -103,9 +219,14 @@ CREATE TABLE IF NOT EXISTS public.user_state (
 
 CREATE INDEX IF NOT EXISTS idx_exercises_module    ON public.exercises(module_key);
 CREATE INDEX IF NOT EXISTS idx_exercises_published ON public.exercises(is_published) WHERE is_published;
+CREATE INDEX IF NOT EXISTS idx_modules_course      ON public.modules(course_key);
 CREATE INDEX IF NOT EXISTS idx_progress_user       ON public.progress(user_id);
 CREATE INDEX IF NOT EXISTS idx_enrollments_user    ON public.enrollments(user_id);
 CREATE INDEX IF NOT EXISTS idx_enrollments_module  ON public.enrollments(module_key);
+CREATE INDEX IF NOT EXISTS idx_course_enrollments_user
+  ON public.course_enrollments(user_id);
+CREATE INDEX IF NOT EXISTS idx_course_enrollments_course
+  ON public.course_enrollments(course_key);
 
 -- ----------------------------------------------------------------------------
 -- 3. Funciones helper (SECURITY DEFINER: se ejecutan como el owner y no les
@@ -155,18 +276,22 @@ CREATE TRIGGER on_auth_user_created
 -- ----------------------------------------------------------------------------
 
 ALTER TABLE public.profiles    ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.courses     ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.modules     ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.exercises   ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.enrollments ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.course_enrollments ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.progress    ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.user_state  ENABLE ROW LEVEL SECURITY;
 
 -- Fase 8 (B4): FORCE RLS para que las políticas se apliquen también a los
 -- privilegios del owner (defensa en profundidad si se usan credenciales owner).
 ALTER TABLE public.profiles    FORCE ROW LEVEL SECURITY;
+ALTER TABLE public.courses     FORCE ROW LEVEL SECURITY;
 ALTER TABLE public.modules     FORCE ROW LEVEL SECURITY;
 ALTER TABLE public.exercises   FORCE ROW LEVEL SECURITY;
 ALTER TABLE public.enrollments FORCE ROW LEVEL SECURITY;
+ALTER TABLE public.course_enrollments FORCE ROW LEVEL SECURITY;
 ALTER TABLE public.progress    FORCE ROW LEVEL SECURITY;
 ALTER TABLE public.user_state  FORCE ROW LEVEL SECURITY;
 
@@ -181,6 +306,28 @@ CREATE POLICY profiles_update_own ON public.profiles
   FOR UPDATE TO authenticated
   USING (auth.uid() = id)
   WITH CHECK (auth.uid() = id);
+
+-- courses: catálogo publicado visible públicamente; escritura solo admin.
+DROP POLICY IF EXISTS courses_select_published_or_admin ON public.courses;
+CREATE POLICY courses_select_published_or_admin ON public.courses
+  FOR SELECT TO anon, authenticated
+  USING (is_published OR public.is_admin());
+
+DROP POLICY IF EXISTS courses_insert_admin ON public.courses;
+CREATE POLICY courses_insert_admin ON public.courses
+  FOR INSERT TO authenticated
+  WITH CHECK (public.is_admin());
+
+DROP POLICY IF EXISTS courses_update_admin ON public.courses;
+CREATE POLICY courses_update_admin ON public.courses
+  FOR UPDATE TO authenticated
+  USING (public.is_admin())
+  WITH CHECK (public.is_admin());
+
+DROP POLICY IF EXISTS courses_delete_admin ON public.courses;
+CREATE POLICY courses_delete_admin ON public.courses
+  FOR DELETE TO authenticated
+  USING (public.is_admin());
 
 -- modules: SELECT si autenticado y publicado (admin ve todo); escritura admin.
 DROP POLICY IF EXISTS modules_select_published_or_admin ON public.modules;
@@ -204,11 +351,28 @@ CREATE POLICY modules_delete_admin ON public.modules
   FOR DELETE TO authenticated
   USING (public.is_admin());
 
--- exercises: SELECT si autenticado y publicado (admin ve todo); escritura admin.
+-- exercises: contenido completo solo para admin o usuario inscrito al curso.
 DROP POLICY IF EXISTS exercises_select_published_or_admin ON public.exercises;
-CREATE POLICY exercises_select_published_or_admin ON public.exercises
+DROP POLICY IF EXISTS exercises_select_enrolled_or_admin ON public.exercises;
+CREATE POLICY exercises_select_enrolled_or_admin ON public.exercises
   FOR SELECT TO authenticated
-  USING (is_published OR public.is_admin());
+  USING (
+    public.is_admin()
+    OR (
+      exercises.is_published
+      AND EXISTS (
+        SELECT 1
+        FROM public.modules m
+        JOIN public.courses c ON c.key = m.course_key
+        JOIN public.course_enrollments ce
+          ON ce.course_key = m.course_key
+         AND ce.user_id = (SELECT auth.uid())
+        WHERE m.key = exercises.module_key
+          AND m.is_published
+          AND c.is_published
+      )
+    )
+  );
 
 DROP POLICY IF EXISTS exercises_insert_admin ON public.exercises;
 CREATE POLICY exercises_insert_admin ON public.exercises
@@ -256,11 +420,45 @@ CREATE POLICY enrollments_delete_own ON public.enrollments
   FOR DELETE TO authenticated
   USING (auth.uid() = user_id);
 
--- progress: SELECT solo lo propio. INSERT/UPDATE/DELETE solo si es la propia
--- fila Y existe un enrollment del mismo usuario y module_key (subquery).
--- Nota: `progress.module_key` va calificado con el nombre de la tabla para
--- referirse a la fila que se inserta/actualiza/borra (sin calificar, la
--- subquery lo resolvería contra el alias `e` y la condición sería trivial).
+-- course_enrollments: el usuario administra su propia inscripción.
+DROP POLICY IF EXISTS course_enrollments_select_own_or_admin
+  ON public.course_enrollments;
+CREATE POLICY course_enrollments_select_own_or_admin
+  ON public.course_enrollments
+  FOR SELECT TO authenticated
+  USING ((SELECT auth.uid()) = user_id OR public.is_admin());
+
+DROP POLICY IF EXISTS course_enrollments_insert_own
+  ON public.course_enrollments;
+CREATE POLICY course_enrollments_insert_own
+  ON public.course_enrollments
+  FOR INSERT TO authenticated
+  WITH CHECK (
+    (SELECT auth.uid()) = user_id
+    AND EXISTS (
+      SELECT 1 FROM public.courses c
+      WHERE c.key = course_enrollments.course_key
+        AND c.is_published
+    )
+  );
+
+DROP POLICY IF EXISTS course_enrollments_update_own
+  ON public.course_enrollments;
+CREATE POLICY course_enrollments_update_own
+  ON public.course_enrollments
+  FOR UPDATE TO authenticated
+  USING ((SELECT auth.uid()) = user_id)
+  WITH CHECK ((SELECT auth.uid()) = user_id);
+
+DROP POLICY IF EXISTS course_enrollments_delete_own
+  ON public.course_enrollments;
+CREATE POLICY course_enrollments_delete_own
+  ON public.course_enrollments
+  FOR DELETE TO authenticated
+  USING ((SELECT auth.uid()) = user_id);
+
+-- progress: las filas existentes se conservan. Escribir requiere inscripción
+-- al curso padre del módulo.
 DROP POLICY IF EXISTS progress_select_own ON public.progress;
 CREATE POLICY progress_select_own ON public.progress
   FOR SELECT TO authenticated
@@ -270,24 +468,30 @@ DROP POLICY IF EXISTS progress_insert_enrolled ON public.progress;
 CREATE POLICY progress_insert_enrolled ON public.progress
   FOR INSERT TO authenticated
   WITH CHECK (
-    auth.uid() = user_id
+    (SELECT auth.uid()) = user_id
     AND EXISTS (
-      SELECT 1 FROM public.enrollments e
-      WHERE e.user_id = auth.uid()
-        AND e.module_key = progress.module_key
+      SELECT 1
+      FROM public.modules m
+      JOIN public.course_enrollments ce
+        ON ce.course_key = m.course_key
+       AND ce.user_id = (SELECT auth.uid())
+      WHERE m.key = progress.module_key
     )
   );
 
 DROP POLICY IF EXISTS progress_update_enrolled ON public.progress;
 CREATE POLICY progress_update_enrolled ON public.progress
   FOR UPDATE TO authenticated
-  USING (auth.uid() = user_id)
+  USING ((SELECT auth.uid()) = user_id)
   WITH CHECK (
-    auth.uid() = user_id
+    (SELECT auth.uid()) = user_id
     AND EXISTS (
-      SELECT 1 FROM public.enrollments e
-      WHERE e.user_id = auth.uid()
-        AND e.module_key = progress.module_key
+      SELECT 1
+      FROM public.modules m
+      JOIN public.course_enrollments ce
+        ON ce.course_key = m.course_key
+       AND ce.user_id = (SELECT auth.uid())
+      WHERE m.key = progress.module_key
     )
   );
 
@@ -295,11 +499,14 @@ DROP POLICY IF EXISTS progress_delete_enrolled ON public.progress;
 CREATE POLICY progress_delete_enrolled ON public.progress
   FOR DELETE TO authenticated
   USING (
-    auth.uid() = user_id
+    (SELECT auth.uid()) = user_id
     AND EXISTS (
-      SELECT 1 FROM public.enrollments e
-      WHERE e.user_id = auth.uid()
-        AND e.module_key = progress.module_key
+      SELECT 1
+      FROM public.modules m
+      JOIN public.course_enrollments ce
+        ON ce.course_key = m.course_key
+       AND ce.user_id = (SELECT auth.uid())
+      WHERE m.key = progress.module_key
     )
   );
 
@@ -320,6 +527,80 @@ CREATE POLICY user_state_update_own ON public.user_state
   USING (auth.uid() = user_id)
   WITH CHECK (auth.uid() = user_id);
 
+-- Catálogo público seguro: expone temario y metadatos, nunca contenido que
+-- revele código, respuestas o soluciones.
+CREATE OR REPLACE FUNCTION public.get_public_course_curriculum(
+  p_course_key text DEFAULT NULL
+)
+RETURNS TABLE (
+  course_key text,
+  course_name text,
+  course_description text,
+  course_icon text,
+  course_color text,
+  course_position int,
+  curriculum jsonb
+)
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = ''
+AS $$
+  SELECT
+    c.key,
+    c.name,
+    c.description,
+    c.icon,
+    c.color,
+    c.position,
+    COALESCE(
+      jsonb_agg(
+        jsonb_build_object(
+          'key', m.key,
+          'name', m.name,
+          'icon', m.icon,
+          'badge', m.badge,
+          'color', m.color,
+          'description', m.description,
+          'topics', m.topics,
+          'position', m.position,
+          'exercises', (
+            SELECT COALESCE(
+              jsonb_agg(
+                jsonb_build_object(
+                  'exercise_ref', e.exercise_ref,
+                  'title', e.title,
+                  'stars', e.stars,
+                  'category', e.category,
+                  'step', e.step,
+                  'description', e.description,
+                  'objective', e.objective,
+                  'tags', e.tags,
+                  'position', e.position
+                )
+                ORDER BY e.position, e.exercise_ref
+              ),
+              '[]'::jsonb
+            )
+            FROM public.exercises e
+            WHERE e.module_key = m.key
+              AND e.is_published
+          )
+        )
+        ORDER BY m.position, m.key
+      ) FILTER (WHERE m.key IS NOT NULL),
+      '[]'::jsonb
+    )
+  FROM public.courses c
+  LEFT JOIN public.modules m
+    ON m.course_key = c.key
+   AND m.is_published
+  WHERE c.is_published
+    AND (p_course_key IS NULL OR c.key = p_course_key)
+  GROUP BY c.key, c.name, c.description, c.icon, c.color, c.position
+  ORDER BY c.position, c.key;
+$$;
+
 -- ----------------------------------------------------------------------------
 -- 6. Restricciones a nivel de columna (defensa en profundidad)
 -- ----------------------------------------------------------------------------
@@ -332,15 +613,29 @@ GRANT UPDATE (display_name, avatar_url) ON public.profiles TO authenticated;
 REVOKE UPDATE ON public.enrollments FROM authenticated;
 GRANT UPDATE (last_opened_at) ON public.enrollments TO authenticated;
 
+-- Objetos de la jerarquía: revocación explícita y permisos mínimos.
+REVOKE ALL ON public.courses,
+              public.course_enrollments
+  FROM PUBLIC, anon, authenticated;
+GRANT SELECT ON public.courses TO anon, authenticated;
+GRANT INSERT, UPDATE, DELETE ON public.courses TO authenticated;
+GRANT SELECT, INSERT, DELETE ON public.course_enrollments TO authenticated;
+GRANT UPDATE (last_opened_at) ON public.course_enrollments TO authenticated;
+
+REVOKE EXECUTE ON FUNCTION public.get_public_course_curriculum(text)
+  FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.get_public_course_curriculum(text)
+  TO anon, authenticated;
+
 -- ----------------------------------------------------------------------------
--- 7. Fase 8 (B4): acceso anónimo nulo
+-- 7. Acceso anónimo restringido al catálogo público
 -- ----------------------------------------------------------------------------
--- La app solo accede a los datos autenticada (el landing es estático); el
--- rol `anon` (clave anon-key) no debe poder leer/escribir ninguna tabla.
+-- `anon` solo puede leer cursos publicados y ejecutar el RPC público.
 REVOKE ALL ON public.profiles,
             public.modules,
             public.exercises,
             public.enrollments,
+            public.course_enrollments,
             public.progress,
             public.user_state
   FROM anon;

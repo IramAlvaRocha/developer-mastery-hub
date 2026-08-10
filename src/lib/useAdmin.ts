@@ -32,14 +32,15 @@ import type {
 
 const CACHE_PREFIX = "dmh-admin-";
 
-/** Módulo admin: `Module` + flags de publicación y orden. */
-export interface AdminModule extends Module {
+/** Ejercicio admin: `Exercise` + flags de publicación y orden. */
+export interface AdminExercise extends Exercise {
   isPublished: boolean;
   position: number;
 }
 
-/** Ejercicio admin: `Exercise` + flags de publicación y orden. */
-export interface AdminExercise extends Exercise {
+/** Módulo admin: `Module` + ejercicios y flags administrativos. */
+export interface AdminModule extends Omit<Module, "exercises"> {
+  exercises: AdminExercise[];
   isPublished: boolean;
   position: number;
 }
@@ -52,6 +53,7 @@ export interface ModuleInput {
   badge: string;
   color: string;
   group: string;
+  courseKey: string;
   description: string;
   topics: string[];
   isPublished: boolean;
@@ -94,6 +96,7 @@ interface ModuleRow {
   badge: string;
   color: string;
   group: string | null;
+  course_key: string | null;
   description: string;
   topics: string[] | null;
   position: number;
@@ -218,6 +221,7 @@ function moduleFromRow(
     badge: row.badge,
     color: row.color,
     group: row.group ?? "",
+    courseKey: row.course_key ?? undefined,
     desc: row.description,
     topics: row.topics ?? [],
     exercises: exercisesByModule.get(row.key) ?? [],
@@ -257,7 +261,7 @@ export function useAdmin() {
       const { data: moduleRows, error: moduleErr } = await supabase
         .from("modules")
         .select(
-          "key,name,icon,badge,color,group,description,topics,position,is_published",
+          "key,name,icon,badge,color,group,course_key,description,topics,position,is_published",
         )
         .order("position");
       if (moduleErr) throw new Error(moduleErr.message);
@@ -327,6 +331,7 @@ export function useAdmin() {
         badge: input.badge.trim(),
         color: input.color,
         group: input.group.trim(),
+        course_key: input.courseKey.trim(),
         description: input.description.trim(),
         topics: input.topics,
         position,
@@ -350,6 +355,8 @@ export function useAdmin() {
       if (patch.badge !== undefined) data.badge = patch.badge.trim();
       if (patch.color !== undefined) data.color = patch.color;
       if (patch.group !== undefined) data.group = patch.group.trim();
+      if (patch.courseKey !== undefined)
+        data.course_key = patch.courseKey.trim();
       if (patch.description !== undefined)
         data.description = patch.description.trim();
       if (patch.topics !== undefined) data.topics = patch.topics;
