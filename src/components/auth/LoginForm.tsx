@@ -104,7 +104,7 @@ function LoginFormInner({
     setError(null);
     setInfo(null);
     setSubmitting(true);
-    const res = await signInWithGoogle(redirectTo);
+    const res = await signInWithGoogle();
     setSubmitting(false);
     if (res.error) setError(res.error);
   }

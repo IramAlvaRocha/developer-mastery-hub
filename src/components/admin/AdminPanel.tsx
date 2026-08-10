@@ -12,7 +12,6 @@ import { FORMAT_LABELS } from "@/lib/formatMeta";
 import { useAdmin, type AdminExercise, type AdminModule } from "@/lib/useAdmin";
 import { useToasts } from "@/lib/useToasts";
 import UserMenu from "@/components/auth/UserMenu";
-import BrandMark from "@/components/brand/BrandMark";
 import Toasts from "@/components/Toasts";
 import ModuleEditor from "./ModuleEditor";
 import ExerciseEditor from "./ExerciseEditor";
@@ -208,7 +207,9 @@ export default function AdminPanel() {
           className="flex min-w-0 shrink-0 items-center gap-3"
           aria-label="Ir a la landing"
         >
-          <BrandMark className="h-11 w-11" />
+          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-brand/15 text-lg text-brand">
+            ◆
+          </span>
           <div className="min-w-0 text-left">
             <span className="block truncate text-base font-semibold tracking-tight text-cream sm:text-lg">
               Mastery Hub
@@ -318,7 +319,7 @@ export default function AdminPanel() {
                           aria-hidden
                           className="mod-icon-bg flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-line text-xl"
                         >
-                          {m.icon || "{}"}
+                          {m.icon || "◆"}
                         </span>
 
                         <span className="min-w-0 flex-1">

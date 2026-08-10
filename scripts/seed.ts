@@ -18,10 +18,6 @@ import { resolve } from "node:path";
 import { createClient } from "@supabase/supabase-js";
 import type { Exercise, Module } from "@/lib/types";
 import { ALL_MODULES } from "@/data";
-import {
-  COURSE_DEFINITIONS,
-  getCourseKeyForGroup,
-} from "@/data/courseDefinitions";
 
 // ──────────────────────────────────────────────────────────────────────────
 // Configuración
@@ -275,22 +271,9 @@ function serializeFormat(exercise: Exercise): {
 // Construcción de filas
 // ──────────────────────────────────────────────────────────────────────────
 
-function buildCourseRows() {
-  return COURSE_DEFINITIONS.map((course, position) => ({
-    key: course.key,
-    name: course.name,
-    description: course.description,
-    icon: course.icon,
-    color: course.color,
-    position,
-    is_published: true,
-  }));
-}
-
 function buildModuleRows(modules: Module[]) {
   return modules.map((m, i) => ({
     key: m.key,
-    course_key: getCourseKeyForGroup(m.group),
     name: m.name,
     icon: m.icon,
     badge: m.badge,
@@ -341,16 +324,7 @@ async function main() {
     `Conectando a ${SUPABASE_URL}...\n`,
   );
 
-  // 1) Cursos padre (deben existir antes de resolver la FK de modules)
-  const courseRows = buildCourseRows();
-  const courses = await withRetry(
-    () => upsertRows("courses", courseRows, "key"),
-    "courses",
-  );
-  if (courses.error) fail(`upsert courses: ${courses.error.message}`);
-  await sleep(400);
-
-  // 2) Módulos (un solo upsert)
+  // 1) Módulos (un solo upsert)
   const moduleRows = buildModuleRows(ALL_MODULES);
   const mod = await withRetry(
     () => upsertRows("modules", moduleRows, "key"),
@@ -359,7 +333,7 @@ async function main() {
   if (mod.error) fail(`upsert modules: ${mod.error.message}`);
   await sleep(400);
 
-  // 3) Ejercicios (por módulo para mantener el request razonable)
+  // 2) Ejercicios (por módulo para mantener el request razonable)
   let totalExercises = 0;
   let totalFormatted = 0;
   for (const module of ALL_MODULES) {
@@ -379,8 +353,7 @@ async function main() {
   }
 
   process.stdout.write(
-    `\nSeed completado: ${courseRows.length} cursos, ` +
-      `${ALL_MODULES.length} módulos, ` +
+    `\nSeed completado: ${ALL_MODULES.length} módulos, ` +
       `${totalExercises} ejercicios (${totalFormatted} con formato interactivo).\n`,
   );
 }
