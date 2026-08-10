@@ -15,8 +15,8 @@
   --color-line: #42433d;
   --color-line-soft: #2e2f2b;
   --color-ink: #fffce1;
-  --color-muted: #aaa99b;
-  --color-faint: #77766a;
+  --color-muted: #7c7c6f;
+  --color-faint: #5a5a50;
 
   --color-brand: #0ae448;
   --color-brand-strong: #abff84;
@@ -138,36 +138,6 @@ body.is-app {
 }
 
 @layer components {
-  .brand-mark {
-    display: block;
-    flex-shrink: 0;
-    overflow: visible;
-  }
-  .brand-mark__brackets,
-  .brand-mark__slash {
-    fill: none;
-    stroke-linecap: square;
-    stroke-linejoin: miter;
-  }
-  .brand-mark__brackets {
-    stroke: var(--color-cream);
-    stroke-width: 3.5;
-  }
-  .brand-mark__slash {
-    stroke: var(--color-brand);
-    stroke-width: 4;
-  }
-  .brand-mark__wordmark {
-    fill: var(--color-cream);
-    font-family: var(--font-sans);
-    font-size: 20px;
-    font-weight: 700;
-    letter-spacing: -0.5px;
-  }
-  .brand-mark__wordmark-accent {
-    fill: var(--color-brand);
-  }
-
   .ui-card {
     border-radius: var(--radius-card);
     border: 1px solid var(--color-line);

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { ALL_MODULES, MODULE_GROUPS } from "@/data";
 import { getSupabase, isSupabaseConfigured } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth/AuthContext";
 import type {
@@ -16,7 +17,7 @@ import type {
 } from "@/lib/types";
 import type { ExpectedAnswer } from "@/lib/answers";
 
-const CACHE_PREFIX = "dmh-modules-cache-v2-";
+const CACHE_KEY = "dmh-modules-cache";
 
 interface CachedModules {
   savedAt: number;
@@ -31,7 +32,6 @@ interface ModuleRow {
   badge: string;
   color: string;
   group: string | null;
-  course_key: string | null;
   description: string;
   topics: string[] | null;
   position: number;
@@ -64,15 +64,10 @@ function deriveGroups(modules: Module[]): string[] {
   return Array.from(new Set(modules.map((m) => m.group || "Otros")));
 }
 
-function cacheKey(uid: string | null, enrolledCourseKeys: string[]): string {
-  const scope = [...enrolledCourseKeys].sort().join(",") || "none";
-  return `${CACHE_PREFIX}${uid ?? "demo"}-${scope}`;
-}
-
-function readCache(key: string): CachedModules | null {
+function readCache(): CachedModules | null {
   if (typeof localStorage === "undefined") return null;
   try {
-    const raw = localStorage.getItem(key);
+    const raw = localStorage.getItem(CACHE_KEY);
     if (!raw) return null;
     const parsed = JSON.parse(raw) as CachedModules;
     if (!parsed || !Array.isArray(parsed.modules)) return null;
@@ -82,11 +77,11 @@ function readCache(key: string): CachedModules | null {
   }
 }
 
-function writeCache(key: string, modules: Module[], groups: string[]) {
+function writeCache(modules: Module[], groups: string[]) {
   if (typeof localStorage === "undefined") return;
   try {
     localStorage.setItem(
-      key,
+      CACHE_KEY,
       JSON.stringify({ savedAt: Date.now(), modules, groups }),
     );
   } catch {
@@ -160,22 +155,22 @@ function moduleFromRow(
     badge: row.badge,
     color: row.color,
     group: row.group ?? "",
-    courseKey: row.course_key ?? undefined,
     desc: row.description,
     topics: row.topics ?? [],
     exercises: exercisesByModule.get(row.key) ?? [],
   };
 }
 
-export function useModules(enrolledCourseKeys: string[] = []) {
+export function useModules() {
   const { user } = useAuth();
   const supabaseReady = isSupabaseConfigured && !!user;
-  const uid = user?.id ?? null;
-  const enrolledScope = [...enrolledCourseKeys].sort().join(",");
-  const storageKey = cacheKey(uid, enrolledCourseKeys);
 
-  const [modules, setModules] = useState<Module[]>([]);
-  const [groups, setGroups] = useState<string[]>([]);
+  const [modules, setModules] = useState<Module[]>(() =>
+    isSupabaseConfigured ? [] : ALL_MODULES,
+  );
+  const [groups, setGroups] = useState<string[]>(() =>
+    isSupabaseConfigured ? [] : MODULE_GROUPS,
+  );
   const [loading, setLoading] = useState<boolean>(() => isSupabaseConfigured);
   const [error, setError] = useState<string | null>(null);
 
@@ -192,18 +187,13 @@ export function useModules(enrolledCourseKeys: string[] = []) {
     try {
       const { data: moduleRows, error: moduleErr } = await supabase
         .from("modules")
-        .select(
-          "key,name,icon,badge,color,group,course_key,description,topics,position",
-        )
+        .select("key,name,icon,badge,color,group,description,topics,position")
         .eq("is_published", true)
         .order("position");
 
       if (moduleErr) throw new Error(moduleErr.message);
       const rows = (moduleRows ?? []) as ModuleRow[];
-      const enrolledSet = new Set(enrolledCourseKeys);
-      const keys = rows
-        .filter((row) => row.course_key && enrolledSet.has(row.course_key))
-        .map((row) => row.key);
+      const keys = rows.map((r) => r.key);
 
       const exercisesByModule = new Map<string, Exercise[]>();
       if (keys.length > 0) {
@@ -227,12 +217,12 @@ export function useModules(enrolledCourseKeys: string[] = []) {
       const nextGroups = deriveGroups(next);
       setModules(next);
       setGroups(nextGroups);
-      writeCache(storageKey, next, nextGroups);
+      writeCache(next, nextGroups);
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       setError(message);
       if (modulesRef.current.length === 0) {
-        const cached = readCache(storageKey);
+        const cached = readCache();
         if (cached) {
           setModules(cached.modules);
           setGroups(
@@ -245,31 +235,18 @@ export function useModules(enrolledCourseKeys: string[] = []) {
     } finally {
       setLoading(false);
     }
-  }, [supabaseReady, enrolledScope, storageKey]);
+  }, [supabaseReady]);
 
   useEffect(() => {
     if (!supabaseReady) {
-      let active = true;
-      if (!isSupabaseConfigured && import.meta.env.DEV) {
-        void import("@/data").then(({ ALL_MODULES, MODULE_GROUPS }) => {
-          if (!active) return;
-          setModules(ALL_MODULES);
-          setGroups(MODULE_GROUPS);
-          setLoading(false);
-          setError(null);
-        });
-      } else {
-        setModules([]);
-        setGroups([]);
-        setLoading(false);
-        setError(null);
-      }
-      return () => {
-        active = false;
-      };
+      setModules(ALL_MODULES);
+      setGroups(MODULE_GROUPS);
+      setLoading(false);
+      setError(null);
+      return;
     }
     setLoading(true);
-    const cached = readCache(storageKey);
+    const cached = readCache();
     if (cached) {
       setModules(cached.modules);
       setGroups(
@@ -279,7 +256,7 @@ export function useModules(enrolledCourseKeys: string[] = []) {
       );
     }
     void load();
-  }, [supabaseReady, load, storageKey]);
+  }, [supabaseReady, load]);
 
   return { modules, groups, loading, error, reload: load };
 }

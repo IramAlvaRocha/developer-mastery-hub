@@ -1,12 +1,6 @@
 ---
 import Base from "@/layouts/Base.astro";
 import LoginForm from "@/components/auth/LoginForm.tsx";
-
-const requestedNext = Astro.url.searchParams.get("next");
-const redirectTo =
-  requestedNext?.startsWith("/") && !requestedNext.startsWith("//")
-    ? requestedNext
-    : "/aprender";
 ---
 
 <Base title="Iniciar sesión — Developer Mastery Hub" bodyClass="is-landing">
@@ -18,7 +12,7 @@ const redirectTo =
       >
         ← Volver al inicio
       </a>
-      <LoginForm redirectTo={redirectTo} client:load />
+      <LoginForm client:load />
     </div>
   </main>
 </Base>

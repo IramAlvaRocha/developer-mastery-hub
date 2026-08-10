@@ -146,8 +146,6 @@ export interface Module {
   /** Color base de Tailwind (emerald, blue, ...). */
   color: string;
   group: string;
-  /** Curso padre al que pertenece. En datos legacy se deriva de `group`. */
-  courseKey?: string;
   desc: string;
   topics: string[];
   exercises: Exercise[];

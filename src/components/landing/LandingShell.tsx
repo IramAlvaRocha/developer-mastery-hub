@@ -1,5 +1,4 @@
 import { useState } from "react";
-import BrandMark from "@/components/brand/BrandMark";
 
 export default function LandingShell() {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -8,12 +7,13 @@ export default function LandingShell() {
     <>
       <header className="sticky top-0 z-40 border-b border-line/80 bg-canvas/85 backdrop-blur-md">
         <div className="mx-auto flex max-w-[1280px] items-center justify-between gap-4 px-4 py-3 sm:px-6">
-          <a
-            href="/"
-            className="flex items-center"
-            aria-label="Mastery Hub — inicio"
-          >
-            <BrandMark showWordmark className="h-10 w-auto" />
+          <a href="/" className="flex items-center gap-2.5">
+            <span className="flex h-10 w-10 items-center justify-center rounded-full bg-brand/15 text-lg text-brand">
+              ◆
+            </span>
+            <span className="text-lg font-semibold tracking-tight text-cream">
+              Mastery Hub
+            </span>
           </a>
 
           <nav className="hidden items-center gap-1 md:flex">

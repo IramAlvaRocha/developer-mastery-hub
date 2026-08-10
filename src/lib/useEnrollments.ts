@@ -4,8 +4,9 @@ import { useAuth } from "@/lib/auth/AuthContext";
 
 // ──────────────────────────────────────────────────────────────────────────
 // useEnrollments — Fase 6 (Mis Cursos).
-// Suscripciones del usuario a cursos padre (`course_enrollments`). Una sola
-// suscripción habilita todos los módulos y ejercicios de ese curso.
+// Suscripciones del usuario (`enrollments`). Regla de negocio: "cualquier
+// autenticado practica, pero solo suscritos guardan progreso" — el enrollment
+// es lo que habilita persistir en `progress` (la RLS lo exige).
 //
 // • Modo Supabase: SELECT/INSERT/DELETE sobre `enrollments` con RLS del
 //   propio usuario y caché en localStorage (SWR ligero, por usuario).
@@ -21,7 +22,7 @@ const DEMO_KEY = "dmh-enrollments";
 const CACHE_PREFIX = "dmh-enrollments-";
 
 interface EnrollmentRow {
-  course_key: string;
+  module_key: string;
   last_opened_at: string | null;
 }
 
@@ -36,9 +37,7 @@ function readDemoKeys(): string[] {
     const raw = localStorage.getItem(DEMO_KEY);
     const parsed = raw ? (JSON.parse(raw) as unknown) : null;
     if (!Array.isArray(parsed)) return [];
-    return Array.from(
-      new Set(parsed.filter((k): k is string => typeof k === "string")),
-    );
+    return parsed.filter((k): k is string => typeof k === "string");
   } catch {
     return [];
   }
@@ -92,9 +91,7 @@ export function useEnrollments(
     !isSupabaseConfigured ? readDemoKeys() : [],
   );
   const [lastOpenedAt, setLastOpenedAt] = useState<Record<string, string>>({});
-  const [loading, setLoading] = useState<boolean>(
-    () => !demoMode && Boolean(uid),
-  );
+  const [loading, setLoading] = useState<boolean>(() => !demoMode);
 
   const enrolledRef = useRef<string[]>(enrolledKeys);
   useEffect(() => {
@@ -111,10 +108,7 @@ export function useEnrollments(
       return;
     }
     if (!uid) {
-      enrolledRef.current = [];
-      setEnrolledKeys([]);
-      setLastOpenedAt({});
-      setLoading(false);
+      setLoading(true);
       return;
     }
     setLoading(true);
@@ -132,8 +126,8 @@ export function useEnrollments(
     void (async () => {
       try {
         const { data, error } = await supabase
-          .from("course_enrollments")
-          .select("course_key, last_opened_at")
+          .from("enrollments")
+          .select("module_key, last_opened_at")
           .eq("user_id", uid);
         if (!active) return;
         if (error) {
@@ -141,10 +135,10 @@ export function useEnrollments(
           return;
         }
         const rows = (data ?? []) as EnrollmentRow[];
-        const keys = rows.map((r) => r.course_key);
+        const keys = rows.map((r) => r.module_key);
         const opened: Record<string, string> = {};
         for (const r of rows) {
-          if (r.last_opened_at) opened[r.course_key] = r.last_opened_at;
+          if (r.last_opened_at) opened[r.module_key] = r.last_opened_at;
         }
         enrolledRef.current = keys;
         setEnrolledKeys(keys);
@@ -161,49 +155,49 @@ export function useEnrollments(
   }, [demoMode, uid]);
 
   const isEnrolled = useCallback(
-    (courseKey: string) => enrolledRef.current.includes(courseKey),
+    (moduleKey: string) => enrolledRef.current.includes(moduleKey),
     [],
   );
 
   const enroll = useCallback(
-    async (courseKey: string): Promise<boolean> => {
-      if (enrolledRef.current.includes(courseKey)) return true;
+    async (moduleKey: string): Promise<boolean> => {
+      if (enrolledRef.current.includes(moduleKey)) return true;
       const uidNow = user?.id ?? null;
       const demoNow = isDemoUser(uidNow);
       if (demoNow) {
-        const next = [...enrolledRef.current, courseKey];
+        const next = [...enrolledRef.current, moduleKey];
         enrolledRef.current = next;
         setEnrolledKeys(next);
         writeDemoKeys(next);
-        await syncModule?.(courseKey);
+        await syncModule?.(moduleKey);
         return true;
       }
       if (!uidNow) return false;
       const supabase = getSupabase();
       if (!supabase) return false;
-      const { error } = await supabase.from("course_enrollments").insert({
+      const { error } = await supabase.from("enrollments").insert({
         user_id: uidNow,
-        course_key: courseKey,
+        module_key: moduleKey,
       });
       if (error) return false;
-      const next = [...enrolledRef.current, courseKey];
+      const next = [...enrolledRef.current, moduleKey];
       enrolledRef.current = next;
       setEnrolledKeys(next);
       writeCacheKeys(uidNow, next);
       // Migra el progreso local pendiente del módulo a la nube (Fase 6).
-      await syncModule?.(courseKey);
+      await syncModule?.(moduleKey);
       return true;
     },
     [user?.id, syncModule],
   );
 
   const unenroll = useCallback(
-    async (courseKey: string): Promise<boolean> => {
-      if (!enrolledRef.current.includes(courseKey)) return true;
+    async (moduleKey: string): Promise<boolean> => {
+      if (!enrolledRef.current.includes(moduleKey)) return true;
       const uidNow = user?.id ?? null;
       const demoNow = isDemoUser(uidNow);
       if (demoNow) {
-        const next = enrolledRef.current.filter((k) => k !== courseKey);
+        const next = enrolledRef.current.filter((k) => k !== moduleKey);
         enrolledRef.current = next;
         setEnrolledKeys(next);
         writeDemoKeys(next);
@@ -213,12 +207,12 @@ export function useEnrollments(
       const supabase = getSupabase();
       if (!supabase) return false;
       const { error } = await supabase
-        .from("course_enrollments")
+        .from("enrollments")
         .delete()
         .eq("user_id", uidNow)
-        .eq("course_key", courseKey);
+        .eq("module_key", moduleKey);
       if (error) return false;
-      const next = enrolledRef.current.filter((k) => k !== courseKey);
+      const next = enrolledRef.current.filter((k) => k !== moduleKey);
       enrolledRef.current = next;
       setEnrolledKeys(next);
       writeCacheKeys(uidNow, next);
@@ -228,20 +222,25 @@ export function useEnrollments(
   );
 
   const touchLastOpened = useCallback(
-    async (courseKey: string): Promise<void> => {
+    async (moduleKey: string): Promise<void> => {
       // Solo marca como reciente los cursos suscritos (nunca crea enrollment).
-      if (!enrolledRef.current.includes(courseKey)) return;
+      if (!enrolledRef.current.includes(moduleKey)) return;
       const nowIso = new Date().toISOString();
-      setLastOpenedAt((prev) => ({ ...prev, [courseKey]: nowIso }));
+      setLastOpenedAt((prev) => ({ ...prev, [moduleKey]: nowIso }));
       const uidNow = user?.id ?? null;
       if (isDemoUser(uidNow) || !uidNow) return;
       const supabase = getSupabase();
       if (!supabase) return;
       await supabase
-        .from("course_enrollments")
-        .update({ last_opened_at: nowIso })
-        .eq("user_id", uidNow)
-        .eq("course_key", courseKey);
+        .from("enrollments")
+        .upsert(
+          {
+            user_id: uidNow,
+            module_key: moduleKey,
+            last_opened_at: nowIso,
+          },
+          { onConflict: "user_id,module_key" },
+        );
     },
     [user?.id],
   );

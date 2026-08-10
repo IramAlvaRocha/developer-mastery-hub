@@ -32,8 +32,7 @@ export default function AuthGate({
     if (requireAdmin && role === null) return;
     if (!user || (requireAdmin && role !== "admin")) {
       redirected.current = true;
-      const next = `${window.location.pathname}${window.location.search}`;
-      window.location.assign(`/login?next=${encodeURIComponent(next)}`);
+      window.location.assign("/login");
     }
   }, [loading, isDemoMode, user, role, requireAdmin]);
 
