@@ -1,12 +1,11 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import gsap from "gsap";
-import type { Exercise, ExerciseFormat } from "@/lib/types";
+import type { Exercise } from "@/lib/types";
 import { isAnswerCorrect } from "@/lib/answers";
 import { evaluateFormat } from "@/lib/formatVerification";
 import { clearAnswers, readAnswers, writeAnswers } from "@/lib/answerStorage";
 import { moduleColorStyle } from "@/lib/moduleColors";
 import { usePrefersReducedMotion } from "@/lib/useReducedMotion";
-import { FORMAT_LABELS, type FormatOption } from "@/lib/formatMeta";
 import ChallengeCode from "./ChallengeCode";
 import ExerciseFormatView from "./formats/ExerciseFormat";
 import TheoryTab from "./TheoryTab";
@@ -18,6 +17,7 @@ type Tab = "theory" | "terminal" | "challenge" | "code";
 interface TabDef {
   id: Tab;
   label: string;
+  shortLabel: string;
 }
 
 interface Props {
@@ -28,12 +28,10 @@ interface Props {
   alreadyCompleted: boolean;
   index: number;
   total: number;
-  formats: FormatOption[];
-  formatFilter: ExerciseFormat | null;
-  onFormatFilterChange: (f: ExerciseFormat | null) => void;
   onPrev: () => void;
   onNext: () => void;
   onComplete: (id: number) => void;
+  onShare: () => void;
   onToast: (type: "success" | "error" | "info", message: string) => void;
 }
 
@@ -45,12 +43,10 @@ export default function ExerciseWorkspace({
   alreadyCompleted,
   index,
   total,
-  formats,
-  formatFilter,
-  onFormatFilterChange,
   onPrev,
   onNext,
   onComplete,
+  onShare,
   onToast,
 }: Props) {
   const [activeTab, setActiveTab] = useState<Tab>(
@@ -216,6 +212,12 @@ export default function ExerciseWorkspace({
     exercise.step != null ? `Paso ${exercise.step}` : `Nivel ${exercise.stars}`;
 
   const instruction = buildInstruction(exercise);
+  const answerCount = Object.keys(exercise.inputs).length;
+  const challengeMeta = exercise.format
+    ? "Ejercicio interactivo"
+    : answerCount > 0
+      ? `${answerCount} ${answerCount === 1 ? "respuesta" : "respuestas"}`
+      : "Práctica guiada";
 
   const positionPercent = total > 0 ? ((index + 1) / total) * 100 : 0;
   const colorStyle = moduleColorStyle(color);
@@ -223,11 +225,20 @@ export default function ExerciseWorkspace({
   // ── Tabs visibles ─────────────────────────────────────────────────────────
   const tabs = useMemo<TabDef[]>(() => {
     const list: TabDef[] = [];
-    if (exercise.theory) list.push({ id: "theory", label: "Teoría" });
+    if (exercise.theory)
+      list.push({ id: "theory", label: "Teoría", shortLabel: "01" });
     if (exercise.simulation)
-      list.push({ id: "terminal", label: "Terminal" });
-    list.push({ id: "challenge", label: "Desafío" });
-    list.push({ id: "code", label: "Solución" });
+      list.push({ id: "terminal", label: "Terminal", shortLabel: "02" });
+    list.push({
+      id: "challenge",
+      label: "Desafío",
+      shortLabel: exercise.simulation ? "03" : "02",
+    });
+    list.push({
+      id: "code",
+      label: "Solución",
+      shortLabel: exercise.simulation ? "04" : "03",
+    });
     return list;
   }, [exercise.theory, exercise.simulation]);
 
@@ -413,12 +424,37 @@ export default function ExerciseWorkspace({
                 <span className="text-faint">·</span>
                 <span className="text-muted">{exercise.category}</span>
               </span>
-              <span className="pill-chip border border-butter/25 bg-butter/10 text-butter">
-                {"★".repeat(exercise.stars)}
-                <span className="text-line">
-                  {"★".repeat(Math.max(0, 5 - exercise.stars))}
+              <div className="flex items-center gap-2">
+                <span className="pill-chip border border-butter/25 bg-butter/10 text-butter">
+                  {"★".repeat(exercise.stars)}
+                  <span className="text-line">
+                    {"★".repeat(Math.max(0, 5 - exercise.stars))}
+                  </span>
                 </span>
-              </span>
+                <button
+                  type="button"
+                  onClick={onShare}
+                  className="icon-btn border border-line bg-canvas/40"
+                  aria-label="Compartir ejercicio"
+                  title="Compartir ejercicio"
+                >
+                  <svg
+                    width="19"
+                    height="19"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden="true"
+                  >
+                    <path d="M14 4h6v6" />
+                    <path d="m20 4-9 9" />
+                    <path d="M18 13v5a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h5" />
+                  </svg>
+                </button>
+              </div>
             </div>
             <p data-hero-label className="relative section-eyebrow text-cream">
               {"{ Ejercicio }"}
@@ -448,71 +484,60 @@ export default function ExerciseWorkspace({
                 </span>
               ))}
             </div>
+
+            {/* Las vistas forman parte de la ficha; no flotan fuera del contexto. */}
+            <div className="relative mt-7 border-t border-line/70 pt-3">
+              <div
+                ref={tabListRef}
+                role="tablist"
+                aria-label="Contenido del ejercicio"
+                onKeyDown={onTabListKeyDown}
+                className="relative flex w-full overflow-x-auto"
+              >
+                <span
+                  ref={tabIndicatorRef}
+                  aria-hidden
+                  className="mod-bg pointer-events-none absolute bottom-0 left-0 h-[3px] rounded-full"
+                />
+                {tabs.map((tab, i) => {
+                  const active = activeTab === tab.id;
+                  return (
+                    <button
+                      key={tab.id}
+                      ref={(el) => {
+                        tabButtonRefs.current[i] = el;
+                      }}
+                      type="button"
+                      role="tab"
+                      id={`tab-${tab.id}`}
+                      aria-selected={active}
+                      aria-controls={`panel-${tab.id}`}
+                      tabIndex={active ? 0 : -1}
+                      onClick={() => setActiveTab(tab.id)}
+                      className={`relative z-10 flex min-w-[7rem] flex-1 shrink-0 items-center justify-center gap-2 px-4 py-3.5 text-[13px] font-semibold transition-colors ${
+                        active
+                          ? "mod-text"
+                          : "text-muted hover:text-cream"
+                      }`}
+                    >
+                      <span
+                        className={`font-mono text-[10px] ${
+                          active ? "opacity-100" : "text-faint"
+                        }`}
+                        aria-hidden="true"
+                      >
+                        {tab.shortLabel}
+                      </span>
+                      {tab.label}
+                      {tab.id === "challenge" && !solved && (
+                        <span className="inline-block h-1.5 w-1.5 rounded-full bg-brand" />
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
           </section>
-
-          {/* TabSlider autocontenido + filtro de formato */}
-          <div className="flex flex-wrap items-center gap-2 px-4 py-4 sm:px-6">
-            <div
-              ref={tabListRef}
-              role="tablist"
-              aria-label="Contenido del ejercicio"
-              onKeyDown={onTabListKeyDown}
-              className="relative inline-flex w-full rounded-full border border-line bg-surface/80 p-1.5 backdrop-blur sm:w-auto"
-            >
-              <span
-                ref={tabIndicatorRef}
-                aria-hidden
-                className="pointer-events-none absolute inset-y-1.5 left-0 rounded-full bg-cream shadow-float"
-              />
-              {tabs.map((tab, i) => {
-                const active = activeTab === tab.id;
-                return (
-                  <button
-                    key={tab.id}
-                    ref={(el) => {
-                      tabButtonRefs.current[i] = el;
-                    }}
-                    type="button"
-                    role="tab"
-                    id={`tab-${tab.id}`}
-                    aria-selected={active}
-                    aria-controls={`panel-${tab.id}`}
-                    tabIndex={active ? 0 : -1}
-                    onClick={() => setActiveTab(tab.id)}
-                    className={`relative z-10 flex flex-1 shrink-0 items-center justify-center gap-1.5 rounded-full px-4 py-2.5 text-[13px] font-semibold transition-colors sm:flex-initial ${
-                      active
-                        ? "text-canvas"
-                        : "text-muted hover:text-cream"
-                    }`}
-                  >
-                    {tab.label}
-                    {tab.id === "challenge" && !solved && (
-                      <span className="inline-block h-1.5 w-1.5 rounded-full bg-brand" />
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-
-            <div className="ml-auto flex min-w-0 flex-wrap items-center justify-end gap-2">
-              <FormatFilterSelect
-                formats={formats}
-                value={formatFilter}
-                onChange={onFormatFilterChange}
-              />
-              {formatFilter && (
-                <button
-                  type="button"
-                  onClick={() => onFormatFilterChange(null)}
-                  className="pill-chip border border-brand/40 bg-brand/15 text-brand transition-colors hover:border-brand/60"
-                  aria-label="Quitar filtro de tipo de ejercicio"
-                >
-                  <span>{formatChipLabel(formatFilter)}</span>
-                  <span aria-hidden>×</span>
-                </button>
-              )}
-            </div>
-          </div>
 
           {/* Paneles sobre canvas; solo código y terminal conservan caja dev-tool */}
           <div
@@ -521,24 +546,67 @@ export default function ExerciseWorkspace({
             id="panel-challenge"
             aria-labelledby="tab-challenge"
             tabIndex={activeTab === "challenge" ? 0 : -1}
-            className={activeTab === "challenge" ? "flex min-h-full min-w-0 flex-col px-4 pb-6 sm:px-6 sm:pb-8" : "hidden"}
+            className={activeTab === "challenge" ? "flex min-h-full min-w-0 flex-col px-4 pb-6 pt-6 sm:px-6 sm:pb-8" : "hidden"}
           >
-              <div
+            <div className="grid min-w-0 gap-5 lg:grid-cols-[17rem_minmax(0,1fr)] lg:items-start">
+              <aside
                 style={colorStyle}
-                className="rounded-[24px] border border-line border-l-[3px] mod-task-border bg-surface-2/50 px-4 py-3.5"
+                className="overflow-hidden rounded-[24px] border border-line bg-surface lg:sticky lg:top-5"
               >
-                <p className="text-[11px] font-bold uppercase tracking-wide text-muted">
-                  Tu tarea
-                </p>
-                <p className="mt-1.5 text-[15px] leading-relaxed text-cream/95">
-                  {instruction}
-                </p>
-              </div>
+                <div className="border-b border-line-soft p-5">
+                  <div className="flex items-center gap-3">
+                    <span className="mod-icon-bg mod-text flex h-10 w-10 items-center justify-center rounded-[15px] font-mono text-lg font-bold" aria-hidden="true">
+                      ?
+                    </span>
+                    <p className="font-mono text-[10px] font-bold uppercase tracking-[0.14em] mod-text">
+                      Tu misión
+                    </p>
+                    <span
+                      className={`ml-auto rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide ${
+                        solved
+                          ? "border-brand/30 bg-brand/10 text-brand"
+                          : "border-line bg-canvas/50 text-faint"
+                      }`}
+                    >
+                      {solved ? "Completado" : "Pendiente"}
+                    </span>
+                  </div>
+                  <h2 className="mt-5 text-lg font-semibold tracking-tight text-cream">
+                    Resuelve el desafío
+                  </h2>
+                  <p className="mt-3 text-[14px] leading-relaxed text-muted">
+                    {instruction}
+                  </p>
+                </div>
+                <div className="space-y-3 bg-surface-2/60 p-5">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-faint">
+                    Cómo avanzar
+                  </p>
+                  <ol className="space-y-3 text-[12px] text-muted">
+                    <li className="flex gap-2.5">
+                      <span className="mod-text font-mono font-bold">01</span>
+                      <span>Lee el contexto y localiza qué debes completar.</span>
+                    </li>
+                    <li className="flex gap-2.5">
+                      <span className="mod-text font-mono font-bold">02</span>
+                      <span>Responde directamente en el ejercicio.</span>
+                    </li>
+                    <li className="flex gap-2.5">
+                      <span className="mod-text font-mono font-bold">03</span>
+                      <span>Verifica y revisa la explicación final.</span>
+                    </li>
+                  </ol>
+                  <div className="flex items-center justify-between border-t border-line-soft pt-3 text-[11px]">
+                    <span className="text-faint">Formato</span>
+                    <span className="font-semibold text-cream">{challengeMeta}</span>
+                  </div>
+                </div>
+              </aside>
 
-              {/* Caja dev-tool: solo el código conserva el marco de ventana */}
+              {/* Área de trabajo: el ejercicio conserva el marco de una herramienta real. */}
               <div
                 style={colorStyle}
-                className="mt-4 flex min-h-0 flex-1 flex-col overflow-hidden rounded-[24px] border border-line bg-canvas sm:mt-5"
+                className="flex min-h-0 min-w-0 flex-col overflow-hidden rounded-[24px] border border-line bg-canvas"
               >
                 <div className="flex flex-col gap-2 border-b border-line bg-surface-2 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
                   <div className="flex min-w-0 items-center gap-2.5">
@@ -586,6 +654,7 @@ export default function ExerciseWorkspace({
                 </div>
               </div>
             </div>
+          </div>
 
             {exercise.theory && (
               <div
@@ -596,7 +665,7 @@ export default function ExerciseWorkspace({
                 tabIndex={activeTab === "theory" ? 0 : -1}
                 className={activeTab === "theory" ? "outline-none" : "hidden"}
               >
-                <div className="px-4 pb-6 sm:px-6 sm:pb-8">
+                <div className="px-4 pb-6 pt-6 sm:px-6 sm:pb-8">
                   <TheoryTab theory={exercise.theory} />
                 </div>
               </div>
@@ -611,7 +680,7 @@ export default function ExerciseWorkspace({
                 tabIndex={activeTab === "terminal" ? 0 : -1}
                 className={activeTab === "terminal" ? "outline-none" : "hidden"}
               >
-                <div className="px-4 pb-6 sm:px-6 sm:pb-8">
+                <div className="px-4 pb-6 pt-6 sm:px-6 sm:pb-8">
                   <SimulatedTerminal
                     scenario={exercise.simulation}
                     resetKey={`${exercise.id}-${exercise.category}`}
@@ -628,7 +697,7 @@ export default function ExerciseWorkspace({
               tabIndex={activeTab === "code" ? 0 : -1}
               className={activeTab === "code" ? "outline-none" : "hidden"}
             >
-              <div className="px-4 pb-6 sm:px-6 sm:pb-8">
+              <div className="px-4 pb-6 pt-6 sm:px-6 sm:pb-8">
                 <SolutionPanel exercise={exercise} color={color} />
               </div>
             </div>
@@ -686,56 +755,10 @@ export default function ExerciseWorkspace({
             </div>
           </div>
 
-          <div className="mt-2 hidden justify-center sm:flex">
-            <KeyboardHints />
-          </div>
         </div>
       </footer>
     </main>
   );
-}
-
-/** Píldora de selección de formato (select nativo estilizado, accesible). */
-function FormatFilterSelect({
-  formats,
-  value,
-  onChange,
-}: {
-  formats: FormatOption[];
-  value: ExerciseFormat | null;
-  onChange: (f: ExerciseFormat | null) => void;
-}) {
-  return (
-    <span className="relative inline-flex items-center">
-      <select
-        value={value ?? ""}
-        onChange={(e) => {
-          const v = e.target.value;
-          onChange(v === "" ? null : (v as ExerciseFormat));
-        }}
-        aria-label="Filtrar por tipo de ejercicio"
-        className="appearance-none rounded-full border border-line bg-surface-2 py-2 pl-3.5 pr-8 text-[12px] font-semibold text-muted transition-colors hover:text-cream focus:text-cream"
-      >
-        {formats.map((opt) => (
-          <option key={opt.format ?? "all"} value={opt.format ?? ""}>
-            {opt.icon ? `${opt.icon} ` : ""}
-            {opt.label} · {opt.count}
-          </option>
-        ))}
-      </select>
-      <span
-        className="pointer-events-none absolute right-3 text-[10px] text-faint"
-        aria-hidden
-      >
-        ▾
-      </span>
-    </span>
-  );
-}
-
-function formatChipLabel(format: ExerciseFormat): string {
-  const meta = FORMAT_LABELS[format];
-  return `${meta.icon} ${meta.label}`;
 }
 
 const CONFETTI_COLORS = [
@@ -857,32 +880,6 @@ function Celebration({
         ✓
       </div>
     </div>
-  );
-}
-
-/** Atajos de teclado en una línea discreta bajo los controles. */
-function KeyboardHints() {
-  return (
-    <p
-      className="flex items-center justify-center gap-x-1.5 gap-y-1 text-[10px] text-muted"
-      aria-label="Atajos de teclado para navegar entre ejercicios"
-    >
-      <span className="sr-only">Atajos:</span>
-      <Kbd>←</Kbd>
-      <Kbd>→</Kbd>
-      <span className="text-line">o</span>
-      <Kbd>p</Kbd>
-      <Kbd>n</Kbd>
-      <span>navegar</span>
-    </p>
-  );
-}
-
-function Kbd({ children }: { children: React.ReactNode }) {
-  return (
-    <kbd className="rounded-full border border-line bg-canvas px-2 py-0.5 font-sans text-[10px] font-semibold text-muted">
-      {children}
-    </kbd>
   );
 }
 

@@ -4,16 +4,27 @@ interface Props {
 
 export default function TheoryTab({ theory }: Props) {
   return (
-    <div className="mx-auto max-w-prose">
-      <div className="rounded-[24px] bg-canvas/40 p-4 sm:p-6">
-        <p className="section-eyebrow text-cream">{"{ Teoría }"}</p>
-        <h2 className="mt-1 text-lg font-semibold tracking-tight text-cream sm:text-xl">
-          Fundamentos teóricos
-        </h2>
-        <div className="mt-4 space-y-3 text-[14px] leading-relaxed text-muted">
+    <div className="mx-auto max-w-4xl">
+      <article className="overflow-hidden rounded-[26px] border border-line bg-surface">
+        <header className="flex items-center gap-4 border-b border-line-soft bg-surface-2/70 px-5 py-4 sm:px-7">
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[16px] bg-lilac/15 text-lg text-lilac" aria-hidden="true">
+            ◫
+          </span>
+          <div>
+            <p className="font-mono text-[10px] font-bold uppercase tracking-[0.14em] text-lilac">
+              Antes de practicar
+            </p>
+            <h2 className="mt-0.5 text-lg font-semibold tracking-tight text-cream sm:text-xl">
+              Fundamentos teóricos
+            </h2>
+          </div>
+        </header>
+        <div className="px-5 py-5 sm:px-7 sm:py-6">
+          <div className="w-full space-y-3 text-[14px] leading-relaxed text-muted">
           <Markdown source={theory} />
+          </div>
         </div>
-      </div>
+      </article>
     </div>
   );
 }
@@ -34,6 +45,18 @@ function Markdown({ source }: { source: string }) {
 
   const isTableRow = (l: string) => l.trim().startsWith("|");
   const isSeparator = (l: string) => /^\s*\|?[\s:|-]+\|?\s*$/.test(l) && l.includes("-");
+  const isBulletLine = (l: string) => /^[-•]\s+/.test(l.trim());
+  const startsBlock = (l: string) => {
+    const value = l.trim();
+    return (
+      value === "" ||
+      value.startsWith("## ") ||
+      value.startsWith("### ") ||
+      isTableRow(l) ||
+      isBulletLine(l) ||
+      /^\d+\.\s/.test(value)
+    );
+  };
 
   while (i < lines.length) {
     const line = lines[i];
@@ -126,14 +149,24 @@ function Markdown({ source }: { source: string }) {
     }
 
     // Listas con viñetas
-    if (trimmed.startsWith("- ")) {
+    if (isBulletLine(line)) {
       const items: string[] = [];
-      while (i < lines.length && lines[i].trim().startsWith("- ")) {
-        items.push(lines[i].trim().slice(2));
+      while (i < lines.length && isBulletLine(lines[i])) {
+        let item = lines[i].trim().replace(/^[-•]\s+/, "");
         i++;
+        while (
+          i < lines.length &&
+          lines[i].trim() !== "" &&
+          !isBulletLine(lines[i]) &&
+          /^\s{2,}\S/.test(lines[i])
+        ) {
+          item += ` ${lines[i].trim()}`;
+          i++;
+        }
+        items.push(item);
       }
       blocks.push(
-        <ul key={key++} className="space-y-1 pl-1">
+        <ul key={key++} className="space-y-2 pl-1">
           {items.map((it, ii) => (
             <li key={ii} className="flex gap-2">
               <span className="mt-[2px] shrink-0 text-brand">▸</span>
@@ -168,12 +201,17 @@ function Markdown({ source }: { source: string }) {
     }
 
     // Párrafo
+    const paragraphLines = [trimmed];
+    i++;
+    while (i < lines.length && !startsBlock(lines[i])) {
+      paragraphLines.push(lines[i].trim());
+      i++;
+    }
     blocks.push(
       <p key={key++} className="leading-relaxed">
-        {renderInline(trimmed)}
+        {renderInline(paragraphLines.join(" "))}
       </p>,
     );
-    i++;
   }
 
   return <>{blocks}</>;

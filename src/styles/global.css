@@ -407,6 +407,49 @@ body.is-app {
   animation: marquee 32s linear infinite;
 }
 
+/* Landing delight: pequeñas imperfecciones y movimiento para que la
+   experiencia se sienta como un playground, no como un dashboard corporativo. */
+.playful-window {
+  transform: rotate(-1deg);
+  transition:
+    transform 350ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    border-color 250ms ease;
+}
+.playful-window:hover {
+  transform: rotate(0deg) translateY(-4px);
+  border-color: rgba(10, 228, 72, 0.55);
+}
+
+@keyframes stickerWiggle {
+  0%,
+  100% {
+    transform: rotate(6deg) translateY(0);
+  }
+  50% {
+    transform: rotate(3deg) translateY(-5px);
+  }
+}
+.playful-sticker {
+  animation: stickerWiggle 3.5s ease-in-out infinite;
+}
+
+@media (min-width: 640px) {
+  .landing-course-1,
+  .landing-course-4 {
+    transform: rotate(-0.7deg);
+  }
+  .landing-course-3,
+  .landing-course-6 {
+    transform: rotate(0.7deg);
+  }
+  .landing-course-1:hover,
+  .landing-course-3:hover,
+  .landing-course-4:hover,
+  .landing-course-6:hover {
+    transform: rotate(0deg) translateY(-8px);
+  }
+}
+
 ::view-transition-old(root),
 ::view-transition-new(root) {
   animation-duration: 0.32s;
@@ -421,6 +464,15 @@ body.is-app {
   .animate-float,
   .animate-marquee {
     animation: none !important;
+  }
+  .playful-sticker {
+    animation: none !important;
+  }
+  .playful-window,
+  .playful-window:hover,
+  .landing-course,
+  .landing-course:hover {
+    transform: none !important;
   }
   .shimmer-loading {
     background: #2a2a2a;
