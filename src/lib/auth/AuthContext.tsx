@@ -47,7 +47,7 @@ interface AuthContextValue {
   loading: boolean;
   isDemoMode: boolean;
   signInWithEmail: (email: string, password: string) => Promise<AuthResult>;
-  signInWithGoogle: () => Promise<AuthResult>;
+  signInWithGoogle: (redirectPath?: string) => Promise<AuthResult>;
   signUp: (email: string, password: string) => Promise<AuthResult>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
@@ -216,7 +216,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [supabase, isDemoMode],
   );
 
-  const signInWithGoogle = useCallback(async (): Promise<AuthResult> => {
+  const signInWithGoogle = useCallback(async (
+    redirectPath = "/aprender",
+  ): Promise<AuthResult> => {
     if (isDemoMode) {
       return signInWithEmail("demo@developer-mastery-hub.local", "demo");
     }
@@ -225,7 +227,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
-      options: { redirectTo: `${window.location.origin}/aprender` },
+      options: {
+        redirectTo: `${window.location.origin}${
+          redirectPath.startsWith("/") && !redirectPath.startsWith("//")
+            ? redirectPath
+            : "/aprender"
+        }`,
+      },
     });
     return error ? { error: error.message } : { error: null };
   }, [supabase, isDemoMode, signInWithEmail]);
