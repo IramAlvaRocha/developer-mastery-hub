@@ -11,7 +11,20 @@ export const EF_CORE_ARCHITECTURE: Exercise[] = [
     tags: ["EF Core", "Arquitectura", "Value Object", "OwnsOne"],
     completed: false,
     fileName: "CompanyConfiguration.cs",
-    explanationText: "Usar OwnsOne le dice a EF Core que el objeto no tiene vida propia y depende enteramente de su padre. Es como el bolsillo de un abrigo. El bolsillo no existe por sí solo en la tintorería; se lava y existe junto con el abrigo. Si el abrigo se tira a la basura, el bolsillo también. Esto mantiene tu dominio limpio y tu base de datos sin tablas innecesarias.",
+    theory: `## Value Objects con OwnsOne
+Un Value Object (Address) se define por su valor, no por una identidad. No merece tabla propia.
+
+### Qué hace OwnsOne
+- Mapea las propiedades de Address como columnas de la tabla Company.
+- EF Core las carga y guarda siempre junto al aggregate root.
+
+### Por qué importa
+- Sin identidad propia no hay tablas huérfanas ni JOINs extra.
+- La consistencia transaccional es natural: todo se guarda con el padre.
+
+### Regla
+¿El objeto tiene identidad y ciclo de vida propio? → Entidad con tabla. ¿Es solo un conjunto de valores del padre? → OwnsOne.`,
+    explanationText: "🌍 Ejemplo cotidiano: el bolsillo de un abrigo no existe por sí solo en la tintorería: se lava y existe junto con el abrigo.\n\nOwnsOne mapea el Value Object Address como columnas dentro de la tabla Company, sin tabla ni identidad propias. Al no tener entidad propia, mantienes la consistencia transaccional y evitas tablas innecesarias.",
     codeSnippet: `public class CompanyConfiguration : IEntityTypeConfiguration<Company>
 {
     public void Configure(EntityTypeBuilder<Company> builder)
@@ -52,7 +65,7 @@ export const EF_CORE_ARCHITECTURE: Exercise[] = [
     tags: ["EF Core", "Rendimiento", "HasMaxLength", "IsUnicode"],
     completed: false,
     fileName: "ProductConfiguration.cs",
-    explanationText: "Definir límites estrictos evita reservar bloques de memoria gigantes inútiles. Es como reservar un camión de mudanza entero para una sola mochila. Si usas HasMaxLength, pides una motocicleta. Y al usar IsUnicode(false), le dices al motor 'y no traigas remolque pesado, porque no llevaremos carga especial (caracteres Unicode)', reduciendo el peso en disco a la mitad y evitando la fragmentación.",
+    explanationText: "🌍 Ejemplo cotidiano: reservar un camión de mudanza para una mochila es un desperdicio: HasMaxLength pide la moto justa.\n\nPor defecto un string se crea como nvarchar(max); limitarlo con HasMaxLength(50) y IsUnicode(false) reduce el peso en disco a la mitad y evita la fragmentación de índices. Dimensionar columnas es higiene básica que se nota a escala.",
     codeSnippet: `public class ProductConfiguration : IEntityTypeConfiguration<Product>
 {
     public void Configure(EntityTypeBuilder<Product> builder)
@@ -87,7 +100,19 @@ export const EF_CORE_ARCHITECTURE: Exercise[] = [
     tags: ["EF Core", "Arquitectura", "Shadow Properties", "Multi-Tenant"],
     completed: false,
     fileName: "DocumentConfiguration.cs",
-    explanationText: "Las Shadow Properties existen en el modelo de EF Core y en la base de datos, pero no en tu clase C#. Es como el sello de seguridad invisible que le ponen a los billetes en el banco. El billete (tu clase C#) no cambia su diseño y la gente lo usa sin ver el sello, pero el banco (EF Core) sabe que está ahí para rastrearlo y protegerlo. Así mantenemos el dominio limpio.",
+    theory: `## Shadow Properties
+Una Shadow Property existe en el modelo de EF Core y en la base de datos, pero NO en tu clase C#.
+
+### Para qué sirven
+- Multi-tenancy: TenantId sin ensuciar el dominio.
+- Auditoría: CreatedAt / UpdatedBy invisibles para el modelo.
+
+### Cómo se usan
+\`builder.Property<string>("TenantId")\` la declara; se filtra con \`EF.Property<string>(e, "TenantId")\`.
+
+### Por qué importa
+Mantiene el dominio limpio: la infraestructura no contamina las entidades. El precio es renunciar al acceso fuertemente tipado por lambda.`,
+    explanationText: "🌍 Ejemplo cotidiano: el sello de seguridad de un billete existe sin cambiar el diseño del billete: nadie lo ve, pero el banco lo rastrea.\n\nCon builder.Property<string>(\"TenantId\") creas una Shadow Property: vive en el modelo y en la BD, pero no en la clase C#. Así el dominio puro no conoce la infraestructura multi-tenant y no se acopla a la persistencia.",
     codeSnippet: `public class DocumentConfiguration : IEntityTypeConfiguration<Document>
 {
     public void Configure(EntityTypeBuilder<Document> builder)
@@ -120,7 +145,18 @@ export const EF_CORE_ARCHITECTURE: Exercise[] = [
     tags: ["EF Core", "Arquitectura", "Soft Delete", "HasQueryFilter"],
     completed: false,
     fileName: "UserConfiguration.cs",
-    explanationText: "HasQueryFilter aplica un 'where' automáticamente a todas tus consultas. Es como tener un colador en el fregadero de la cocina. No tienes que ir cazando tú los restos de comida uno por uno para atraparlos; el colador automáticamente los retiene y solo deja pasar el agua limpia. Así evitas que datos 'basura' lleguen a la aplicación accidentalmente.",
+    theory: `## Soft delete con HasQueryFilter
+Un filtro global añade una condición WHERE a todas las consultas de una entidad, sin escribirlo a mano en cada LINQ.
+
+### Cómo funciona
+\`builder.HasQueryFilter(u => !u.IsDeleted)\` hace que EF Core excluya los borrados automáticamente.
+
+### El escape
+Para reportes de auditoría necesitas verlos: usa \`.IgnoreQueryFilters()\` explícitamente en esa consulta.
+
+### Por qué importa
+Si el filtro depende de que cada dev lo recuerde, tarde o temprano alguien lo olvida. Centralizarlo lo hace imposible de olvidar.`,
+    explanationText: "🌍 Ejemplo cotidiano: el colador del fregadero retiene los restos solo: no vas cazándolos uno a uno.\n\nHasQueryFilter agrega un WHERE automático a TODAS las consultas de la entidad, así los registros con IsDeleted=true nunca se devuelven. Sin él, basta una consulta olvidada para exponer datos 'borrados' al usuario.",
     codeSnippet: `public class UserConfiguration : IEntityTypeConfiguration<User>
 {
     public void Configure(EntityTypeBuilder<User> builder)
@@ -157,7 +193,19 @@ export const EF_CORE_ARCHITECTURE: Exercise[] = [
     tags: ["EF Core", "Arquitectura", "Índices", "HasIndex", "IsUnique"],
     completed: false,
     fileName: "AccountConfiguration.cs",
-    explanationText: "Un índice compuesto único asegura la unicidad basándose en la combinación de dos columnas. Es como un torneo: no puedes tener dos equipos con el mismo nombre en la misma liga, pero sí un 'Tigres' en México y otro en España. La unicidad depende de liga (Tenant) + nombre (Email). Al usar Shadow Properties, el compilador nos exige pasar los nombres como strings, no mediante lambdas.",
+    theory: `## Índice único compuesto multi-tenant
+La unicidad no siempre es por una sola columna: aquí es por la combinación TenantId + Email.
+
+### Qué cambia
+- Índice simple en Email → bloquea emails válidos de otros tenants.
+- Índice compuesto → permite el mismo email en tenants distintos, pero no dos veces en el mismo tenant.
+
+### Detalle de Shadow Properties
+Al no existir TenantId en la clase, se referencia por nombre de string: \`builder.HasIndex("TenantId", "Email")\`.
+
+### Por qué importa
+Un índice único es la red de seguridad de la BD: aunque tu código olvide validar, la base rechaza el duplicado.`,
+    explanationText: "🌍 Ejemplo cotidiano: puede haber un 'Tigres' en México y otro en España: la unicidad depende de liga + nombre.\n\nHasIndex(\"TenantId\", \"Email\").IsUnique() crea un índice único sobre la combinación de dos columnas, no sobre Email a secas. Al ser Shadow Property, los nombres se pasan como strings (no lambdas), y el mismo email puede existir en tenants distintos.",
     codeSnippet: `public class AccountConfiguration : IEntityTypeConfiguration<Account>
 {
     public void Configure(EntityTypeBuilder<Account> builder)

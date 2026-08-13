@@ -15,15 +15,6 @@ function isNonEmptyString(value: unknown): value is string {
   return typeof value === "string" && value.trim().length > 0;
 }
 
-function isIntegerIndex(value: unknown, length: number): value is number {
-  return (
-    typeof value === "number" &&
-    Number.isInteger(value) &&
-    value >= 0 &&
-    value < length
-  );
-}
-
 export function validateFormatPayload(
   format: ExerciseFormat,
   payload: unknown,
@@ -32,7 +23,7 @@ export function validateFormatPayload(
 
   switch (format) {
     case "prediction": {
-      const { options, answer } = payload;
+      const { options, answer, allowFreeText, acceptedFreeText } = payload;
       if (!Array.isArray(options) || options.length === 0) {
         return "prediction: «options» debe ser un array no vacío de strings.";
       }
@@ -41,6 +32,14 @@ export function validateFormatPayload(
       }
       if (!isNonEmptyString(answer)) {
         return "prediction: «answer» debe ser un string no vacío.";
+      }
+      if (allowFreeText === true) {
+        if (!Array.isArray(acceptedFreeText) || acceptedFreeText.length === 0) {
+          return "prediction: si «allowFreeText» es true, «acceptedFreeText» debe ser un array no vacío.";
+        }
+        if (!acceptedFreeText.every(isNonEmptyString)) {
+          return "prediction: cada respuesta de «acceptedFreeText» debe ser un string no vacío.";
+        }
       }
       return null;
     }
@@ -80,6 +79,7 @@ export function validateFormatPayload(
       if (!Array.isArray(snippets) || snippets.length < 2 || snippets.length > 4) {
         return "snippet-pick: «snippets» debe tener entre 2 y 4 elementos.";
       }
+      const snippetIds = new Set<string>();
       for (const snippet of snippets) {
         if (!isRecord(snippet) || !isNonEmptyString(snippet.id)) {
           return "snippet-pick: cada snippet debe tener un «id» string no vacío.";
@@ -87,9 +87,16 @@ export function validateFormatPayload(
         if (!isNonEmptyString(snippet.code)) {
           return "snippet-pick: cada snippet debe tener un «code» string no vacío.";
         }
+        if (snippetIds.has(snippet.id)) {
+          return `snippet-pick: el id de snippet «${snippet.id}» está duplicado.`;
+        }
+        snippetIds.add(snippet.id);
       }
-      if (!isIntegerIndex(correct, snippets.length)) {
-        return "snippet-pick: «correct» debe ser un índice entero válido.";
+      if (!isNonEmptyString(correct)) {
+        return "snippet-pick: «correct» debe ser el id (string) de un snippet.";
+      }
+      if (!snippetIds.has(correct)) {
+        return `snippet-pick: «correct» referencia un id de snippet inexistente («${correct}»).`;
       }
       return null;
     }
@@ -100,22 +107,36 @@ export function validateFormatPayload(
         return "bug-hunt: «snippet» debe ser un string no vacío.";
       }
       if (!Array.isArray(options) || options.length === 0) {
-        return "bug-hunt: «options» debe ser un array no vacío de strings.";
+        return "bug-hunt: «options» debe ser un array no vacío de {id, text}.";
       }
-      if (!options.every(isNonEmptyString)) {
-        return "bug-hunt: cada opción debe ser un string no vacío.";
+      const optionIds = new Set<string>();
+      for (const option of options) {
+        if (!isRecord(option) || !isNonEmptyString(option.id)) {
+          return "bug-hunt: cada opción debe tener un «id» string no vacío.";
+        }
+        if (!isNonEmptyString(option.text)) {
+          return "bug-hunt: cada opción debe tener un «text» string no vacío.";
+        }
+        if (optionIds.has(option.id)) {
+          return `bug-hunt: el id de opción «${option.id}» está duplicado.`;
+        }
+        optionIds.add(option.id);
       }
-      if (!isIntegerIndex(correct, options.length)) {
-        return "bug-hunt: «correct» debe ser un índice entero válido.";
+      if (!isNonEmptyString(correct)) {
+        return "bug-hunt: «correct» debe ser el id (string) de una opción.";
+      }
+      if (!optionIds.has(correct)) {
+        return `bug-hunt: «correct» referencia un id de opción inexistente («${correct}»).`;
       }
       return null;
     }
 
     case "matching": {
-      const { pairs } = payload;
+      const { pairs, definitions } = payload;
       if (!Array.isArray(pairs) || pairs.length === 0) {
         return "matching: «pairs» debe ser un array no vacío.";
       }
+      const pairDefinitions = new Set<string>();
       for (const pair of pairs) {
         if (!isRecord(pair) || !isNonEmptyString(pair.id)) {
           return "matching: cada par debe tener un «id» string no vacío.";
@@ -125,6 +146,25 @@ export function validateFormatPayload(
         }
         if (!isNonEmptyString(pair.definition)) {
           return "matching: cada par debe tener un «definition» string no vacío.";
+        }
+        pairDefinitions.add(pair.definition);
+      }
+      if (definitions !== undefined) {
+        if (!Array.isArray(definitions)) {
+          return "matching: «definitions» debe ser un array de strings.";
+        }
+        if (!definitions.every(isNonEmptyString)) {
+          return "matching: cada «definitions» debe ser un string no vacío.";
+        }
+        const definitionsSet = new Set(definitions);
+        if (definitionsSet.size !== definitions.length) {
+          return "matching: «definitions» no puede contener duplicados.";
+        }
+        if (
+          definitionsSet.size !== pairDefinitions.size ||
+          !definitions.every((d) => pairDefinitions.has(d))
+        ) {
+          return "matching: «definitions» debe coincidir exactamente con las definiciones de «pairs».";
         }
       }
       return null;

@@ -2,6 +2,7 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import gsap from "gsap";
 import type { FormatBaseProps } from "./FormatTypes";
 import { usePrefersReducedMotion } from "@/lib/useReducedMotion";
+import { resolveDefinitions } from "@/lib/matching";
 
 /**
  * Paleta de parejas: cada relación término↔definición recibe un color propio
@@ -110,7 +111,7 @@ export default function MatchingFormat({
   }, [matching.pairs, userAnswers]);
 
   const definitions = useMemo(
-    () => matching.definitions ?? matching.pairs.map((p) => p.definition),
+    () => resolveDefinitions(matching),
     [matching.definitions, matching.pairs],
   );
 

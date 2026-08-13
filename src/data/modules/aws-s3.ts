@@ -371,7 +371,7 @@ que una política accidental deje el bucket abierto (la famosa filtración de da
 }`,
         },
       ],
-      correct: 1,
+      correct: "segura",
     },
   },
 
@@ -429,12 +429,24 @@ a nivel de bucket y de cuenta para evitar estas filtraciones por accidente.`,
   ]
 }`,
       options: [
-        "Permite a CUALQUIER persona de Internet leer, escribir y borrar objetos: un atacante puede robar y destruir los datos de clientes.",
-        "No hay bug: una política con Principal '*' y GetObject es la configuración recomendada por AWS.",
-        "El bug es que falta el campo Version: las políticas JSON no pueden funcionar sin él.",
-        "El bug es que Resource apunta a un bucket que no existe en la misma región.",
+        {
+          id: "publico-escritura",
+          text: "Permite a CUALQUIER persona de Internet leer, escribir y borrar objetos: un atacante puede robar y destruir los datos de clientes.",
+        },
+        {
+          id: "sin-bug",
+          text: "No hay bug: una política con Principal '*' y GetObject es la configuración recomendada por AWS.",
+        },
+        {
+          id: "falta-version",
+          text: "El bug es que falta el campo Version: las políticas JSON no pueden funcionar sin él.",
+        },
+        {
+          id: "region-invalida",
+          text: "El bug es que Resource apunta a un bucket que no existe en la misma región.",
+        },
       ],
-      correct: 0,
+      correct: "publico-escritura",
     },
   },
 
@@ -510,8 +522,8 @@ a nivel de bucket y de cuenta para evitar estas filtraciones por accidente.`,
     stars: 2,
     category: "WEB Y VERSIONADO",
     description:
-      "El versionado protege contra borrados involuntarios y permite volver a versiones anteriores. MFA Delete añade un código extra para operaciones destructivas.",
-    objective: "Entender versionado y MFA Delete",
+      "Elige la configuración correcta de versionado y MFA Delete para proteger el bucket contra borrados involuntarios.",
+    objective: "Elegir la configuración correcta de versionado y MFA Delete",
     tags: ["versionado", "MFA Delete", "versión nula"],
     fileName: "s3-versioning",
     completed: false,
@@ -528,52 +540,51 @@ a nivel de bucket y de cuenta para evitar estas filtraciones por accidente.`,
     desactivarlo. NO se necesita MFA para habilitar el versionado ni para
     listar versiones eliminadas.`,
     explanationText:
-      "🌍 Ejemplo cotidiano: el versionado es como un borrador automático en cada documento: si borras algo por error, sacas la versión anterior del historial. MFA Delete es la caja fuerte con dos llaves: para destruir una versión de forma permanente hace falta además el código del móvil.\n\nEl versionado no evita el coste: cada versión consume espacio. Suspenderlo congela el historial pero no lo borra. MFA Delete va un paso más allá: solo la cuenta root puede activarlo, lo que lo convierte en protección contra ataques internos o credenciales robadas.",
-    codeSnippet: "// Afirmaciones sobre versionado y MFA Delete en S3",
+      "🌍 Ejemplo cotidiano: el versionado es como un borrador automático en cada documento: si borras algo por error, sacas la versión anterior del historial. MFA Delete es la caja fuerte con dos llaves: para destruir una versión de forma permanente hace falta además el código del móvil.\n\nEl versionado no evita el coste: cada versión consume espacio. Suspenderlo congela el historial pero no lo borra, y solo la cuenta root puede activar o desactivar MFA Delete. La configuración segura es versionado activo + MFA Delete, no 'suspender para limpiar'.",
+    codeSnippet: "// Elige la configuración correcta de versionado y MFA Delete",
     inputs: {},
     completeCode:
       "Sobrescribir crea una nueva versión | versión nula para objetos previos | suspender no borra | MFA Delete: root + versionado",
-    format: "true-false",
-    trueFalse: {
+    format: "snippet-pick",
+    snippetPick: {
       prompt:
-        "Valida tus conocimientos sobre versionado y MFA Delete.",
-      statements: [
+        "¿Cuál es la configuración correcta para proteger el bucket contra borrados involuntarios?",
+      snippets: [
         {
           id: "a",
-          text: "Con el versionado activado, sobrescribir un objeto crea una nueva versión de la misma clave en lugar de destruir la anterior.",
-          answer: true,
-          explanation:
-            "Correcto: cada sobrescritura incrementa la versión, y las anteriores siguen recuperables.",
+          label: "Versionado + MFA Delete",
+          code: `# CORRECTO: versionado activo y MFA Delete
+Versioning = "Enabled"
+MFADelete  = "Enabled"   # solo la cuenta root puede activarlo`,
+          description:
+            "Protege contra borrados y exige código MFA para eliminar versiones o suspender.",
         },
         {
           id: "b",
-          text: "Los objetos subidos antes de activar el versionado reciben una 'versión nula' y quedan igual de protegidos que el resto.",
-          answer: true,
-          explanation:
-            "Correcto: al activar el versionado, los objetos preexistentes se etiquetan con versión nula.",
+          label: "Suspender para limpiar",
+          code: `# INCORRECTO: suspender NO borra las versiones anteriores
+Versioning = "Suspended"`,
+          description:
+            "Suspender solo deja de versionar lo nuevo; el historial sigue existiendo.",
         },
         {
           id: "c",
-          text: "Suspender el versionado elimina automáticamente todas las versiones anteriores del bucket.",
-          answer: false,
-          explanation:
-            "Falso: suspender solo deja de versionar lo nuevo; las versiones existentes permanecen en S3.",
+          label: "MFA Delete por admin",
+          code: `# INCORRECTO: un usuario IAM admin NO puede activar MFA Delete
+# Solo el propietario del bucket (cuenta root) puede hacerlo`,
+          description:
+            "MFA Delete se activa y desactiva únicamente desde la cuenta root.",
         },
         {
           id: "d",
-          text: "Con MFA Delete, se necesita un código MFA para eliminar permanentemente una versión y para suspender el versionado, pero NO para habilitar el versionado.",
-          answer: true,
-          explanation:
-            "Correcto: las operaciones destructivas (borrado permanente de versiones y suspender) exigen MFA.",
-        },
-        {
-          id: "e",
-          text: "Cualquier usuario IAM con permisos de administrador puede activar o desactivar MFA Delete.",
-          answer: false,
-          explanation:
-            "Falso: solo el propietario del bucket (cuenta root) puede activar o desactivar MFA Delete.",
+          label: "Sin versionado",
+          code: `# INCORRECTO: sin versionado, sobrescribir destruye el objeto
+Versioning = "Disabled"`,
+          description:
+            "Una sobrescritura accidental pierde la versión anterior para siempre.",
         },
       ],
+      correct: "a",
     },
   },
 
@@ -1149,7 +1160,7 @@ En tránsito, se recomienda usar HTTPS (SSL/TLS).`,
   --body datos.txt`,
         },
       ],
-      correct: 1,
+      correct: "sse-kms",
     },
   },
 
@@ -1159,8 +1170,8 @@ En tránsito, se recomienda usar HTTPS (SSL/TLS).`,
     stars: 3,
     category: "CIFRADO Y ACCESO",
     description:
-      "CORS permite peticiones entre orígenes, las URLs pre-firmadas dan acceso temporal a un objeto privado y los Access Logs registran cada petición... en otro bucket.",
-    objective: "Repasar CORS, pre-firmadas y logs de acceso",
+      "Los access logs quedaron apuntando al mismo bucket monitorizado. Encuentra el fallo de configuración.",
+    objective: "Detectar el bucle de access logs en el mismo bucket",
     tags: ["CORS", "pre-signed", "access logs", "origen"],
     fileName: "s3-security",
     completed: false,
@@ -1177,45 +1188,41 @@ En tránsito, se recomienda usar HTTPS (SSL/TLS).`,
     un bucket de logs en la MISMA región. NUNCA uses el mismo bucket como
     destino: se crea un bucle exponencial y la factura se dispara.`,
     explanationText:
-      "🌍 Ejemplo cotidiano: CORS es el portero del edificio que deja entrar a quien viene con una invitación (cabecera con origen válido); la URL pre-firmada es el pase VIP con hora de caducidad que tú entregas; los access logs son la hoja de control de entradas que se archiva en OTRA oficina para que no se grabe a sí misma.\n\nPunto de examen: el usuario de una URL pre-firmada hereda los permisos del generador. Y el warning del instructor es tajante: logs en un bucket separado, jamás en el monitorizado, o pagarás un bucle de logs infinito.",
-    codeSnippet: "// Afirmaciones sobre CORS, URLs pre-firmadas y access logs",
+      "🌍 Ejemplo cotidiano: la hoja de control de entradas del edificio se archiva en OTRA oficina para que no se grabe a sí misma. Si la archivaras en la misma sala, cada visita anotada generaría una nueva anotación... y otra... hasta llenar el local.\n\nUsar el mismo bucket como destino de sus propios access logs crea un bucle exponencial: cada log genera nuevos logs y la factura se dispara. La regla del instructor es tajante: bucket de logs separado, en la misma región.",
+    codeSnippet: "// Encuentra el fallo en la configuración de access logs de S3",
     inputs: {},
     completeCode:
-      "CORS: origen = esquema+host+puerto | pre-firmada: temporal, hereda permisos | logs: bucket separado en la misma región",
-    format: "true-false",
-    trueFalse: {
+      "Access logs en bucket separado, misma región | nunca en el bucket monitorizado",
+    format: "bug-hunt",
+    bugHunt: {
       prompt:
-        "Valida tus conocimientos sobre CORS, URLs pre-firmadas y access logs de S3.",
-      statements: [
+        "¿Qué bug de configuración contiene esta política de logging de S3?",
+      snippet: `{
+  "Bucket": "mi-app-prod",
+  "LoggingEnabled": {
+    "TargetBucket": "mi-app-prod",
+    "TargetPrefix": "logs/"
+  }
+}`,
+      options: [
         {
-          id: "a",
-          text: "Un 'origen' en CORS se compone de esquema (protocolo) + host (dominio) + puerto: https://www.example.com y http://www.example.com son orígenes distintos.",
-          answer: true,
-          explanation:
-            "Correcto: cambiar el protocolo o el puerto crea un origen diferente para el navegador.",
+          id: "log-loop",
+          text: "Los access logs apuntan al mismo bucket monitorizado: cada log genera nuevos logs y el bucle exponencial dispara la factura.",
         },
         {
-          id: "b",
-          text: "Sin las cabeceras CORS configuradas, el navegador bloquea las peticiones entre orígenes aunque el bucket permita el acceso por políticas.",
-          answer: true,
-          explanation:
-            "Correcto: CORS es un mecanismo del navegador: sin las cabeceras, la petición cruzada se deniega.",
+          id: "cors",
+          text: "Falta la cabecera CORS en el bucket de destino; sin ella el navegador bloquea la escritura de los logs.",
         },
         {
-          id: "c",
-          text: "Una URL pre-firmada hereda los permisos del usuario que la generó y caduca: por defecto 3.600 segundos en CLI/SDK, con máximo de 168 horas.",
-          answer: true,
-          explanation:
-            "Correcto: el tiempo de expiración se configura en segundos y el máximo en CLI/SDK es 168 horas (7 días).",
+          id: "presigned",
+          text: "La URL del bucket de logs no está pre-firmada, por eso el log no se puede escribir.",
         },
         {
-          id: "d",
-          text: "Los access logs de S3 deben escribirse en el MISMO bucket monitorizado para centralizar la información y ahorrar costes.",
-          answer: false,
-          explanation:
-            "Falso: usar el mismo bucket crea un bucle exponencial de logs y dispara la factura; usa un bucket separado en la misma región.",
+          id: "region",
+          text: "El bucket de logs debe estar en otra región; AWS no permite logging en la misma región.",
         },
       ],
+      correct: "log-loop",
     },
   },
 ];

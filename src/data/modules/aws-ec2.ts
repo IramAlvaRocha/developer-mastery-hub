@@ -316,8 +316,8 @@ rendimiento y precio. El precio por hora de las instancias grandes
     stars: 2,
     category: "SEGURIDAD",
     description:
-      "Los security groups controlan todo el tráfico de entrada y salida; solo contienen reglas de permiso.",
-    objective: "Dominar el comportamiento por defecto de los security groups",
+      "El puerto SSH de una instancia de producción quedó abierto a todo Internet. Encuentra el fallo de seguridad en la configuración del security group.",
+    objective: "Detectar un security group mal configurado",
     tags: ["security group", "firewall", "inbound", "outbound"],
     fileName: "security-group",
     completed: false,
@@ -336,45 +336,51 @@ Reglas clave:
   • Un SG se adjunta a varias instancias; vive ligado a región/VPC
   • Vive 'fuera' de la instancia: si bloquea, la instancia no ve el tráfico`,
     explanationText:
-      "🌍 Ejemplo cotidiano: el portero de un club: por defecto nadie entra (inbound bloqueado) y todos pueden salir (outbound permitido). Solo escribes en la lista quién entra: no existe 'lista negra' porque solo hay permisos.\n\nPor eso, si tu app no responde con timeout, sospecha del SG; y los cambios de reglas se aplican al instante sin reiniciar la instancia.",
-    codeSnippet: "// Afirmaciones sobre los security groups",
+      "🌍 Ejemplo cotidiano: el portero del club dejó la puerta de servicio abierta 'para que sea más fácil entrar'. Cualquiera que conozca la dirección puede colarse.\n\nLa regla de entrada 22/0.0.0.0/0 expone SSH (o RDP) a todo Internet. Los security groups solo admiten reglas de permiso y nacen con el inbound bloqueado: abrir un puerto sensible al mundo es un misconfig grave. Restringe siempre el origen a IPs de confianza o a otro security group.",
+    codeSnippet: "// Encuentra el fallo de seguridad en la configuración del Security Group",
     inputs: {},
-    completeCode: "Inbound bloqueado por defecto | Outbound permitido por defecto | solo reglas de permiso",
-    format: "true-false",
-    trueFalse: {
-      prompt: "Valida cómo funcionan los security groups por defecto.",
-      statements: [
+    completeCode:
+      "ingress SSH solo desde IP de confianza | inbound bloqueado por defecto | solo reglas de permiso",
+    format: "bug-hunt",
+    bugHunt: {
+      prompt:
+        "¿Qué vulnerabilidad introduce esta configuración del security group?",
+      snippet: `resource "aws_security_group" "web" {
+  name = "web-prod"
+
+  ingress {
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]   # SSH abierto a todo Internet
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+}`,
+      options: [
         {
-          id: "a",
-          text: "Por defecto, un security group bloquea todo el tráfico de entrada y permite todo el de salida.",
-          answer: true,
-          explanation: "Inbound bloqueado y outbound autorizado: así nace cada SG.",
+          id: "ssh-open",
+          text: "El puerto SSH (22) está expuesto a todo Internet (0.0.0.0/0) sin restringir el origen a IPs de confianza.",
         },
         {
-          id: "b",
-          text: "Los security groups solo pueden contener reglas de permiso, no reglas de denegación.",
-          answer: true,
-          explanation: "Solo hay 'allow': lo que no está permitido, se deniega implícitamente.",
+          id: "outbound",
+          text: "El egress que permite todo el tráfico de salida es un error: los security groups exigen denegar la salida por defecto.",
         },
         {
-          id: "c",
-          text: "Para cambiar un security group es necesario detener la instancia.",
-          answer: false,
-          explanation: "Los cambios se aplican al instante, sin reiniciar la instancia.",
+          id: "deny",
+          text: "Los security groups no admiten reglas de permiso: se escribió 'ingress' donde debería ir una regla 'deny'.",
         },
         {
-          id: "d",
-          text: "Un security group solo se puede aplicar a una única instancia.",
-          answer: false,
-          explanation: "Un SG se puede adjuntar a varias instancias de la misma región.",
-        },
-        {
-          id: "e",
-          text: "Un security group puede referenciar a otro security group en lugar de una IP concreta.",
-          answer: true,
-          explanation: "Así autorizas tráfico desde todas las instancias que tengan ese otro SG.",
+          id: "stateful",
+          text: "Falta una regla de salida explícita para el puerto 22; al ser stateful, la conexión SSH nunca podrá responder.",
         },
       ],
+      correct: "ssh-open",
     },
   },
 
@@ -503,12 +509,24 @@ HTTP   TCP 80   0.0.0.0/0   // web pública (correcto)`,
 SSH    TCP 22   0.0.0.0/0
 HTTP   TCP 80   0.0.0.0/0`,
       options: [
-        "El puerto SSH (22) está abierto a 0.0.0.0/0: cualquiera puede intentar entrar por fuerza bruta.",
-        "Abrir HTTP (80) a 0.0.0.0/0 es un error grave porque expone la web.",
-        "El puerto 22 no debería usar la sintaxis 0.0.0.0/0 nunca, ni siquiera para la web.",
-        "No hay bug: la configuración es completamente segura.",
+        {
+          id: "ssh-abierto",
+          text: "El puerto SSH (22) está abierto a 0.0.0.0/0: cualquiera puede intentar entrar por fuerza bruta.",
+        },
+        {
+          id: "http-grave",
+          text: "Abrir HTTP (80) a 0.0.0.0/0 es un error grave porque expone la web.",
+        },
+        {
+          id: "puerto-22",
+          text: "El puerto 22 no debería usar la sintaxis 0.0.0.0/0 nunca, ni siquiera para la web.",
+        },
+        {
+          id: "sin-bug",
+          text: "No hay bug: la configuración es completamente segura.",
+        },
       ],
-      correct: 0,
+      correct: "ssh-abierto",
     },
   },
 

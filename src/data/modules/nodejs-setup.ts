@@ -37,7 +37,7 @@ Archivos que nace tu proyecto:
   ├── package-lock.json ← versiones exactas (generado al instalar)
   └── node_modules/     ← dependencias (NO va a git)`,
     explanationText:
-      "Ejemplo cotidiano: package.json es como la carátula de un cuaderno — nombre, materia y reglas. Sin él, npm no sabe qué proyecto eres.",
+      "🌍 Ejemplo cotidiano: package.json es la carátula de un cuaderno: nombre, materia y reglas. Sin él, npm no sabe qué proyecto eres.\n\nnpm init -y crea el package.json con valores por defecto: es el 'acta de nacimiento' que registra metadatos y scripts. Todo proyecto Node arranca aquí, y sin él ninguna herramienta sabe cómo tratarlo.",
     codeSnippet:
 `# Crear carpeta y entrar
 mkdir my-api && cd my-api
@@ -79,7 +79,7 @@ Comando:
 
 No necesitas compilar JavaScript puro — Node lo corre directo.`,
     explanationText:
-      "Es como encender la licuadora y apretar ON: le das un archivo y Node lo procesa. Express y TypeScript vienen después.",
+      "🌍 Ejemplo cotidiano: encender la licuadora y apretar ON: le das un archivo y Node lo procesa.\n\nnode index.js ejecuta el punto de entrada: Node lo lee, lo compila con V8 y lo corre línea por línea. No necesitas compilar JavaScript puro; Express y TypeScript vienen después.",
     codeSnippet:
 `// index.js — tu primer programa
 [INPUT_1].log('🚀 API lista en Node.js');
@@ -114,7 +114,7 @@ Flujo mínimo:
 En producción usas Express/Fastify, pero en entrevistas preguntan:
   "¿Cómo funciona un servidor HTTP por debajo?"`,
     explanationText:
-      "Analogía: http nativo es cocinar desde cero; Express es usar un kit de meal prep. Ambos sirven comida, uno requiere más pasos.",
+      "🌍 Ejemplo cotidiano: http nativo es cocinar desde cero; Express es un kit de meal prep. Ambos sirven comida, uno con más pasos.\n\ncreateServer(cb) + listen(PORT) es la base de todo servidor Node, sin instalar nada. Entenderla te hace responder en entrevistas 'cómo funciona un servidor por debajo'.",
     codeSnippet:
 `import { [INPUT_1] } from 'node:http';
 
@@ -159,7 +159,7 @@ TypeScript en 2026 compila a ESM con:
   "module": "NodeNext"
   "moduleResolution": "NodeNext"`,
     explanationText:
-      "require es como pedir por teléfono; import es como usar una app de delivery con menú claro. La industria migró a import.",
+      "🌍 Ejemplo cotidiano: require es pedir por teléfono; import es una app de delivery con menú claro.\n\n'type': 'module' en package.json activa ESM en todo el proyecto y habilita import/export. En 2026 es el estándar: TypeScript compila a ESM con module: NodeNext.",
     codeSnippet:
 `// package.json
 {
@@ -204,7 +204,7 @@ Comandos útiles:
   npm ls express      → versión instalada
   npm outdated        → deps desactualizadas`,
     explanationText:
-      "npm install es como agregar ingredientes a tu despensa: quedan registrados en la lista (package.json) para que cualquiera replique tu cocina.",
+      "🌍 Ejemplo cotidiano: npm install agrega ingredientes a tu despensa y los deja registrados en la lista para que cualquiera replique tu cocina.\n\nnpm install express registra la dependencia en package.json y genera package-lock.json (versiones exactas) y node_modules/. El lock file es lo que garantiza builds reproducibles; no lo borres.",
     codeSnippet:
 `# Instalar Express 5 (producción)
 npm [INPUT_1] [INPUT_2]
@@ -249,7 +249,7 @@ Sí subir:
   .env.example    → plantilla SIN secretos reales
   src/            → código fuente`,
     explanationText:
-      "Es como no compartir la llave de tu casa en redes: .env tiene secretos; node_modules es pesado y se reconstruye solo.",
+      "🌍 Ejemplo cotidiano: no compartes la llave de tu casa en redes: .env guarda secretos.\n\nEl .gitignore excluye node_modules (se regenera con npm ci), .env (secretos) y dist/ (compilado). Subir un .env real a GitHub es un incidente de seguridad; sube solo .env.example.",
     codeSnippet:
 `# .gitignore — Node.js API 2026
 [INPUT_1]/
@@ -291,7 +291,7 @@ Cuándo usar nodemon aún:
   • Config avanzada (ignorar carpetas específicas)
   • Proyectos legacy con .nodemon.json existente`,
     explanationText:
-      "Como un microondas con sensor: detecta que cambiaste algo y reinicia solo, sin instalar un aparato extra.",
+      "🌍 Ejemplo cotidiano: un microondas con sensor: detecta el cambio y reinicia solo, sin aparato extra.\n\nnode --watch (Node 20+) reinicia el servidor al guardar cambios, sin instalar nodemon. Es suficiente para proyectos simples; nodemon/tsx quedan para configuración avanzada.",
     codeSnippet:
 `// package.json — script de desarrollo sin nodemon
 {
@@ -339,7 +339,7 @@ Archivo nodemon.json (opcional):
   • Proyectos JS legacy → nodemon
   • Proyectos simples JS → node --watch`,
     explanationText:
-      "nodemon es el asistente que vigila tu código y dice 'cambió algo, reinicio el servidor'. Muy común en codebases de empresas.",
+      "🌍 Ejemplo cotidiano: nodemon es el asistente que vigila el código y dice 'cambió algo, reinicio'.\n\nSe instala como devDependency (npm i -D nodemon) y reemplaza a node en el script dev. Conviene conocerlo porque sigue vivo en codebases de empresas y tutoriales.",
     codeSnippet:
 `# Instalar como devDependency
 npm install -[INPUT_1] [INPUT_2]
@@ -389,7 +389,7 @@ Limitaciones (sintaxis que SÍ genera código, no solo tipos):
 Sigue haciendo falta tsc para chequear tipos:
   npx tsc --noEmit   → Node solo borra tipos, no valida que sean correctos`,
     explanationText:
-      "Es como quitarle las etiquetas de precio a un producto antes de la caja: Node borra los tipos (etiquetas) y corre el JavaScript que queda, sin revisar si el precio estaba bien puesto.",
+      "🌍 Ejemplo cotidiano: quitar las etiquetas de precio antes de la caja: Node borra los tipos y corre el JS que queda.\n\nDesde Node 23.6 (estable en 24.12+) node ejecuta .ts directamente con type stripping: borra interfaces y anotaciones. No compila ni type-checkea; por eso tsc --noEmit sigue siendo obligatorio para validar tipos.",
     codeSnippet:
 `// src/index.ts — ejecuta con: node --watch src/index.ts (cero dependencias)
 interface [INPUT_1] {
@@ -438,7 +438,7 @@ El type stripping nativo (ejercicio anterior) NO reemplaza a typescript:
   ✅ Refactoring seguro
   ✅ Mejor onboarding en equipos`,
     explanationText:
-      "TypeScript es como revisar la lista del súper antes de salir: detectas que falta algo ANTES de llegar a caja (producción).",
+      "🌍 Ejemplo cotidiano: revisar la lista del súper antes de salir: detectas lo que falta ANTES de llegar a caja (producción).\n\nTypeScript mueve los errores del runtime al compile-time. Aunque Node ya ejecute .ts, typescript + tsc siguen siendo necesarios para el IDE y el CI; el type stripping no avisa de errores de tipos.",
     codeSnippet:
 `# Instalar TypeScript + tipos de Node
 npm install -[INPUT_1] [INPUT_2] @types/[INPUT_3]
@@ -487,7 +487,7 @@ Config recomendada para una API Node en 2026:
 
 "moduleResolution": "node10" quedó deprecado → usa "nodenext" o "bundler".`,
     explanationText:
-      "En TS 6 el compilador viene 'modo estricto' de fábrica, como un auto con el modo Eco activado por defecto: mejor para casi todos, pero si dependías de una función vieja (cargar todos los @types), ahora tienes que activarla tú mismo con 'types'.",
+      "🌍 Ejemplo cotidiano: el compilador TS 6 viene 'modo estricto' de fábrica, como un auto con modo Eco: mejor para casi todos, pero funciones viejas hay que activarlas a mano.\n\nEn TS 6.0 strict es true por defecto, pero 'types' ahora es []: sin agregar 'types': ['node'], ya no reconoce process ni los módulos nativos. La trampa clásica es olvidarlo y ver 'Cannot find name process'.",
     codeSnippet:
 `# Generar tsconfig.json
 npx [INPUT_1] --[INPUT_2]
@@ -545,7 +545,7 @@ Flujo de trabajo:
   Desarrollo  → tsx watch (sin carpeta dist)
   Producción  → npm run build && npm start (JS en dist/)`,
     explanationText:
-      "tsx es como probar la comida mientras cocinas; tsc + node es el plato servido al cliente en el restaurante (producción).",
+      "🌍 Ejemplo cotidiano: tsx es probar la comida mientras cocinas; tsc + node es el plato servido al cliente.\n\ntsx watch ejecuta TS con soporte completo de tsconfig (enums, paths, decorators); el type stripping nativo no. Producción sigue con npm run build (tsc) + npm start (node dist).",
     codeSnippet:
 `npm install -D [INPUT_1]
 
@@ -588,7 +588,7 @@ engines en package.json:
   "engines": { "node": ">=24.0.0" }
   → documenta versión mínima (Heroku, Cloud Run lo respetan)`,
     explanationText:
-      "dev = cocinar en la cocina; build = empaquetar para delivery; start = abrir el local al público.",
+      "🌍 Ejemplo cotidiano: dev = cocinar en la cocina; build = empaquetar para delivery; start = abrir el local al público.\n\nLos tres scripts (dev con tsx watch, build con tsc, start con node dist) son lo primero que revisa un senior en un repo nuevo. engines documenta la versión mínima de Node y la respetan Cloud Run y Heroku.",
     codeSnippet:
 `{
   "type": "module",
@@ -631,7 +631,7 @@ Tipado de handler Express:
   import type { Request, Response } from 'express';
   app.get('/', (req: Request, res: Response) => { ... });`,
     explanationText:
-      "@types es como el manual traducido al español para una herramienta japonesa: Express habla JS, @types/express le enseña TypeScript el vocabulario.",
+      "🌍 Ejemplo cotidiano: @types es el manual traducido para una herramienta japonesa: Express habla JS, @types/express le enseña el vocabulario a TypeScript.\n\nLas librerías en JS puro necesitan @types/* (DefinitelyTyped); las modernas en TS traen tipos incluidos. Sin los tipos, req/res serían any y perderías todo el autocompletado.",
     codeSnippet:
 `npm install -D @types/[INPUT_1]
 
@@ -686,7 +686,7 @@ Alternativa producción:
   Variables del sistema (Cloud Run, Docker -e, GitHub Secrets)
   → no necesitas .env en prod, solo en local`,
     explanationText:
-      ".env es tu libreta de contraseñas personal que nunca prestas; .env.example es la plantilla vacía que sí compartes con el equipo.",
+      "🌍 Ejemplo cotidiano: .env es tu libreta de contraseñas que nunca prestas; .env.example es la plantilla vacía que sí compartes.\n\nimport 'dotenv/config' carga el .env en process.env (o usa el nativo node --env-file). Valida con Zod al arrancar: si falta DATABASE_URL, falla con mensaje claro en vez de explotar en runtime.",
     codeSnippet:
 `import '[INPUT_1]/config';
 
@@ -730,7 +730,7 @@ server.ts vs app.ts:
   • app.ts exporta la app Express (testeable con supertest)
   • server.ts hace app.listen() — solo en runtime real`,
     explanationText:
-      "Separar app.ts de server.ts es como tener la receta (app) aparte del horno encendido (server): puedes probar la receta sin quemar nada.",
+      "🌍 Ejemplo cotidiano: la receta (app) aparte del horno encendido (server): puedes probar la receta sin quemar nada.\n\napp.ts exporta la app Express (testeable con supertest) y server.ts solo hace app.listen(). Separarlos es lo que permite probar rutas sin levantar un puerto real.",
     codeSnippet:
 `// src/app.ts
 import express from 'express';
@@ -779,7 +779,7 @@ Comandos diarios:
 
 Node LTS: 24.x activa (22.x en mantenimiento) | TypeScript: 6.x | Express: 5.x | tsx: latest`,
     explanationText:
-      "Con este checklist tienes lo mismo que monta un dev senior el día 1 en un proyecto nuevo. El módulo Node.js Backend continúa con JWT, Prisma y producción.",
+      "🌍 Ejemplo cotidiano: este checklist es lo que monta un dev senior el día 1 en un proyecto nuevo.\n\nNode 24 LTS + type module + TypeScript 6 + tsx + scripts dev/build/start + .gitignore y .env.example. Con eso arrancas el módulo de Node.js Backend (JWT, Prisma, producción) sobre bases sólidas.",
     codeSnippet:
 `# Checklist rápido — completa los huecos
 ✅ Node [INPUT_1] LTS instalado

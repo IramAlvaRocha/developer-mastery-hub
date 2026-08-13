@@ -35,6 +35,8 @@ export interface PredictionExercise {
   /** Valor correcto (debe normalizar igual que la opción correcta). */
   answer: string;
   allowFreeText?: boolean;
+  /** Respuestas de texto libre alternativas válidas (se normalizan al comparar). */
+  acceptedFreeText?: string[];
 }
 
 /** Paso de un ejercicio de ordenar pasos. */
@@ -54,16 +56,23 @@ export interface OrderingExercise {
 export interface SnippetPickExercise {
   prompt: string;
   snippets: { id: string; label: string; code: string; description?: string }[];
-  /** Índice del snippet correcto (o el anti-patrón si prompt lo pide). */
-  correct: number;
+  /** Id del snippet correcto (o el anti-patrón si prompt lo pide). */
+  correct: string;
+}
+
+/** Opción de un ejercicio bug-hunt (describe la vulnerabilidad). */
+export interface BugHuntOption {
+  id: string;
+  text: string;
 }
 
 /** Bug hunt: snippet con bug + opciones que describen la vulnerabilidad. */
 export interface BugHuntExercise {
   prompt?: string;
   snippet: string;
-  options: string[];
-  correct: number;
+  options: BugHuntOption[];
+  /** Id de la opción correcta. */
+  correct: string;
 }
 
 /** Par de un ejercicio de emparejar término ↔ definición. */
@@ -118,6 +127,8 @@ export interface Exercise {
   instruction?: string;
   /** Texto teorico opcional (tab "Teoria"). */
   theory?: string;
+  /** Pistas progresivas opcionales, ordenadas de la mas general a la mas concreta. No revelan la respuesta literal. */
+  hints?: string[];
   explanationText: string;
   /** Codigo con placeholders [INPUT_1], [INPUT_2]... que se renderizan como inputs inline. */
   codeSnippet: string;

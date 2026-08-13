@@ -149,6 +149,11 @@ CREATE TABLE IF NOT EXISTS public.exercises (
   CONSTRAINT exercises_module_ref_key UNIQUE (module_key, exercise_ref)
 );
 
+-- Pistas progresivas (general → concreta) para el sistema de hints pedagógicos.
+-- `jsonb` mantiene el array de strings, coherente con `inputs` y `format_payload`.
+ALTER TABLE public.exercises
+  ADD COLUMN IF NOT EXISTS hints jsonb;
+
 -- Suscripciones del usuario a cursos (alimenta la vista "Mis Cursos").
 CREATE TABLE IF NOT EXISTS public.enrollments (
   user_id        uuid NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
@@ -205,6 +210,16 @@ CREATE TABLE IF NOT EXISTS public.progress (
     REFERENCES public.exercises (module_key, exercise_ref) ON DELETE CASCADE
 );
 
+-- Señal rica de repaso espaciado (SRS-ready), aditiva sobre `progress`.
+-- `completed_at` se conserva como "primera vez completado"; el cliente no lo
+-- envía en el upsert para no sobrescribirlo. `attempts`/`last_correct`/
+-- `last_error_keys`/`last_attempt_at` alimentan el repaso de "mis fallos".
+ALTER TABLE public.progress
+  ADD COLUMN IF NOT EXISTS attempts        int NOT NULL DEFAULT 1,
+  ADD COLUMN IF NOT EXISTS last_correct    boolean,
+  ADD COLUMN IF NOT EXISTS last_error_keys jsonb,
+  ADD COLUMN IF NOT EXISTS last_attempt_at timestamptz;
+
 -- "Continuar donde lo dejaste".
 CREATE TABLE IF NOT EXISTS public.user_state (
   user_id             uuid PRIMARY KEY REFERENCES public.profiles(id) ON DELETE CASCADE,
@@ -221,6 +236,8 @@ CREATE INDEX IF NOT EXISTS idx_exercises_module    ON public.exercises(module_ke
 CREATE INDEX IF NOT EXISTS idx_exercises_published ON public.exercises(is_published) WHERE is_published;
 CREATE INDEX IF NOT EXISTS idx_modules_course      ON public.modules(course_key);
 CREATE INDEX IF NOT EXISTS idx_progress_user       ON public.progress(user_id);
+CREATE INDEX IF NOT EXISTS idx_progress_user_attempt
+  ON public.progress (user_id, last_attempt_at DESC);
 CREATE INDEX IF NOT EXISTS idx_enrollments_user    ON public.enrollments(user_id);
 CREATE INDEX IF NOT EXISTS idx_enrollments_module  ON public.enrollments(module_key);
 CREATE INDEX IF NOT EXISTS idx_course_enrollments_user

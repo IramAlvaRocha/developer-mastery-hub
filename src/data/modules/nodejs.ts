@@ -39,7 +39,7 @@ Estructura recomendada:
   ├── middleware/  → funciones que interceptan requests
   ├── utils/       → funciones de utilidad reutilizables
   └── config/      → configuración centralizada`,
-    explanationText: "Consejo senior: Nunca pongas lógica de negocio en los controllers ni queries SQL en los controllers. Cada capa solo conoce a la siguiente.",
+    explanationText: "🌍 Ejemplo cotidiano: en un restaurante, el mesero no cocina ni entra a la despensa: toma el pedido y lo pasa a cocina. Una API bien hecha funciona igual.\n\nConsejo senior: nunca pongas lógica de negocio ni queries SQL en los controllers. Cada capa solo conoce a la siguiente: si rompes la regla, un cambio de base de datos te obliga a tocar 20 archivos a la vez.",
     codeSnippet:
 `// src/routes/userRoutes.ts — SOLO URLs y verbos
 import { Router } from 'express';
@@ -51,7 +51,12 @@ router.get('/:id', userController.getById);
 router.post('/', userController.[INPUT_4]);
 export default router;`,
     inputs: { INPUT_1: "userController", INPUT_2: "Router", INPUT_3: "userController", INPUT_4: "create" },
-    completeCode: "Router() | userController.getAll | userController.create — routes solo definen URLs"
+    completeCode: "Router() | userController.getAll | userController.create — routes solo definen URLs",
+    hints: [
+      "Separa por capas: el archivo de rutas solo declara URLs y verbos; importa desde el controller y delega.",
+      "Express exporta una función que crea un mini-enrutador para organizar rutas por dominio.",
+      "En una API REST, el POST crea recursos: delega en el método con el verbo de crear.",
+    ],
   },
 
   {
@@ -87,7 +92,7 @@ Códigos HTTP más usados en APIs REST:
   404 Not Found   → recurso no existe
   409 Conflict    → duplicado (ej: email ya registrado)
   500 Server Error→ error interno (nunca exponer detalles al cliente)`,
-    explanationText: "Truco: si tu controller tiene más de 20 líneas, algo debería estar en el service. Si tiene queries SQL, está mal.",
+    explanationText: "🌍 Ejemplo cotidiano: el controller es el recepcionista del hotel: recibe al cliente, toma sus datos y deriva a la persona indicada. No limpia las habitaciones ni gestiona la caja.\n\nTruco: si tu controller tiene más de 20 líneas, algo debería estar en el service. Si tiene queries SQL, está mal: acopla la capa HTTP a la base de datos y te impide testear sin levantar un servidor.",
     codeSnippet:
 `// controllers/userController.ts
 export const userController = {
@@ -110,7 +115,13 @@ export const userController = {
   }
 };`,
     inputs: { INPUT_1: "userService", INPUT_2: "status", INPUT_3: "next", INPUT_4: "body" },
-    completeCode: "userService.getAll() | res.status(200).json() | next(error) | req.body"
+    completeCode: "userService.getAll() | res.status(200).json() | next(error) | req.body",
+    hints: [
+      "Un controller limpio delega toda la lógica al service: nunca hace queries ni reglas de negocio.",
+      "Para responder debes fijar el código HTTP antes de enviar el JSON; los métodos de `res` se encadenan.",
+      "En un error se pasa al siguiente middleware del pipeline para que lo maneje el handler global.",
+      "Los datos que envía el cliente en un POST viajan en el cuerpo de la petición.",
+    ],
   },
 
   {
@@ -140,7 +151,7 @@ Ejemplo de lógica de negocio en un service de usuarios:
   • Calcular permisos según el rol
 
 Todas estas reglas van en el service, NO en el controller ni en el repository.`,
-    explanationText: "Si puedes copiar y pegar tu service a una app de consola (CLI) sin cambiar nada, está bien diseñado.",
+    explanationText: "🌍 Ejemplo cotidiano: el service es el cocinero que solo sigue la receta: no necesita saber quién pidió el plato ni por qué ventanilla lo entregarán.\n\nSi puedes copiar y pegar tu service a una app de consola (CLI) sin cambiar nada, está bien diseñado. Por eso vive sin `req` ni `res`: al no depender de Express, es 100% testeable y reutilizable en REST, GraphQL o un job.",
     codeSnippet:
 `// services/userService.ts — sin Request ni Response
 import { userRepository } from '../repositories/userRepository';
@@ -159,7 +170,12 @@ export const userService = {
   }
 };`,
     inputs: { INPUT_1: "hash", INPUT_2: "email", INPUT_3: "409", INPUT_4: "hash" },
-    completeCode: "service sin req/res | AppError(msg, statusCode) | hash password | repository.create"
+    completeCode: "service sin req/res | AppError(msg, statusCode) | hash password | repository.create",
+    hints: [
+      "El service valida reglas de negocio: el email debe ser único y la contraseña nunca se guarda en claro.",
+      "Un email duplicado es un conflicto: el código HTTP de «ya existe» empieza por 40.",
+      "Para proteger la contraseña usa una función que la transforma de forma irreversible antes de guardarla.",
+    ],
   },
 
   // ─── SECCIÓN 2: VARIABLES DE ENTORNO ────────────────────────────────────────
@@ -197,7 +213,7 @@ Archivos importantes:
 Validar al inicio:
   Si falta JWT_SECRET y tu app arranca igual, tienes un bug de seguridad.
   La app debe FALLAR al iniciar si faltan variables críticas.`,
-    explanationText: "Regla de oro: si comiteaste un .env con contraseñas reales, considera esas contraseñas comprometidas. Cámbialas inmediatamente.",
+    explanationText: "🌍 Ejemplo cotidiano: las contraseñas van en la caja fuerte, no escritas con rotulador en la pared de la oficina. El código es esa pared: cualquiera que lo lea vería tus secretos.\n\nRegla de oro: si comiteaste un `.env` con contraseñas reales, considéralas comprometidas y cámbialas ya. La configuración vive en el entorno, no en el repo; además, valida las variables críticas al arrancar y haz que la app falle si faltan.",
     codeSnippet:
 `// config/env.ts — validación al iniciar la app
 import dotenv from '[INPUT_1]';
@@ -263,7 +279,7 @@ Middleware comunes:
   morgan               → logging de requests
   helmet               → headers de seguridad
   express-rate-limit   → limita requests por IP`,
-    explanationText: "Tip: el orden de app.use() importa. Si pones el auth middleware después del handler, el handler corre sin autenticación.",
+    explanationText: "🌍 Ejemplo cotidiano: el middleware es el control de seguridad del aeropuerto: cada puesto revisa tu pase y te deriva al siguiente. Si un puesto no te deriva, te quedas parado en el pasillo.\n\nTip: el orden de `app.use()` importa. Si pones el middleware de auth después del handler, éste corre sin autenticación. Y si un middleware ni llama a `next()` ni responde, el request queda colgado hasta el timeout.",
     codeSnippet:
 `// Anatomía de un middleware
 function myMiddleware(req: Request, res: Response, [INPUT_1]: NextFunction) {
@@ -284,7 +300,12 @@ function errorHandler([INPUT_4]: Error, req: Request, res: Response, next: NextF
 app.use(myMiddleware); // global
 app.use(errorHandler); // SIEMPRE al final`,
     inputs: { INPUT_1: "next", INPUT_2: "method", INPUT_3: "next", INPUT_4: "error" },
-    completeCode: "(req, res, next) | next() para continuar | error handler: (err, req, res, next)"
+    completeCode: "(req, res, next) | next() para continuar | error handler: (err, req, res, next)",
+    hints: [
+      "Un middleware recibe (req, res, next) y debe llamar a la función que continúa el pipeline, o la request se queda colgada.",
+      "El log usa una propiedad de `req` que identifica el verbo HTTP (GET, POST…).",
+      "El handler de errores tiene 4 parámetros: el primero es el objeto de la excepción.",
+    ],
   },
 
   {
@@ -318,7 +339,7 @@ Formatos de Morgan:
 
 Herramienta avanzada: winston + winston-transport-gcp para
 enviar logs directamente a Cloud Logging desde Node.js`,
-    explanationText: "En producción usa 'combined' o JSON estructurado. En Cloud Run los logs van automáticamente a Cloud Logging si escribes a stdout.",
+    explanationText: "🌍 Ejemplo cotidiano: los logs son la caja negra del avión: nadie la mira hasta que algo sale mal, y entonces es lo único que te dice qué pasó a las 3am.\n\nEn producción usa `combined` o JSON estructurado. En Cloud Run los logs llegan solos a Cloud Logging si escribes a stdout. Sin este registro no puedes diagnosticar fallos nocturnos ni detectar intentos de fuerza bruta.",
     codeSnippet:
 `import [INPUT_1] from 'morgan';
 import { config } from '../config/env';
@@ -376,7 +397,7 @@ Headers que configura Helmet:
 
 Sin Helmet, tu API devuelve headers como:
   X-Powered-By: Express  ← anuncia tu stack al atacante`,
-    explanationText: "helmet() en una línea configura 14 headers de seguridad. No hay excusa para no usarlo.",
+    explanationText: "🌍 Ejemplo cotidiano: los headers de seguridad son como cerrar persianas y poner cerradura a las ventanas de casa: no evitan al ladrón experto, pero descartan a casi todos los oportunistas.\n\n`helmet()` en una línea configura 14 headers que mitigan XSS, clickjacking y sniffing de MIME. No usarlo es dejar tu API anunciando su stack (`X-Powered-By: Express`) y sin protección básica, sin coste alguno.",
     codeSnippet:
 `import [INPUT_1] from 'helmet';
 
@@ -438,7 +459,7 @@ Headers CORS importantes:
 ⚠️ NUNCA en producción:
   origin: '*' con credentials: true → ES IMPOSIBLE (el navegador lo rechaza)
   origin: '*'                       → permite CUALQUIER dominio (peligroso para APIs privadas)`,
-    explanationText: "CORS de '*' en producción es como dejar la puerta de tu casa abierta con un letrero de 'pasen'. Siempre especifica los orígenes permitidos.",
+    explanationText: "🌍 Ejemplo cotidiano: CORS es la lista de invitados de una fiesta privada: solo entra quien está en la lista. Con `*` estás dejando pasar a cualquiera que toque el timbre.\n\nEn producción siempre define una whitelist de orígenes. Además, `origin: '*'` junto a `credentials: true` ni siquiera funciona: el navegador lo rechaza, así que se trata de configurar bien los orígenes y no de abrir la puerta de par en par.",
     codeSnippet:
 `import cors from 'cors';
 import { config } from '../config/env';
@@ -502,7 +523,7 @@ Niveles recomendados:
   Global:        1000 req / 15 min por IP
   Login/Register: 5   req / 1 hora por IP (más estricto)
   API con token:  10000 req / hora por usuario`,
-    explanationText: "Sin rate limit en /login es como tener una puerta blindada pero dejar que alguien intente claves indefinidamente. El rate limit es el guardia.",
+    explanationText: "🌍 Ejemplo cotidiano: el rate limit es el guardia de la discoteca que cuenta cuántas veces intentaste entrar: tras cinco intentos con la credencial equivocada, te pide esperar.\n\nSin límite en `/login`, un bot puede probar millones de contraseñas por hora y colapsar el servidor. Aplica un límite estricto en autenticación (5/hora) y uno global razonable (100/15min), y devuelve 429 con `Retry-After`.",
     codeSnippet:
 `import rateLimit from '[INPUT_1]';
 
@@ -573,7 +594,7 @@ HS256 vs RS256:
 Access Token vs Refresh Token:
   Access Token:  corta duración (15min - 1hr), va en Authorization header
   Refresh Token: larga duración (7-30 días), va en HttpOnly Cookie`,
-    explanationText: "Regla: el JWT_SECRET debe ser de al menos 256 bits (32 chars aleatorios). Genera con: node -e \"console.log(require('crypto').randomBytes(32).toString('hex'))\"",
+    explanationText: "🌍 Ejemplo cotidiano: un JWT es un pasaporte firmado: el funcionario sella cada página y cualquiera que cambie una letra rompe el sello. Pero el contenido sigue siendo legible, no cifrado.\n\nEl payload es solo Base64: cualquiera puede leerlo, así que nunca guardes contraseñas ni datos sensibles ahí. Regla: `JWT_SECRET` de al menos 256 bits, generado con `node -e \"console.log(require('crypto').randomBytes(32).toString('hex'))\"`.",
     codeSnippet:
 `import jwt from 'jsonwebtoken';
 import { config } from '../config/env';
@@ -603,7 +624,12 @@ export const jwtUtils = {
   }
 };`,
     inputs: { INPUT_1: "sign", INPUT_2: "expiresIn", INPUT_3: "verify", INPUT_4: "TokenExpiredError" },
-    completeCode: "jwt.sign(payload, secret, { expiresIn }) | jwt.verify | TokenExpiredError handling"
+    completeCode: "jwt.sign(payload, secret, { expiresIn }) | jwt.verify | TokenExpiredError handling",
+    hints: [
+      "Crear un token y comprobar su validez son dos operaciones opuestas de la misma librería.",
+      "El tiempo de vida del token se configura con la opción de expiración.",
+      "Cuando un token caduca, la librería lanza un error con un nombre específico de «expirado».",
+    ],
   },
 
   {
@@ -643,7 +669,7 @@ export const jwtUtils = {
   localStorage:  fácil pero vulnerable a XSS
   HttpOnly Cookie: más seguro (JS no puede leerla)
   Memoria (variable): más seguro, pero se pierde al recargar`,
-    explanationText: "Nunca confíes en datos del JWT sin verificar la firma. Si el token es válido, confías. Si no, rechazas. Sin excepciones.",
+    explanationText: "🌍 Ejemplo cotidiano: el middleware de auth es el portero que revisa tu pase en cada puerta: si la firma no cuadra, no entras, por mucho que el pase parezca bonito.\n\nNunca confíes en datos del JWT sin verificar la firma: si el token es válido, confías; si no, rechazas con 401. Verificar cada request es lo que impide que un token falsificado acceda a rutas protegidas.",
     codeSnippet:
 `export const authenticate = async (req: Request, res: Response, next: NextFunction) => {
   const authHeader = req.headers.[INPUT_1];
@@ -704,7 +730,7 @@ Flujo completo:
 Riesgo de timing attack en comparación de contraseñas:
   ❌ password === hashedPassword  (timing diferente según chars iguales)
   ✅ bcrypt.compare(password, hash) (tiempo constante, resistente a timing)`,
-    explanationText: "El timing attack es un ataque real: midiendo el tiempo de respuesta, un atacante puede saber cuántos caracteres de la contraseña acertó. bcrypt.compare lo evita.",
+    explanationText: "🌍 Ejemplo cotidiano: usar access token + refresh token es como llevar una llave de uso diario (corta) y guardar la llave maestra en una caja fuerte: si pierdes la de diario, el daño dura poco.\n\nEl timing attack es real: midiendo el tiempo de respuesta, un atacante deduce cuántos caracteres acertó de la contraseña. `bcrypt.compare` lo evita al tardar siempre lo mismo; por eso nunca compares contraseñas con `===`.",
     codeSnippet:
 `export const authController = {
   login: async (req: Request, res: Response, next: NextFunction) => {
@@ -775,7 +801,7 @@ Mass assignment attack:
   Si haces: user.update(req.body) sin validar,
   un atacante puede enviar { role: "admin" } y escalar privilegios.
   Zod con .pick() o .omit() previene esto.`,
-    explanationText: "Zod.safeParse() devuelve { success, data, error } sin lanzar excepción. Úsalo cuando quieras manejar el error tú mismo.",
+    explanationText: "🌍 Ejemplo cotidiano: Zod es la aduana del aeropuerto: revisa el pasaporte de todo lo que entra y solo deja pasar lo que cumple las reglas, sin importar lo que el viajero afirme llevar.\n\n`safeParse()` devuelve `{ success, data, error }` sin lanzar excepción; úsalo cuando quieras manejar el error tú mismo. Validar en el servidor (siempre) previene el mass assignment: un atacante que envíe `{ role: \"admin\" }` no puede escalar privilegios si el schema no lo permite.",
     codeSnippet:
 `import { z } from '[INPUT_1]';
 
@@ -843,7 +869,7 @@ Información a devolver en error response:
   ✅ En desarrollo: stack trace para debugging
   ❌ En producción: nunca el stack trace (revela la arquitectura)
   ❌ Nunca exponer el mensaje de error de la BD (puede revelar el schema)`,
-    explanationText: "Si ves el stack trace de tu app en producción en el navegador, tienes un bug de seguridad. El error handler debe filtrarlo.",
+    explanationText: "🌍 Ejemplo cotidiano: el error handler es una central única de emergencias: todos los problemas llegan al mismo sitio y se atienden con el mismo protocolo, en vez de apagar incendios cada uno por su cuenta.\n\nSi ves el stack trace de tu app en producción en el navegador, tienes un bug de seguridad: revela tu arquitectura y rutas internas. El handler central debe filtrarlo y devolver siempre el mismo formato (`statusCode`, `message`, `status`).",
     codeSnippet:
 `// utils/AppError.ts
 export class AppError extends Error {
@@ -915,7 +941,7 @@ Comandos esenciales:
   npx prisma migrate dev   → crear migración y aplicarla
   npx prisma studio        → GUI para ver datos
   npx prisma generate      → regenerar el cliente`,
-    explanationText: "Prisma genera un singleton del PrismaClient. Para evitar conexiones excesivas en desarrollo (hot reload), usa el patrón singleton que verás en el ejercicio siguiente.",
+    explanationText: "🌍 Ejemplo cotidiano: un ORM es un traductor que convierte tus objetos en lenguaje SQL y de vuelta, para que no hables dos idiomas a la vez en el mismo código.\n\nPrisma define el schema una vez y genera tipos TypeScript automáticamente. El porqué importa: es type-safe (autocompletado) y usa prepared statements, así que previene el SQL injection por diseño.",
     codeSnippet:
 `// prisma/schema.prisma
 generator client {
@@ -978,7 +1004,7 @@ Queries Prisma más usadas:
   delete({ where: { id } })            → eliminar
   upsert({ where, create, update })    → insertar o actualizar
   count({ where })                     → contar registros`,
-    explanationText: "Prisma tiene transacciones: prisma.$transaction([query1, query2]) para operaciones atómicas. Si una falla, todas se revierten.",
+    explanationText: "🌍 Ejemplo cotidiano: no abres cien grifos a la vez para llenar un vaso: abres uno. El singleton de PrismaClient es ese grifo único y reutilizable.\n\nPrismaClient abre un pool de conexiones; crear una instancia por request (o por hot reload) agota las 100 conexiones de PostgreSQL. Además usa transacciones con `prisma.$transaction([...])`: si una query falla, todas se revierten.",
     codeSnippet:
 `// lib/prisma.ts — patrón singleton
 import { PrismaClient } from '@prisma/[INPUT_1]';
@@ -1038,7 +1064,7 @@ Filtros:
   where: { title: { contains: 'vue', mode: 'insensitive' } }
   where: { AND: [{ published: true }, { authorId: userId }] }
   where: { OR: [{ role: 'ADMIN' }, { role: 'EDITOR' }] }`,
-    explanationText: "Siempre usa select para excluir campos sensibles como password. Un include sin select en una query que devuelves al cliente es una fuga de datos.",
+    explanationText: "🌍 Ejemplo cotidiano: `include` es pedir la ficha completa del cliente; `select` es pedir solo el nombre y el email. Nunca entregues la ficha entera si en ella está su contraseña.\n\nSiempre usa `select` para excluir campos sensibles como `password`. Un `include` sin `select` en una query que devuelves al cliente es una fuga de datos real y un motivo de rechazo en auditorías de seguridad.",
     codeSnippet:
 `export const postRepository = {
   findAllPublished: async (page: number, limit: number) => {
@@ -1104,7 +1130,7 @@ Convenciones REST:
 PUT vs PATCH:
   PUT:   envías TODOS los campos (aunque no cambien)
   PATCH: envías SOLO los campos que cambian`,
-    explanationText: "Siempre versiona tu API desde el principio aunque solo tengas v1. Agregar versionado después es mucho más doloroso.",
+    explanationText: "🌍 Ejemplo cotidiano: versionar la API es como las ediciones de un libro: el capítulo antiguo sigue disponible para quien ya lo leyó, mientras publicas una versión nueva sin romper la cita de nadie.\n\nSiempre versiona desde el principio (`/api/v1`), aunque solo tengas v1. Tus clientes (apps, frontends, terceros) dependen del contrato actual; si lo cambias sin versionar, los rompes a todos a la vez.",
     codeSnippet:
 `// routes/index.ts — punto central de rutas
 import { Router } from 'express';
@@ -1165,7 +1191,7 @@ Cuándo usar cada uno:
   params → identificar un recurso específico (/users/123)
   query  → filtrar, paginar, ordenar (?page=2&sort=name)
   body   → datos complejos de creación/actualización`,
-    explanationText: "req.params.id siempre es string. Si tu BD espera un número, usa Number(req.params.id) o z.coerce.number() con Zod.",
+    explanationText: "🌍 Ejemplo cotidiano: tres canales de entrada distintos: `params` es el número de la casa en la dirección, `query` son las instrucciones extra (\"segundo piso\"), y `body` es el paquete que entregas.\n\n`req.params.id` y `req.query.page` siempre son strings. Si tu BD espera un número, conviértelos con `Number()` o `z.coerce.number()`; comparar un string contra un número es una fuente clásica de bugs silenciosos.",
     codeSnippet:
 `// GET /api/v1/users/123/posts?page=2&limit=10&published=true
 router.get('/:userId/posts', async (req, res, next) => {
@@ -1227,7 +1253,7 @@ Cuándo SÍ puedes tener SQL Injection con Prisma:
 La forma segura con raw queries:
   prisma.$queryRaw\`SELECT * FROM users WHERE email = \${email}\`
   (Tagged template literal → Prisma lo parametriza automáticamente)`,
-    explanationText: "Regla: nunca concatenes strings en SQL queries. Siempre usa parámetros o el ORM. Si ves + en una query, es una red flag.",
+    explanationText: "🌍 Ejemplo cotidiano: concatenar una query es echar lo que dice el cliente directamente en la receta: si te dice \"azúcar o veneno\", lo mezclas sin mirar. Los parámetros son echar cada ingrediente por separado, sin que nadie pueda reescribir la receta.\n\nRegla: nunca concatenes strings en SQL. Prisma parametriza con prepared statements (seguro); la única excepción peligrosa es `$queryRawUnsafe` con concatenación. Si ves un `+` dentro de una query, es una red flag.",
     codeSnippet:
 `// ✅ SEGURO: Prisma API standard
 const user = await prisma.user.findUnique({
@@ -1287,7 +1313,7 @@ Librería validator.js:
 DOMPurify (en servidor con jsdom):
   DOMPurify.sanitize('<img onerror="evil()">')
   → '<img>' (elimina atributos peligrosos)`,
-    explanationText: "La defensa en profundidad dice: sanitiza en el servidor Y escapa en el cliente. Un sola capa puede fallar; dos capas son mucho más difíciles de bypassear.",
+    explanationText: "🌍 Ejemplo cotidiano: el XSS es colar un letrero malicioso en tu tienda: si el frontend lo pega tal cual con `innerHTML`, ejecuta su código. Sanitizar es revisar el texto antes de colgarlo.\n\nLa defensa en profundidad dice: sanitiza en el servidor (al entrar) Y escapa en el cliente (al salir). Una sola capa puede fallar; dos capas son mucho más difíciles de bypassear.",
     codeSnippet:
 `import validator from 'validator';
 
@@ -1352,7 +1378,7 @@ Headers de seguridad para producción:
   Strict-Transport-Security → fuerza HTTPS por 1 año
   X-Content-Type-Options    → no adivinar MIME type
   X-Frame-Options           → no en iframes (clickjacking)`,
-    explanationText: "En Cloud Run, GCP maneja TLS automáticamente. Solo asegúrate de que tu app escuche en el PORT que inyecta Cloud Run (process.env.PORT).",
+    explanationText: "🌍 Ejemplo cotidiano: en producción no pones la caja registradora en la entrada del local: el portero (reverse proxy) recibe a los clientes y tú trabajas en la trastienda con tranquilidad.\n\nEn Cloud Run, GCP maneja TLS automáticamente; tu app solo escucha en `process.env.PORT`. Configura `trust proxy: 1` para que `req.ip` devuelva la IP real del cliente y no la del balanceador, sin exponerte a que cualquiera falsifique `X-Forwarded-For`.",
     codeSnippet:
 `// app.ts — configuración de producción
 const app = express();
@@ -1421,7 +1447,7 @@ Para tests unitarios:
     create: vi.fn()
   };
   const service = new UserService(mockRepo); // inyección de dependencias`,
-    explanationText: "El Repository Pattern es la razón por la que puedes testear el service sin una BD real. Inyectas un mock repository en los tests.",
+    explanationText: "🌍 Ejemplo cotidiano: el Repository Pattern es un enchufe con estándar universal: cambias el electrodoméstico sin tocar la instalación de la casa.\n\nEs la razón por la que puedes testear el service sin una BD real: inyectas un mock del repository en los tests. Si mañana migras de Prisma a Firebase, solo cambias el repository; el service no se entera.",
     codeSnippet:
 `// types/repositories.ts — el contrato (interfaz)
 export interface [INPUT_1] {
@@ -1483,7 +1509,7 @@ En Node.js sin framework DI (NestJS, InversifyJS):
 Con NestJS: el framework maneja todo con decorators:
   @Injectable() class UserService { constructor(private repo) {} }
   @Module({ providers: [UserService, UserRepository] }) class AppModule {}`,
-    explanationText: "NestJS es Express con DI, módulos y todo configurado. Si la empresa usa NestJS, el patrón de DI aquí es exactamente lo que NestJS hace internamente.",
+    explanationText: "🌍 Ejemplo cotidiano: la inyección de dependencias es cablear un aparato desde fuera con clavijas, en lugar de soldar los cables por dentro: puedes intercambiar piezas sin romper el aparato.\n\nNestJS es Express con DI, módulos y todo configurado; el patrón de composición manual de este ejercicio es exactamente lo que NestJS hace internamente. El beneficio clave: inyectas un mock en tests y una implementación real en producción, sin tocar la clase.",
     codeSnippet:
 `// container.ts — composición de dependencias
 import { PrismaUserRepository } from './repositories/prismaUserRepository';
@@ -1546,7 +1572,7 @@ Formato de respuesta estándar:
 Sorting:
   GET /users?sort=createdAt&order=desc
   Validar que 'sort' sea un campo permitido (evita ordenar por 'password')`,
-    explanationText: "Siempre valida el campo 'sort' contra una whitelist. sort='password' podría filtrar usuarios por contraseña y facilitar ataques de timing.",
+    explanationText: "🌍 Ejemplo cotidiano: la paginación es servir el menú por páginas, no lanzar el libro entero sobre la mesa: el cliente pide \"página 3, 10 platos\" y tú devuelves justo eso.\n\nSiempre valida el campo `sort` contra una whitelist: `sort=password` podría ordenar usuarios por contraseña y facilitar ataques de timing o filtraciones. Y recuerda que el offset es cómodo pero lento en tablas grandes; el cursor escala mejor.",
     codeSnippet:
 `export interface PaginationOptions {
   page: number;
@@ -1613,7 +1639,7 @@ MIME type spoofing:
   El Content-Type del header puede ser falsificado por el cliente.
   Para mayor seguridad, usa 'file-type' para detectar el tipo real
   leyendo los magic bytes del archivo.`,
-    explanationText: "Nunca uses el nombre de archivo que envía el cliente. Un atacante puede enviar filename='../../../app.js' y sobrescribir tu código.",
+    explanationText: "🌍 Ejemplo cotidiano: el upload de archivos es el control de equipaje del aeropuerto: revisas qué entra, cuánto pesa y le pones etiqueta propia en lugar de confiar en la del pasajero.\n\nNunca uses el nombre de archivo que envía el cliente: un atacante puede enviar `filename='../../../app.js'` y sobrescribir tu código (path traversal). Valida MIME y extensión, limita el tamaño y genera el nombre con `crypto.randomBytes`.",
     codeSnippet:
 `import multer from 'multer';
 import path from 'path';
@@ -1680,7 +1706,7 @@ Cache Invalidation — el problema difícil:
   1. TTL corto (datos expiran solos)
   2. Invalidación activa: al actualizar usuario, borrar cache de ese usuario
   3. Versionado: incluir versión en la clave del caché`,
-    explanationText: "Redis también se usa para rate limiting distribuido, sesiones, pub/sub y colas de tareas. Es una herramienta fundamental en backends modernos.",
+    explanationText: "🌍 Ejemplo cotidiano: Redis es apuntar la respuesta en una pizarra junto a la puerta: si te vuelven a preguntar lo mismo, lees la pizarra en vez de correr a la trastienda.\n\nGuarda respuestas en memoria para pasar de ~200ms a ~2ms y descargar la BD. El problema difícil es la invalidación: por eso siempre hay un TTL. Redis también sirve para rate limiting distribuido, sesiones, pub/sub y colas.",
     codeSnippet:
 `import { createClient } from '[INPUT_1]';
 
@@ -1750,7 +1776,7 @@ Alternativa moderna: express-async-errors
 Cuándo usar cada uno:
   asyncHandler: transparente, sin dependencias, fácil de entender
   express-async-errors: más limpio, requiere importar al inicio de app.ts`,
-    explanationText: "express-async-errors es mi recomendación para proyectos nuevos: una importación al inicio y nunca más olvidas el try/catch.",
+    explanationText: "🌍 Ejemplo cotidiano: el `asyncHandler` es la red de seguridad bajo el trapecista: si el lanzamiento sale mal, alguien lo atrapa en lugar de estrellarse en silencio.\n\nEn Express, una promesa rechazada en un handler async no se propaga sola: necesitas el `try/catch` o el wrapper. `express-async-errors` es mi recomendación para proyectos nuevos: una importación al inicio y nunca más olvidas el `try/catch`.",
     codeSnippet:
 `// utils/asyncHandler.ts
 import { Request, Response, NextFunction, RequestHandler } from 'express';
@@ -1811,7 +1837,7 @@ Diferencias comunes entre ambientes:
   DATABASE_URL: localhost (dev) vs Cloud SQL (prod)
   JWT_EXPIRES_IN: 7d (dev, para no loguearse tanto) vs 15m (prod)
   CORS_ORIGINS: http://localhost:3000 (dev) vs https://app.com (prod)`,
-    explanationText: "Regla: .env.production nunca va al git. Los secretos de producción van en Secret Manager (GCP) o en las variables de entorno de Cloud Run/GitHub Actions.",
+    explanationText: "🌍 Ejemplo cotidiano: cada ambiente es un cajón distinto del armario: no usas el abrigo de invierno en verano ni guardas las llaves de producción en el cajón que comparte todo el equipo.\n\nRegla: `.env.production` nunca va al git. Los secretos de producción viven en Secret Manager (GCP) o en las variables de entorno de Cloud Run/GitHub Actions; el archivo versionado solo lleva plantillas sin valores reales.",
     codeSnippet:
 `// .env (base - SÍ al git, sin secretos)
 NODE_ENV=development
@@ -1880,7 +1906,7 @@ Graceful Shutdown — ¿Por qué importa?
     3. Esperar a que terminen las requests en curso (timeout: 30s)
     4. Cerrar conexión a BD (prisma.$disconnect())
     5. Salir limpiamente`,
-    explanationText: "Cloud Run envía SIGTERM 10 segundos antes de forzar SIGKILL. Tu graceful shutdown debe completarse en esos 10 segundos.",
+    explanationText: "🌍 Ejemplo cotidiano: el health check es tomarle el pulso al paciente antes de operarlo, y el graceful shutdown es cerrar la caja y apagar las luces en orden, no arrancar el cable a media venta.\n\nCloud Run envía SIGTERM 10 segundos antes de forzar SIGKILL: tu shutdown debe completarse en ese margen (dejar de aceptar tráfico, terminar requests y cerrar la BD). Sin él, dejas transacciones a medias y al cliente le llega un 502.",
     codeSnippet:
 `// server.ts
 const server = app.listen(PORT, () => console.log(\`Port \${PORT}\`));
@@ -1945,7 +1971,7 @@ Best practices:
   beforeEach → limpiar la BD antes de cada test
   afterAll   → cerrar conexiones (prisma.$disconnect())
   Datos de prueba → no usar datos de producción en tests`,
-    explanationText: "Exporta 'app' sin .listen() y el server.ts llama app.listen(). Así Supertest puede importar app y hacer requests sin puerto en conflicto.",
+    explanationText: "🌍 Ejemplo cotidiano: un test de integración prueba la receta completa, no cada ingrediente por separado: enciende la cocina, no solo mira la sal.\n\nExporta `app` sin `.listen()` y deja que `server.ts` llame a `app.listen()`: así Supertest importa `app` y dispara requests reales sin conflicto de puertos. Es el nivel más valioso para APIs porque ejercita middleware → controller → service → BD.",
     codeSnippet:
 `import request from '[INPUT_1]';
 import { app } from '../src/app';
@@ -2008,7 +2034,7 @@ Con mocking:
 vi.mock() vs MSW:
   vi.mock('./firebase') → mockea el módulo completo
   MSW (Mock Service Worker) → intercepta a nivel de red (más realista)`,
-    explanationText: "En test unitarios, mockea todo excepto lo que estás probando. En tests de integración, mockea solo los externos reales (email, pagos, push notifications).",
+    explanationText: "🌍 Ejemplo cotidiano: en un entrenamiento de boxeo no pegas contra el campeón mundial: usas un sparring que simula sus movimientos. Un test que manda un email real o cobra una tarjeta es pegarle al campeón.\n\nEn tests unitarios, mockea todo excepto lo que estás probando; en integración, mockea solo los externos reales (email, pagos, push). Así los tests son rápidos, deterministas y no requieren servicios levantados.",
     codeSnippet:
 `import { vi } from 'vitest';
 
@@ -2071,7 +2097,7 @@ Autenticación en WebSocket:
   HTTP: cada request tiene Authorization header.
   WebSocket: la conexión se establece una vez → verificar el JWT
   en el handshake inicial (evento 'connection').`,
-    explanationText: "Para notificaciones simples (no chat), considera Server-Sent Events (SSE) que es más simple y funciona sobre HTTP normal. Para bidireccional, WebSocket.",
+    explanationText: "🌍 Ejemplo cotidiano: HTTP es enviar cartas (el servidor solo responde cuando le escribes); WebSocket es una llamada telefónica abierta, donde cualquiera de los dos habla en cualquier momento.\n\nPara notificaciones simples (no chat), considera Server-Sent Events (SSE): es más simple y funciona sobre HTTP normal. Para bidireccional en tiempo real (chats, dashboards en vivo), usa WebSocket, y autentica en el handshake inicial.",
     codeSnippet:
 `import { Server } from '[INPUT_1]';
 import { jwtUtils } from '../utils/jwt';
@@ -2142,7 +2168,7 @@ Limitación de EventEmitter interno:
 
 Para sistemas distribuidos → Pub/Sub real:
   Redis Pub/Sub, Google Cloud Pub/Sub, RabbitMQ, Kafka`,
-    explanationText: "EventEmitter interno es el patrón Observer de Node.js. Para microservicios, necesitas un broker de mensajes externo (Pub/Sub, RabbitMQ).",
+    explanationText: "🌍 Ejemplo cotidiano: el EventEmitter es el altavoz de la plaza: el que tiene una noticia la anuncia, y quien esté interesado la escucha, sin que ninguno se conozca entre sí.\n\nEs el patrón Observer de Node.js y desacopla módulos: al emitir `user:created`, el servicio de email, el de analytics y el de puntos reaccionan sin que el service los invoque. Limitación: solo funciona dentro del mismo proceso; para microservicios necesitas un broker (Pub/Sub, RabbitMQ, Kafka).",
     codeSnippet:
 `import { EventEmitter } from 'events';
 
@@ -2211,7 +2237,7 @@ Estructura de log en producción:
     "service": "user-service",
     "stack_trace": "..."
   }`,
-    explanationText: "Agrega el requestId a cada log. Cuando un usuario reporta un error, tomar su requestId y filtrar en Cloud Logging te muestra todo lo que pasó en esa request específica.",
+    explanationText: "🌍 Ejemplo cotidiano: Winston es la caja negra con niveles de prioridad: no anotas con el mismo rotulador una compra de pan y un incendio en la cocina.\n\n`console.log` no distingue niveles ni puede silenciar el debug en producción; Winston sí. Agrega el `requestId` a cada log: cuando un usuario reporta un error, filtras por su ID en Cloud Logging y ves toda la cadena de esa request.",
     codeSnippet:
 `import winston from '[INPUT_1]';
 
@@ -2269,7 +2295,7 @@ Casos de uso comunes:
   1. Usar Cloud Scheduler (GCP) → envía HTTP request a una instancia
   2. Redis distributed lock → solo una instancia corre el job
   3. Cloud Tasks → encolar la tarea, Cloud Run la procesa una vez`,
-    explanationText: "Para producción con múltiples instancias, usa Cloud Scheduler + un endpoint en tu API. El scheduler llama HTTP a tu API y Cloud Run enruta a UNA instancia.",
+    explanationText: "🌍 Ejemplo cotidiano: el cron es un despertador que suena a la misma hora: \"cada día a medianoche, saca la basura\". No lo pones tú a mano, lo dejas programado.\n\nEn producción con múltiples instancias, un cron local se ejecutaría N veces (una por instancia). Usa Cloud Scheduler + un endpoint de tu API: el scheduler llama por HTTP y Cloud Run enruta a una sola instancia, evitando tareas duplicadas.",
     codeSnippet:
 `import [INPUT_1] from 'node-cron';
 import { prisma } from '../lib/prisma';
@@ -2332,7 +2358,7 @@ Buenas prácticas:
   ✅ Documentar códigos de error (400, 401, 404, 500)
   ✅ Versionar la spec junto con el código
   ❌ No exponer /api-docs en producción sin autenticación básica`,
-    explanationText: "Tip: tools como Postman pueden importar tu spec OpenAPI y generar una colección completa para el equipo automáticamente.",
+    explanationText: "🌍 Ejemplo cotidiano: Swagger es el menú del restaurante: describe cada plato, sus ingredientes y su precio para que nadie tenga que entrar a la cocina a preguntar.\n\nDocumentar la API en OpenAPI evita que el frontend y QA te pregunten qué hace cada endpoint. Tip: Postman puede importar tu spec y generar una colección completa para el equipo automáticamente; solo protege `/api-docs` en producción.",
     codeSnippet:
 `import swaggerJsdoc from '[INPUT_1]';
 import swaggerUi from 'swagger-ui-express';
@@ -2404,7 +2430,7 @@ if (process.env.NODE_ENV !== 'production') {
 5. En Cloud Run/Kubernetes:
    No necesitas cluster: el escalado es horizontal (múltiples instancias).
    Mejor 1 proceso por contenedor, múltiples contenedores.`,
-    explanationText: "En Cloud Run no necesitas cluster mode. GCP escala horizontalmente creando más instancias. Enfócate en que tu app sea stateless (sin estado local).",
+    explanationText: "🌍 Ejemplo cotidiano: la compresión es comprimir la maleta antes de facturar: mismo contenido, menos bulto, y el equipaje llega antes.\n\n`compression` reduce una respuesta JSON de 100KB a ~10KB, ahorrando ancho de banda y latencia. En Cloud Run no necesitas cluster mode: GCP escala horizontalmente con más instancias; céntrate en que tu app sea stateless.",
     codeSnippet:
 `import compression from '[INPUT_1]';
 
@@ -2471,7 +2497,7 @@ Identificar el tenant en cada request:
   Subdominio:    cliente1.miapp.com → tenant='cliente1'
   Header:        X-Tenant-ID: cliente1
   JWT claim:     token payload incluye tenantId`,
-    explanationText: "El mayor riesgo en multitenancy: olvidar el filtro de tenantId en UNA query y exponer datos de otro cliente. RLS de PostgreSQL es tu red de seguridad.",
+    explanationText: "🌍 Ejemplo cotidiano: el multitenancy es un edificio de departamentos: todos comparten la fachada y la entrada, pero cada puerta abre solo a la casa del inquilino correcto.\n\nEl mayor riesgo es olvidar el filtro de `tenantId` en UNA query y exponer datos de otro cliente. Por eso el Row-Level Security de PostgreSQL es tu red de seguridad: aunque olvides el filtro, la BD solo devuelve filas de ese tenant.",
     codeSnippet:
 `// middleware/tenantMiddleware.ts
 export const tenantMiddleware = async (req: Request, res: Response, next: NextFunction) => {
@@ -2514,7 +2540,7 @@ export const userRepository = {
 Esta es la diferencia entre un junior y un senior developer.
 Un junior hace que funcione. Un senior hace que funcione, sea seguro,
 sea monitoreable, sea mantenible y sea escalable.`,
-    explanationText: "En la entrevista, si preguntan '¿Qué consideraciones de producción tomarías?', esta lista es tu respuesta. Demuestra madurez técnica.",
+    explanationText: "🌍 Ejemplo cotidiano: es la lista de verificación del piloto antes de despegar: ningún vuelo serio sale sin revisar combustible, flaps y controles, por mucho que el avión \"funcione\".\n\nEn la entrevista, si preguntan \"¿Qué consideraciones de producción tomarías?\", esta lista es tu respuesta. Un junior hace que funcione; un senior además lo hace seguro, monitoreable, mantenible y escalable.",
     codeSnippet:
 `// SEGURIDAD ─────────────────────────────────────────────
 // ✅ [INPUT_1]() para headers de seguridad
@@ -2576,7 +2602,7 @@ En entrevistas te preguntan:
   • ¿Cuál usas en proyectos nuevos? → ESM (estándar JS/TS)
   • ¿Puedes mezclar? → Sí, pero evítalo; usa .cjs para configs legacy
   • ¿__dirname en ESM? → import.meta.url + fileURLToPath`,
-    explanationText: "Con \"type\": \"module\" en package.json no necesitas .mjs. TypeScript compila a ESM con \"module\": \"NodeNext\".",
+    explanationText: "🌍 Ejemplo cotidiano: CommonJS y ES Modules son dos tipos de enchufe distintos: el aparato moderno (import/export) no entra en el enchufe viejo (require) sin un adaptador.\n\nCon `\"type\": \"module\"` en package.json no necesitas la extensión `.mjs`; TypeScript compila a ESM con `\"module\": \"NodeNext\"`. Es el estándar de JavaScript y lo que se espera en proyectos nuevos.",
     codeSnippet:
 `// math.mjs
 [INPUT_1] function add(a, b) { return a + b; }
@@ -2616,7 +2642,7 @@ Response interceptor (al recibir respuesta):
 Patrón en Clean Architecture:
   src/infrastructure/http/axiosClient.ts → un solo cliente configurado
   Los services lo importan, nunca axios directo`,
-    explanationText: "En entrevista: 'Los interceptors de Axios son el equivalente al middleware de Express, pero para llamadas HTTP salientes desde el servidor.'",
+    explanationText: "🌍 Ejemplo cotidiano: los interceptors son la secretaria que revisa cada carta antes de enviarla (le pone el sello) y cada carta que llega (detecta respuestas de error) sin que el autor se preocupe.\n\nEn entrevista: \"los interceptors de Axios son el equivalente al middleware de Express, pero para llamadas HTTP salientes desde el servidor\". Centralizan auth, logging y retry en un único cliente configurado.",
     codeSnippet:
 `import axios from 'axios';
 
@@ -2666,7 +2692,7 @@ Casos reales en backend:
   • Leer plantillas de email (.html)
   • Cargar config JSON en startup
   • Procesar CSVs subidos (con streams para archivos grandes)`,
-    explanationText: "Para archivos grandes usa createReadStream + pipeline, no readFile completo en memoria.",
+    explanationText: "🌍 Ejemplo cotidiano: no detienes toda la fila del supermercado para leer un libro en la caja: la versión síncrona (`readFileSync`) congela a todos los que esperan detrás.\n\nNode es single-threaded, así que `readFileSync` bloquea el event loop y congela todas las peticiones mientras lee el disco. Usa `fs/promises` (async), y para archivos grandes `createReadStream` + `pipeline` en lugar de cargar todo en memoria.",
     codeSnippet:
 `import { [INPUT_1] } from 'node:fs/promises';
 
@@ -2703,7 +2729,7 @@ Scripts comunes en APIs de producción:
 En entrevista:
   • npm ci vs npm install → ci usa package-lock exacto (CI/CD)
   • devDependencies vs dependencies → dev no van a producción`,
-    explanationText: "En Cloud Run/Docker el CMD ejecuta npm start. El script start debe apuntar al build compilado, no a tsx.",
+    explanationText: "🌍 Ejemplo cotidiano: el `package.json` es la placa del coche: de un vistazo sabes qué motor tiene, qué versión necesita y cómo se arranca.\n\nEn Cloud Run/Docker el `CMD` ejecuta `npm start`, así que ese script debe apuntar al build compilado (`node dist/server.js`), no a `tsx` (que es para desarrollo). Y documenta la versión mínima con `engines` para evitar sorpresas en despliegue.",
     codeSnippet:
 `{
   "name": "my-api",

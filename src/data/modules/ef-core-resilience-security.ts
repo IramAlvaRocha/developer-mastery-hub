@@ -11,7 +11,16 @@ export const EF_CORE_RESILIENCE_SECURITY: Exercise[] = [
     tags: ["EF Core", "Concurrencia", "RowVersion"],
     fileName: "ProductConfiguration.cs",
     completed: false,
-    explanationText: "IsRowVersion() le dice a SQL Server que gestione automáticamente una 'marca de tiempo' binaria que cambia en cada UPDATE. Es como el número de ticket en la panadería: cuando pides un pastel, te dan un ticket con un número. Si alguien más intenta reclamar el mismo pedido con un ticket viejo, el empleado se da cuenta de que el número no coincide con el actual y rechaza la operación, evitando que dos personas se lleven el mismo pastel.",
+    theory: `## Concurrencia optimista con RowVersion
+Dos personas editan el mismo registro; la última que guarda puede pisar el cambio de la otra sin darse cuenta.
+
+### Cómo lo evita RowVersion
+- SQL Server incrementa un token binario en cada UPDATE.
+- EF Core incluye el token en el WHERE al guardar: si no coincide, la fila cambió y lanza DbUpdateConcurrencyException.
+
+### Por qué optimista
+No bloqueas la fila mientras alguien edita (eso sería pesimista); asumes que el conflicto es raro y lo detectas al guardar. Es el estándar para apps web donde nadie 'retiene' un registro.`,
+    explanationText: "🌍 Ejemplo cotidiano: el ticket de la panadería: si otro reclama tu pedido con un ticket viejo, el número no coincide y se rechaza.\n\nIsRowVersion() configura una columna byte[] que SQL Server incrementa en cada UPDATE. EF Core la compara al guardar: si cambió desde que leíste, lanza DbUpdateConcurrencyException y evita el 'lost update' (sobrescribir el cambio de otro).",
     codeSnippet: `public class ProductConfiguration : IEntityTypeConfiguration<Product>
 {
     public void Configure(EntityTypeBuilder<Product> builder)
@@ -44,7 +53,7 @@ export const EF_CORE_RESILIENCE_SECURITY: Exercise[] = [
     tags: ["EF Core", "Concurrencia", "Exception Handling"],
     fileName: "ProductService.cs",
     completed: false,
-    explanationText: "DbUpdateConcurrencyException es la alarma que EF Core dispara cuando detecta que el 'ticket' (RowVersion) que enviaste ya no coincide con el de la base de datos. Es como cuando intentas pagar un cheque en el banco pero el cajero ve que el saldo ya cambió desde que revisaste tu cuenta esta mañana: el banco no procesa el pago a ciegas, te avisa para que verifiques la información actualizada antes de continuar.",
+    explanationText: "🌍 Ejemplo cotidiano: pagar un cheque y que el cajero avise que el saldo cambió desde que lo revisaste: no procesa a ciegas.\n\nCuando el RowVersion no coincide, SaveChangesAsync lanza DbUpdateConcurrencyException. Capturarla y convertirla en una excepción de dominio con mensaje claro evita el 500 genérico y le dice al usuario 'recarga, alguien más lo editó'.",
     codeSnippet: `public async Task UpdateProductAsync(Product product)
 {
     _context.Entry(product).State = EntityState.Modified;
@@ -85,7 +94,7 @@ export const EF_CORE_RESILIENCE_SECURITY: Exercise[] = [
     tags: ["EF Core", "Concurrencia", "Multi-DB"],
     fileName: "OrderConfiguration.cs",
     completed: false,
-    explanationText: "IsConcurrencyToken() funciona en cualquier base de datos porque no depende de un tipo de dato especial del motor, solo le pide a EF Core que compare el valor antes y después de guardar. Es como firmar un contrato con la fecha y hora exacta escritas a mano: no importa si estás en una oficina con reloj digital o uno de pared, cualquiera puede verificar si la fecha del contrato coincide con la última versión firmada.",
+    explanationText: "🌍 Ejemplo cotidiano: firmar un contrato con fecha y hora: cualquiera verifica si coincide con la última versión, sin importar el reloj usado.\n\nIsConcurrencyToken() marca una columna (LastModified) como token de concurrencia portable: EF Core la compara en el WHERE al guardar, sin depender del tipo rowversion de SQL Server. Es la alternativa multi-proveedor que funciona en PostgreSQL, MySQL, etc.",
     codeSnippet: `public class OrderConfiguration : IEntityTypeConfiguration<Order>
 {
     public void Configure(EntityTypeBuilder<Order> builder)
@@ -118,7 +127,18 @@ export const EF_CORE_RESILIENCE_SECURITY: Exercise[] = [
     tags: ["Ciberseguridad", "SQL Injection", "OWASP"],
     fileName: "ProductRepository.cs",
     completed: false,
-    explanationText: "FromSqlInterpolated convierte automáticamente cada valor interpolado en un parámetro seguro (@p0, @p1...) en lugar de pegarlo directamente en el texto del comando SQL. Es como pedirle a un cajero de banco que deposite '100 dólares' en lugar de entregarle un papel donde tú mismo escribiste a mano el monto: el cajero (la base de datos) solo confía en el sistema oficial de conteo (los parámetros), nunca en texto libre que alguien pudo alterar.",
+    theory: `## SQL injection en EF Core
+Concatenar input en una query SQL convierte al atacante en autor de la sentencia.
+
+### Lo vulnerable
+\`FromSqlRaw($"...WHERE Category = '{category}'")\` → si category es \`'; DROP TABLE Products; --\`, ejecuta el drop.
+
+### Lo seguro
+\`FromSqlInterpolated($"...WHERE Category = {category}")\` → convierte category en un parámetro @p0, tratado como valor, nunca como código.
+
+### Regla
+Nunca concatenes input en SQL. Prefiere LINQ; si necesitas raw, usa la versión interpolada.`,
+    explanationText: "🌍 Ejemplo cotidiano: depositas '100 dólares' y el cajero usa el sistema oficial; nunca un papel escrito a mano que cualquiera pudo alterar.\n\nFromSqlInterpolated convierte cada valor interpolado en un parámetro seguro (@p0) en vez de concatenarlo al SQL. Concatenar strings de usuario en FromSqlRaw es la puerta al SQL injection; parametrizar es la puerta blindada.",
     codeSnippet: `public async Task<List<Product>> SearchByCategoryAsync(string category)
 {
     // Vulnerable: return await _context.Products
@@ -147,7 +167,7 @@ export const EF_CORE_RESILIENCE_SECURITY: Exercise[] = [
     tags: ["Ciberseguridad", "SQL Injection", "OWASP"],
     fileName: "UserRepository.cs",
     completed: false,
-    explanationText: "Cuantos más valores concatenes directamente en un string SQL, más 'puertas sin cerradura' dejas abiertas para un atacante. FromSqlInterpolated cierra todas esas puertas a la vez, tratando cada variable como un paquete sellado que se entrega por separado, nunca mezclado con las instrucciones. Es como enviar cartas certificadas en sobres individuales en lugar de escribir todos los mensajes en una sola hoja que cualquiera podría alterar antes de que llegue a destino.",
+    explanationText: "🌍 Ejemplo cotidiano: cartas certificadas en sobres individuales, no todos los mensajes en una hoja que cualquiera altera en el camino.\n\nCada valor interpolado en FromSqlInterpolated se entrega como un paquete sellado (parámetro), nunca mezclado con las instrucciones. Cuantos más valores concatenes, más puertas sin cerradura abres; la interpolación las cierra todas a la vez.",
     codeSnippet: `public async Task<List<User>> FilterUsersAsync(string domain, bool isActive)
 {
     return await _context.Users
@@ -176,7 +196,7 @@ export const EF_CORE_RESILIENCE_SECURITY: Exercise[] = [
     tags: ["Ciberseguridad", "SQL Injection", "Composability"],
     fileName: "ReportRepository.cs",
     completed: false,
-    explanationText: "FromSqlInterpolated no solo es seguro, también es 'componible': EF Core puede seguir agregando cláusulas LINQ encima como si fuera una consulta normal. Es como pedir una pizza base y luego seguir agregando ingredientes en el mostrador antes de que entre al horno; en cambio, el SQL crudo no componible es como una pizza que ya salió del horno: no puedes seguir modificándola, solo comerla tal cual llegó.",
+    explanationText: "🌍 Ejemplo cotidiano: a la pizza base le agregas ingredientes antes del horno; a la ya horneada solo la comes tal cual.\n\nFromSqlInterpolated es componible: puedes encadenar Where, AsNoTracking y demás encima, como una consulta LINQ normal. El SQL crudo no componible con ORDER BY mal formado lanza excepción al intentar componer; la interpolación lo permite.",
     codeSnippet: `public async Task<List<SalesReport>> GetReportsAsync(int minAmount)
 {
     return await _context.SalesReports
@@ -205,7 +225,18 @@ export const EF_CORE_RESILIENCE_SECURITY: Exercise[] = [
     tags: ["Transacciones", "ACID", "BeginTransactionAsync"],
     fileName: "PaymentService.cs",
     completed: false,
-    explanationText: "Una transacción agrupa varias operaciones para que se comporten como una sola unidad indivisible: o pasan todas, o no pasa ninguna. Es como transferir dinero entre dos cuentas en el mismo banco: el banco nunca le resta el dinero a una cuenta y lo deja 'flotando' sin abonarlo a la otra, aunque haya un corte de luz a la mitad. O se completa la operación entera, o se revierte todo como si nunca hubiera ocurrido.",
+    theory: `## Transacciones atómicas
+Varias escrituras que deben ir juntas se envuelven en una transacción: o todas se confirman, o todas se revierten.
+
+### El patrón
+\`BeginTransactionAsync()\` → operaciones → \`CommitAsync()\` en éxito, \`RollbackAsync()\` en catch.
+
+### Por qué importa
+Un fallo de red a mitad de un proceso de compra (descuento → orden → historial) dejaba cuentas con saldo descontado pero sin orden. La transacción garantiza que nunca quede a medias.
+
+### Regla
+Cualquier secuencia de escrituras relacionadas va dentro de una transacción. El coste es mínimo; el bug que evitas, no.`,
+    explanationText: "🌍 Ejemplo cotidiano: transferir dinero entre dos cuentas: o se completa entera, o no pasa nada, aunque haya un corte de luz.\n\nBeginTransactionAsync envuelve las escrituras en una unidad ACID: CommitAsync al final, RollbackAsync si algo falla. Sin ella, un fallo entre el descuento y la creación de la orden deja el saldo descontado sin orden, un bug de producción real.",
     codeSnippet: `public async Task ProcessPurchaseAsync(int accountId, decimal amount)
 {
     using var transaction = await _context.Database.[INPUT_1]();
@@ -264,7 +295,7 @@ export const EF_CORE_RESILIENCE_SECURITY: Exercise[] = [
     tags: ["Transacciones", "Unit of Work", "Repository Pattern"],
     fileName: "UnitOfWork.cs",
     completed: false,
-    explanationText: "Cuando varios repositorios comparten el mismo DbContext pero cada uno guarda por su cuenta, es como si dos cocineros del mismo restaurante cobraran la cuenta al cliente por separado sin comunicarse: uno podría cobrar y el otro fallar, dejando al cliente con un cargo incompleto. Una transacción a nivel de Unit of Work es como poner a un solo cajero a cargo de cobrar toda la mesa junta: o se cobra el pedido completo, o no se cobra nada.",
+    explanationText: "🌍 Ejemplo cotidiano: dos cocineros cobrando la mesa por separado; un solo cajero cobra el pedido completo o no cobra nada.\n\nSi cada repositorio llama a SaveChangesAsync por su cuenta, el primero ya confirmó su cambio cuando el segundo falla. Envolver ambos en una transacción a nivel de Unit of Work hace que los dos SaveChanges formen una sola unidad atómica.",
     codeSnippet: `public async Task PlaceOrderWithInventoryAsync(Order order, int productId, int qty)
 {
     using var transaction = await _context.Database.BeginTransactionAsync();
@@ -313,7 +344,19 @@ export const EF_CORE_RESILIENCE_SECURITY: Exercise[] = [
     tags: ["Transacciones", "Isolation Level", "Concurrencia"],
     fileName: "BankTransferService.cs",
     completed: false,
-    explanationText: "El nivel de aislamiento Serializable obliga a que las transacciones se ejecuten como si ocurrieran una detrás de otra, nunca al mismo tiempo sobre los mismos datos. Es como un baño público con una sola llave: aunque haya diez personas en la fila, solo una puede entrar y cerrar la puerta a la vez; las demás deben esperar su turno completo antes de poder ver el estado real del baño (el saldo de la cuenta).",
+    theory: `## Niveles de aislamiento
+El nivel por defecto (ReadCommitted) permite que dos transacciones lean el mismo dato antes de que la otra escriba: condición de carrera.
+
+### Qué aporta Serializable
+- Ejecuta las transacciones como si fueran secuenciales sobre los mismos datos.
+- Impide lecturas inconsistentes: cada una ve el estado estable.
+
+### El coste
+Más bloqueos y menos concurrencia. Úsalo solo en operaciones críticas (transferencias, saldos), no en todo.
+
+### Regla
+Paga el aislamiento donde el error cuesta dinero; en el resto, concurrencia optimista + RowVersion.`,
+    explanationText: "🌍 Ejemplo cotidiano: un baño con una sola llave: uno entra, cierra y los demás esperan su turno completo.\n\nSerializable ejecuta las transacciones como si fueran una tras otra, impidiendo que dos lean el mismo saldo antes de que la otra escriba. En operaciones financieras críticas evita el sobregiro por condición de carrera, a costa de más bloqueos y menos concurrencia.",
     codeSnippet: `public async Task TransferAsync(int fromId, int toId, decimal amount)
 {
     using var transaction = await _context.Database.BeginTransactionAsync(
@@ -370,7 +413,19 @@ export const EF_CORE_RESILIENCE_SECURITY: Exercise[] = [
     tags: ["Resiliencia", "Cloud", "Retry Policy"],
     fileName: "Startup.cs",
     completed: false,
-    explanationText: "EnableRetryOnFailure hace que EF Core vuelva a intentar la operación automáticamente cuando detecta un error transitorio de red, en lugar de rendirse al primer fallo. Es como cuando llamas a un amigo y la llamada se corta por mala señal: en vez de darte por vencido, vuelves a marcar un par de veces antes de asumir que algo está realmente mal, porque sabes que probablemente fue solo una interferencia momentánea.",
+    theory: `## Resiliencia con retry
+Los servicios administrados (Azure SQL) sufren fallos transitorios de milisegundos que parecen errores reales.
+
+### Qué hace EnableRetryOnFailure
+- Reintenta automáticamente ante errores de red conocidos.
+- Configuras cuántos reintentos (maxRetryCount) y el retraso máximo (maxRetryDelay).
+
+### Por qué importa
+Sin retry, cada microcorte devuelve un 500 al usuario. Con retry, la operación se repite de forma transparente.
+
+### Ojo
+No reintentes errores permanentes (sintaxis SQL): solo los transitorios. Por eso se puede limitar por código de error.`,
+    explanationText: "🌍 Ejemplo cotidiano: la llamada se corta por mala señal y vuelves a marcar antes de rendirte.\n\nEnableRetryOnFailure reintenta automáticamente ante fallos transitorios de red (comunes en Azure SQL), con maxRetryCount y maxRetryDelay. Sin él, un microcorte de milisegundos tumba la petición aunque la BD esté sana un segundo después.",
     codeSnippet: `services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(connectionString, sqlOptions =>
     {
@@ -399,7 +454,7 @@ export const EF_CORE_RESILIENCE_SECURITY: Exercise[] = [
     tags: ["Resiliencia", "Execution Strategy", "Retry Policy"],
     fileName: "PaymentService.cs",
     completed: false,
-    explanationText: "Cuando activas reintentos automáticos, EF Core necesita reintentar TODA la operación desde el inicio si algo falla a mitad de camino, incluyendo la transacción. Por eso exige que uses ExecuteAsync como un 'contenedor' que sabe repetir el proceso completo. Es como grabar un video en una sola toma: si te equivocas a la mitad, no puedes simplemente 'pegar' la parte buena; el director (la estrategia de ejecución) te pide repetir la escena entera desde el 'action' para asegurar que quede coherente.",
+    explanationText: "🌍 Ejemplo cotidiano: grabar en una sola toma: si te equivocas a la mitad, repites la escena entera desde el 'action'.\n\nCon retry activado, una transacción manual lanza InvalidOperationException porque EF Core no puede reintentar solo la mitad. Envolverla en strategy.ExecuteAsync() hace que la estrategia repita TODA la operación, transacción incluida, de forma coherente.",
     codeSnippet: `public async Task ProcessPaymentAsync(int accountId, decimal amount)
 {
     var strategy = _context.Database.CreateExecutionStrategy();
@@ -442,7 +497,7 @@ export const EF_CORE_RESILIENCE_SECURITY: Exercise[] = [
     tags: ["Resiliencia", "Cloud", "Retry Policy"],
     fileName: "DbContextConfig.cs",
     completed: false,
-    explanationText: "No todos los errores merecen un reintento: reintentar un error de sintaxis SQL es tan inútil como volver a tocar un timbre que sabes que está roto, nunca va a sonar sin importar cuántas veces lo intentes. En cambio, errorNumbersToAdd le dice a EF Core exactamente qué 'timbres' sí vale la pena volver a tocar porque son fallas temporales del edificio (la nube), no defectos permanentes del timbre mismo.",
+    explanationText: "🌍 Ejemplo cotidiano: no tocas un timbre roto cien veces: nunca sonará. Solo reintentas la falla temporal del edificio.\n\nerrorNumbersToAdd limita el retry a códigos transitorios (4060 BD no disponible, 40197 error de Azure), excluyendo los permanentes como sintaxis SQL. Así no malgastas reintentos en errores que nunca se resuelven solos.",
     codeSnippet: `services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(connectionString, sqlOptions =>
     {

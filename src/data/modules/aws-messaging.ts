@@ -815,7 +815,7 @@ notificación de evento y comprueba que el mensaje de test llega a la cola.`,
           description: "Solo permite recibir mensajes al propietario: S3 no podría escribir en la cola."
         }
       ],
-      correct: 0
+      correct: "a"
     }
   },
 

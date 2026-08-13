@@ -659,8 +659,8 @@ Escenario: un cliente repite la MISMA petición GET 5 veces en 1 minuto.`,
     stars: 3,
     category: "RENDIMIENTO Y USO",
     description:
-      "Monetizar una API: el plan de uso limita velocidad y cuota por cliente, y la API key identifica a cada cliente. ¿Cómo se configura el conjunto?",
-    objective: "Comprender planes de uso, API keys y su orden de configuración",
+      "La API key identifica a cada cliente y debe viajar en la cabecera X-API-Key. Elige la petición que autentica correctamente.",
+    objective: "Elegir la forma correcta de enviar la API key",
     tags: ["usage plan", "API keys", "throttling", "X-API-Key"],
     fileName: "usage-plan",
     completed: false,
@@ -687,44 +687,55 @@ Orden de configuración:
 El cliente debe enviar su clave en la cabecera **\`X-API-Key\`** en cada
 petición; si falta, recibe un 403 de acceso denegado.`,
     explanationText:
-      "🌍 Ejemplo cotidiano: el plan de uso es el abono de gimnasio (puedes entrar X veces al mes y reservar como máximo cada Y minutos) y la API key es la tarjeta personal con tu número de socio: sin ella, la recepción no te deja pasar (403).\n\nLa key no es un método de autenticación, solo identifica al suscriptor para aplicar su límite. El orden importa: primero marcas el método como 'requiere API key', luego creas claves y plan, y por último lo asocias todo. En el examen, 'enviar la clave como query string' es una opción falsa: va en la cabecera X-API-Key.",
-    codeSnippet: "// Afirmaciones sobre planes de uso y claves de API",
+      "🌍 Ejemplo cotidiano: el plan de uso es el abono de gimnasio (puedes entrar X veces al mes y reservar como máximo cada Y minutos) y la API key es la tarjeta personal con tu número de socio: sin ella, la recepción no te deja pasar (403).\n\nLa key no es un método de autenticación, solo identifica al suscriptor para aplicar su límite. El detalle de examen es dónde viaja: en la cabecera X-API-Key de cada petición, nunca como query string ni en el body.",
+    codeSnippet: "// Elige la petición que envía la API key correctamente",
     inputs: {},
     completeCode:
-      "Plan de uso: throttling + cuota por cliente | API key: cabecera X-API-Key | método con API Key Required = true | asociar etapas y claves al plan",
-    format: "true-false",
-    trueFalse: {
-      prompt: "Valida tu comprensión de los planes de uso y las claves de API.",
-      statements: [
+      "Plan de uso: throttling + cuota por cliente | API key: cabecera X-API-Key | método con API Key Required = true",
+    format: "snippet-pick",
+    snippetPick: {
+      prompt:
+        "¿Cuál es la forma correcta de autenticar una petición con la API key?",
+      snippets: [
         {
           id: "a",
-          text: "Un plan de uso determina quién puede acceder a una o más etapas y métodos de la API y con qué límites de velocidad (throttling) y cuota, aplicados por cliente.",
-          answer: true,
-          explanation:
-            "Correcto: el plan de uso define el acceso y los límites individuales por cliente.",
+          label: "Cabecera X-API-Key",
+          code: `// CORRECTO: la clave viaja en la cabecera
+fetch("https://api.example.com/v1/orders", {
+  headers: { "X-API-Key": "a1b2c3d4..." }
+});`,
+          description:
+            "El método debe tener API Key Required = true y el cliente envía la cabecera X-API-Key.",
         },
         {
           id: "b",
-          text: "Las API keys son valores alfanuméricos que se distribuyen a los clientes para identificarlos y medir su acceso a la API.",
-          answer: true,
-          explanation:
-            "Correcto: la clave identifica al suscriptor y permite aplicar su plan de uso.",
+          label: "Query string",
+          code: `// INCORRECTO: la clave no se envía en el query string
+fetch("https://api.example.com/v1/orders?api_key=a1b2c3d4...");`,
+          description:
+            "Enviarla como parámetro de URL es una opción falsa típica de examen.",
         },
         {
           id: "c",
-          text: "Para que la clave funcione, el método debe estar configurado con API Key Required = true y el cliente debe enviarla en la cabecera X-API-Key de cada petición.",
-          answer: true,
-          explanation:
-            "Correcto: la clave viaja como cabecera; si falta o es inválida, el acceso se deniega (403).",
+          label: "En el body",
+          code: `// INCORRECTO: la clave no va en el body JSON
+fetch("https://api.example.com/v1/orders", {
+  method: "POST",
+  body: JSON.stringify({ apiKey: "a1b2c3d4..." })
+});`,
+          description:
+            "La clave no viaja en el cuerpo; debe ir en la cabecera de la petición.",
         },
         {
           id: "d",
-          text: "La API key se envía como parámetro de la URL (query string), no como cabecera HTTP.",
-          answer: false,
-          explanation:
-            "Falso: la clave de API debe enviarse en la cabecera X-API-Key de la petición.",
+          label: "Sin clave",
+          code: `// INCORRECTO: sin clave, el plan de uso no identifica al cliente
+fetch("https://api.example.com/v1/orders");`,
+          description:
+            "Sin la clave el acceso se deniega (403) o no se aplica el límite por cliente.",
         },
       ],
+      correct: "a",
     },
   },
 

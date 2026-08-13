@@ -8,7 +8,7 @@ export const NUXT_EXERCISES: Exercise[] = [
     tags: ["pages", "composables", "server", "auto-import"],
     fileName: "structure.md",
     completed: false,
-    explanationText: "Nuxt auto-importa todo lo que está en /composables, /components y /utils. Sin imports manuales. Es como tener dependency injection automático.",
+    explanationText: "🌍 Ejemplo cotidiano: Nuxt es un taller donde las herramientas ya están a mano: no importas nada, todo lo de /composables y /components está disponible.\n\nLas carpetas definen el comportamiento: pages/ genera rutas, server/api/ crea endpoints y middleware/ protege la navegación. Conocer la convención es leer el proyecto sin documentación.",
     codeSnippet:
 `// Directorios principales de Nuxt 3:
 // [INPUT_1]/       → genera rutas automáticamente (file-based routing)
@@ -27,7 +27,7 @@ export const NUXT_EXERCISES: Exercise[] = [
     tags: ["useRoute", "[id]", "dynamic"],
     fileName: "pages/users/[id].vue",
     completed: false,
-    explanationText: "Imagina las páginas como carpetas de archivos en tu escritorio. El nombre del archivo ES la URL. [id] es como un comodín que captura cualquier valor.",
+    explanationText: "🌍 Ejemplo cotidiano: el nombre del archivo ES la URL, y [id] es el comodín que captura cualquier valor.\n\npages/users/[id].vue responde en /users/123, y useRoute().params.id te da '123'. Con file-based routing no mantienes una tabla de rutas: la estructura de carpetas es la tabla.",
     codeSnippet:
 `<!-- pages/users/[INPUT_1].vue → /users/123 -->
 <script setup lang="ts">
@@ -50,7 +50,20 @@ const { data: user } = await [INPUT_4](\`/api/users/\${userId}\`);
     tags: ["useFetch", "useAsyncData", "SSR"],
     fileName: "pages/products.vue",
     completed: false,
-    explanationText: "useFetch es como pedir pizza por app: funciona igual desde casa (cliente) o desde la oficina (servidor). El resultado llega hidratado sin doble fetch.",
+    theory: `## Fetch isomórfico en Nuxt
+El mismo código corre en SSR (servidor) y en el cliente, y el resultado se transfiere hidratado.
+
+### useFetch
+- Atajo: la URL es la clave de caché.
+- Devuelve data, pending, error y refresh.
+
+### useAsyncData
+- Control manual: clave propia + callback con $fetch.
+- Útil cuando necesitas lógica previa al fetch o datos no triviales.
+
+### Por qué importa
+Sin hidratación correcta harías el fetch dos veces (servidor y cliente) y el cliente podría renderizar distinto al servidor.`,
+    explanationText: "🌍 Ejemplo cotidiano: useFetch pide pizza por app: funciona igual desde casa (cliente) o la oficina (servidor).\n\nuseFetch es el atajo sobre useAsyncData: la URL es la clave de caché y el resultado se hidrata al cliente sin doble fetch. useAsyncData te da control manual (clave propia, $fetch dentro) cuando necesitas lógica previa.",
     codeSnippet:
 `<script setup lang="ts">
 // useFetch: shorthand, la URL es la clave de caché
@@ -77,7 +90,7 @@ const { data } = await useFetch('/api/items', {
     tags: ["defineNuxtRouteMiddleware", "navigateTo", "auth"],
     fileName: "middleware/auth.ts",
     completed: false,
-    explanationText: "El middleware es como el guardia en la entrada de un club: verifica si tienes acceso antes de dejarte pasar. Si no cumples, te redirige.",
+    explanationText: "🌍 Ejemplo cotidiano: el middleware es el guardia del club: verifica tu acceso antes de dejarte pasar, y si no, te redirige.\n\ndefineNuxtRouteMiddleware corre antes de cargar la página; si devuelve navigateTo('/login'), corta la navegación. Se activa por página con definePageMeta({ middleware: 'auth' }).",
     codeSnippet:
 `// middleware/auth.ts — se aplica con definePageMeta
 export default [INPUT_1](async (to, from) => {
@@ -102,7 +115,17 @@ definePageMeta({
     tags: ["defineEventHandler", "getQuery", "readBody"],
     fileName: "server/api/users/[id].get.ts",
     completed: false,
-    explanationText: "Es como tener Express dentro de tu mismo proyecto. Sin servidor separado, sin CORS entre frontend y backend porque viven juntos.",
+    theory: `## API fullstack con Nitro
+Nuxt incluye un servidor (Nitro) que convierte los archivos de server/api/ en endpoints REST.
+
+### Cómo funciona
+- El nombre del archivo define método y ruta: users/[id].get.ts → GET /api/users/:id.
+- defineEventHandler recibe el event; getRouterParam y readBody leen los datos.
+- createError(status, msg) lanza errores HTTP limpios.
+
+### Por qué importa
+Front y back comparten proyecto, tipos y deploy: sin CORS ni servidor aparte. Ideal para MVPs y apps fullstack.`,
+    explanationText: "🌍 Ejemplo cotidiano: un Express dentro de tu proyecto: sin servidor separado ni CORS, porque front y back viven juntos.\n\nserver/api/users/[id].get.ts crea GET /api/users/:id con defineEventHandler; createError(404) devuelve el error y el return se serializa a JSON. Nitro monta estos endpoints automáticamente.",
     codeSnippet:
 `// server/api/users/[id].get.ts → GET /api/users/123
 export default [INPUT_1](async (event) => {
@@ -127,7 +150,7 @@ export default [INPUT_1](async (event) => {
     tags: ["useState", "hydration", "SSR"],
     fileName: "composables/useCounter.ts",
     completed: false,
-    explanationText: "Tip: useState es para estado simple compartido. Para lógica compleja (async, múltiples acciones), usa Pinia.",
+    explanationText: "🌍 Ejemplo cotidiano: useState es el tablón de anuncios SSR-safe: se escribe en el servidor y se hidrata al cliente.\n\nuseState('counter', () => 0) comparte el valor entre server y cliente bajo una clave. Para lógica compleja (acciones async, varios slices), Pinia escala mejor; useState es para valores simples.",
     codeSnippet:
 `// composables/useCounter.ts
 export const useCounter = () => {
@@ -149,7 +172,7 @@ export const useCounter = () => {
     tags: ["layouts", "NuxtLayout", "slot"],
     fileName: "layouts/dashboard.vue",
     completed: false,
-    explanationText: "Un layout es como la plantilla de Word: defines el marco una vez (encabezado, pie de página) y cada página solo pone el contenido.",
+    explanationText: "🌍 Ejemplo cotidiano: el layout es la plantilla de Word: defines el marco una vez y cada página solo pone el contenido.\n\nEl slot del layout envuelve la página, definePageMeta({ layout: 'dashboard' }) lo elige y NuxtLayout lo monta. Así navbar y sidebar no se repiten en cada página.",
     codeSnippet:
 `<!-- layouts/dashboard.vue -->
 <template>
@@ -182,7 +205,16 @@ export const useCounter = () => {
     tags: ["useRuntimeConfig", "public", ".env"],
     fileName: "nuxt.config.ts",
     completed: false,
-    explanationText: "Regla de oro de seguridad: los secretos (API keys, DB passwords) NUNCA al cliente. useRuntimeConfig.public es lo que llega al navegador. runtimeConfig (raíz) solo al servidor.",
+    theory: `## Secretos con useRuntimeConfig
+La frontera entre lo que ve el servidor y lo que llega al navegador es una línea de seguridad.
+
+### Las dos zonas
+- runtimeConfig (raíz): solo servidor. Aquí van API_SECRET, DB_PASSWORD.
+- runtimeConfig.public: servidor + cliente. Aquí va lo no sensible (apiBase).
+
+### Por qué importa
+Todo lo que va en public se expone en el bundle del navegador. Un secreto en public es un secreto filtrado, sin excepción.`,
+    explanationText: "🌍 Ejemplo cotidiano: los secretos se quedan en la caja fuerte del servidor; al cliente solo le llega lo marcado como público.\n\nruntimeConfig (raíz) vive solo en el servidor; runtimeConfig.public llega a ambos. Meter una API key en public es filtrarla al navegador: por eso la frontera es explícita.",
     codeSnippet:
 `// nuxt.config.ts
 export default defineNuxtConfig({
@@ -210,7 +242,7 @@ const apiBase = config.[INPUT_4].apiBase; // OK en cliente
     tags: ["defineNuxtPlugin", "provide", "useNuxtApp"],
     fileName: "plugins/analytics.client.ts",
     completed: false,
-    explanationText: "El sufijo .client.ts hace que el plugin solo corra en el navegador (no en SSR). .server.ts es solo en servidor. Sin sufijo = ambos.",
+    explanationText: "🌍 Ejemplo cotidiano: el sufijo del plugin decide en qué planta corre: .client.ts solo navegador, .server.ts solo servidor, sin sufijo ambos.\n\ndefineNuxtPlugin registra un servicio global y provide lo expone como useNuxtApp().$analytics. Si un plugin solo usa window, márcalo .client.ts para no romper el SSR.",
     codeSnippet:
 `// plugins/analytics.client.ts — solo en navegador
 export default [INPUT_1](() => {
@@ -240,7 +272,7 @@ const { $[INPUT_4] } = useNuxtApp();`,
     tags: ["useSeoMeta", "useHead", "OG"],
     fileName: "pages/blog/[slug].vue",
     completed: false,
-    explanationText: "En una SPA clásica, los bots de Google no ven el contenido dinámico. Con Nuxt SSR, el HTML llega completo con todos los meta tags ya renderizados.",
+    explanationText: "🌍 Ejemplo cotidiano: en una SPA los bots no ven el contenido; con SSR el HTML llega completo con los meta tags ya puestos.\n\nuseSeoMeta rellena title, description y og: de forma reactiva en el servidor. El SEO deja de depender de JavaScript del cliente: el rastreador lee la página renderizada.",
     codeSnippet:
 `<script setup lang="ts">
 const { data: post } = await useFetch(\`/api/blog/\${route.params.slug}\`);
@@ -263,7 +295,7 @@ const { data: post } = await useFetch(\`/api/blog/\${route.params.slug}\`);
     tags: ["server/middleware", "defineEventHandler", "setHeader"],
     fileName: "server/middleware/logger.ts",
     completed: false,
-    explanationText: "Diferencia clave: el middleware de ruta (pages) corre en el cliente. El middleware de servidor (server/middleware) corre en Node.js, antes de que la request llegue a tu API.",
+    explanationText: "🌍 Ejemplo cotidiano: el middleware de servidor es el control de seguridad del edificio: revisa a todos antes de que lleguen a tu piso.\n\nserver/middleware intercepta TODAS las requests en Node antes de los handlers: ideal para logging y headers de seguridad (setHeader). El middleware de ruta (pages) corre en el cliente; este, en el servidor.",
     codeSnippet:
 `// server/middleware/logger.ts — intercepta TODAS las requests
 export default [INPUT_1](async (event) => {
@@ -293,7 +325,17 @@ export default [INPUT_1](async (event) => {
     tags: ["@pinia/nuxt", "storeToRefs", "SSR hydration"],
     fileName: "stores/useProductStore.ts",
     completed: false,
-    explanationText: "Sin hidratación correcta, el cliente renderiza contenido diferente al servidor → 'hydration mismatch'. Es como si el cocinero preparara un plato y al cliente llegara otro diferente.",
+    theory: `## Pinia SSR-safe en Nuxt
+El estado creado en el servidor debe transferirse al cliente para que ambos rendericen lo mismo.
+
+### El patrón
+1. Registra @pinia/nuxt en modules.
+2. En la página, await de la acción del store dentro de setup().
+3. Nuxt serializa el estado y lo hidrata en el cliente.
+
+### Por qué importa
+Si el cliente refetcha o parte de estado vacío, verás hydration mismatch (parpadeo o warning). El await en setup es lo que garantiza que el servidor llene el store antes de render.`,
+    explanationText: "🌍 Ejemplo cotidiano: sin hidratación, el cocinero prepara un plato y al cliente le llega otro: hydration mismatch.\n\nRegistrar @pinia/nuxt y hacer await store.fetchItems() en el setup() de la página hace que SSR llene el store antes de renderizar. Así el estado del servidor se transfiere y el cliente no repinta distinto.",
     codeSnippet:
 `// nuxt.config.ts
 export default defineNuxtConfig({

@@ -34,13 +34,13 @@ export default function SnippetPickFormat({
         aria-label="Snippets a elegir"
         className="grid gap-3 sm:grid-cols-2"
       >
-        {pick.snippets.map((snippet, i) => (
+        {pick.snippets.map((snippet) => (
           <div
             key={snippet.id}
             className={`overflow-hidden rounded-[24px] border bg-surface transition-colors ${
-              solved && i === pick.correct
+              solved && snippet.id === pick.correct
                 ? "border-brand/40"
-                : solved && selected === String(i)
+                : solved && selected === snippet.id
                   ? "border-danger/50"
                   : "border-line"
             }`}
@@ -72,10 +72,10 @@ export default function SnippetPickFormat({
             key={snippet.id}
             index={i}
             label={`${snippet.label} — ${snippet.description ?? "elige este snippet"}`}
-            selected={selected === String(i)}
-            correct={i === pick.correct}
+            selected={selected === snippet.id}
+            correct={snippet.id === pick.correct}
             solved={solved}
-            onSelect={() => onAnswerChange("choice", String(i))}
+            onSelect={() => onAnswerChange("choice", snippet.id)}
           />
         ))}
       </div>
