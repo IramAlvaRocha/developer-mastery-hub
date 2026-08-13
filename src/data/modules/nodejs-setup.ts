@@ -6,6 +6,7 @@ export const NODEJS_SETUP_EXERCISES: Exercise[] = [
     id: 1,
     step: 1,
     title: "npm init: Nacer un Proyecto Node",
+    hints: ["🌍 package.json es la carátula del cuaderno: describe tu proyecto para que npm sepa qué es. ¿Qué comando la genera sin preguntar?","npm init crea el archivo; el flag -y acepta los valores por defecto y evita el asistente interactivo."],
     stars: 1,
     category: "INICIO",
     description:
@@ -55,6 +56,7 @@ cat package.json`,
     id: 2,
     step: 2,
     title: "Hola Mundo: Tu Primer Archivo Node",
+    hints: ["Node ejecuta un archivo directo, sin compilar: ¿qué objeto global de Node escribe texto en la terminal?","console.log() es la salida estándar. El segundo hueco pide el puerto típico de una API local (3000)."],
     stars: 1,
     category: "INICIO",
     description:
@@ -94,6 +96,7 @@ console.log(\`Escuchando concepto en puerto \${port}\`);`,
     id: 3,
     step: 3,
     title: "HTTP Nativo: Servidor Sin Dependencias",
+    hints: ["🌍 Cocinar desde cero vs kit de meal prep: Node trae el módulo http en su biblioteca estándar, sin npm install.","createServer(callback) crea el servidor y listen(PORT) lo pone a escuchar. El callback recibe (req, res)."],
     stars: 2,
     category: "INICIO",
     description:
@@ -135,6 +138,7 @@ server.[INPUT_3](PORT, () => {
     id: 4,
     step: 4,
     title: "ES Modules: type module en package.json",
+    hints: ["🌍 require es pedir por teléfono; import es la app de delivery moderna. La industria migró a import/export.","En package.json, la clave type con valor module activa ESM en todo el proyecto; el archivo usa la palabra clave import."],
     stars: 2,
     category: "INICIO",
     description:
@@ -178,6 +182,7 @@ TypeScript en 2026 compila a ESM con:
     id: 5,
     step: 5,
     title: "npm install: Tu Primera Dependencia",
+    hints: ["🌍 Agregar ingredientes a la despensa: el paquete queda registrado en dependencies para que cualquiera replique tu cocina.","npm install express agrega el paquete a producción. La instancia de la app se crea llamando a la función express()."],
     stars: 1,
     category: "INICIO",
     description:
@@ -228,6 +233,7 @@ app.get('/', (req, res) => res.json({ hello: 'world' }));`,
     id: 6,
     step: 6,
     title: ".gitignore: Proteger el Repositorio",
+    hints: ["🌍 No compartir la llave de tu casa: .env tiene secretos y node_modules pesa y se regenera solo.","Las dos carpetas imprescindibles son node_modules/ (dependencias) y dist/ (código compilado)."],
     stars: 1,
     category: "INICIO",
     description:
@@ -266,6 +272,7 @@ Sí subir:
     id: 7,
     step: 7,
     title: "Hot Reload con node --watch (Nativo)",
+    hints: ["🌍 El microondas con sensor: detecta que cambiaste el código y reinicia solo, sin instalar nada extra.","Node 20+ trae watch mode nativo: el flag --watch va después de node y antes del archivo."],
     stars: 2,
     category: "DEV",
     description:
@@ -310,6 +317,7 @@ npm run [INPUT_2]`,
     id: 8,
     step: 8,
     title: "nodemon: Hot Reload Clásico",
+    hints: ["🌍 El asistente que vigila tu código y dice 'cambió algo, reinicio el servidor'.","nodemon se instala solo para desarrollo con el flag -D y se ejecuta con su propio nombre en el script dev."],
     stars: 2,
     category: "DEV",
     description:
@@ -361,6 +369,7 @@ npm install -[INPUT_1] [INPUT_2]
     id: 9,
     step: 9,
     title: "Type Stripping: Node Ejecuta .ts Sin Instalar Nada",
+    hints: ["🌍 Quitar etiquetas de precio antes de la caja: Node borra los tipos y ejecuta el JS que queda, sin validarlos.","El type stripping borra anotaciones pero NO las valida: tsc --noEmit sigue siendo necesario para chequear tipos."],
     stars: 2,
     category: "TYPESCRIPT",
     description:
@@ -408,6 +417,7 @@ console.log(\`Hola \${user.[INPUT_2]}\`);
     id: 10,
     step: 10,
     title: "Instalar TypeScript en el Proyecto",
+    hints: ["🌍 Revisar la lista del súper antes de salir: TypeScript detecta errores en compile-time, no en producción.","typescript y @types/node se instalan como devDependencies con -D. Para verificar la versión instalada: npx tsc --version."],
     stars: 2,
     category: "TYPESCRIPT",
     description:
@@ -453,6 +463,7 @@ npx tsc --[INPUT_4]`,
     id: 11,
     step: 11,
     title: "tsconfig.json: Generar y Entender (TypeScript 6.0)",
+    hints: ["🌍 En TS 6 el compilador viene en 'modo Eco' de fábrica: strict por defecto, pero la lista de @types ya no se carga sola.","npx tsc --init genera la plantilla. Con 'types': [] por defecto, hay que declarar 'node' explícitamente o process no existe.","rootDir apunta a la carpeta fuente (src), outDir a la salida (dist), y el array types necesita el paquete de tipos del runtime."],
     stars: 3,
     category: "TYPESCRIPT",
     description:
@@ -512,6 +523,7 @@ npx [INPUT_1] --[INPUT_2]
     id: 12,
     step: 12,
     title: "tsx: Ejecutar TypeScript con Soporte Completo",
+    hints: ["🌍 Probar la comida mientras cocinas: tsx ejecuta TS con soporte total; tsc + node es el plato servido en producción.","tsx se instala como devDependency y su modo watch (tsx watch) es el estándar para el script dev."],
     stars: 2,
     category: "TYPESCRIPT",
     description:
@@ -565,6 +577,7 @@ Flujo de trabajo:
     id: 13,
     step: 13,
     title: "Scripts npm: dev, build y start",
+    hints: ["🌍 dev = cocinar en la cocina; build = empaquetar para delivery; start = abrir el local al público.","El pipeline es: dev con tsx watch, build con tsc, start con node dist/. engines documenta la versión mínima de Node (24)."],
     stars: 2,
     category: "TYPESCRIPT",
     description:
@@ -608,6 +621,7 @@ engines en package.json:
     id: 14,
     step: 14,
     title: "@types: Tipos para Librerías JavaScript",
+    hints: ["🌍 El manual traducido para una herramienta japonesa: Express habla JS y @types/express le enseña TypeScript su vocabulario.","@types/express trae Request y Response como tipos. Los handlers se tipan con req: Request, res: Response."],
     stars: 3,
     category: "TYPESCRIPT",
     description:
@@ -650,6 +664,7 @@ app.get('/health', (req: [INPUT_4], res: Response) => {
     id: 15,
     step: 15,
     title: "Variables de Entorno con dotenv",
+    hints: ["🌍 .env es tu libreta de contraseñas que nunca prestas; .env.example es la plantilla vacía que sí compartes.","import 'dotenv/config' carga el .env al arrancar. Los valores se leen desde process.env con un valor por defecto con ??."],
     stars: 2,
     category: "TYPESCRIPT",
     description:
@@ -702,6 +717,7 @@ app.listen(PORT, () => console.log(\`Puerto \${PORT}\`));`,
     id: 16,
     step: 16,
     title: "Estructura src/ y Entry Point TypeScript",
+    hints: ["🌍 Separar la receta (app) del horno encendido (server): puedes probar la receta sin quemar nada.","app.ts exporta la instancia de express(); server.ts la importa (con extensión .js en ESM) y llama a listen()."],
     stars: 2,
     category: "TYPESCRIPT",
     description:
@@ -750,6 +766,7 @@ app.[INPUT_3](PORT, () => console.log(\`🚀 \${PORT}\`));`,
     id: 17,
     step: 17,
     title: "Checklist: Proyecto Node + TS Listo para Desarrollar",
+    hints: ["🌍 Lo que monta un dev senior el día 1: este checklist resume el stack 2026 completo.","Node 24 LTS, type module, tsx como runner de dev, y typescript + @types/node como devDependencies."],
     stars: 3,
     category: "TYPESCRIPT",
     description:

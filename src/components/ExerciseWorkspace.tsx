@@ -10,6 +10,8 @@ import ChallengeCode from "./ChallengeCode";
 import ExerciseFormatView from "./formats/ExerciseFormat";
 import TheoryTab from "./TheoryTab";
 import SolutionPanel from "./SolutionPanel";
+import SolutionLocked from "./SolutionLocked";
+import HintReveal from "./HintReveal";
 import SimulatedTerminal from "./SimulatedTerminal";
 
 type Tab = "theory" | "terminal" | "challenge" | "code";
@@ -132,6 +134,13 @@ export default function ExerciseWorkspace({
     }, 650);
   }
 
+  // CTA del estado bloqueado: vuelve al Desafío y devuelve el foco al tab.
+  function goToChallenge() {
+    setActiveTab("challenge");
+    const idx = tabs.findIndex((t) => t.id === "challenge");
+    tabButtonRefs.current[idx]?.focus();
+  }
+
   function verify() {
     // Formatos interactivos: la evaluación es específica de cada formato.
     if (exercise.format) {
@@ -141,12 +150,11 @@ export default function ExerciseWorkspace({
         return;
       }
       if (result.correct) {
-        const isNew = !solved;
         setIncorrectKeys(new Set());
         setSolved(true);
         onComplete(exercise.id);
         onToast("success", `¡Correcto! "${exercise.title}" completado.`);
-        if (isNew) setCelebrate(true);
+        setCelebrate(true);
         goToSolution();
       } else {
         setIncorrectKeys(new Set(result.incorrectKeys));
@@ -177,12 +185,11 @@ export default function ExerciseWorkspace({
       return;
     }
     if (wrong.size === 0) {
-      const isNew = !solved;
       setIncorrectKeys(new Set());
       setSolved(true);
       onComplete(exercise.id);
       onToast("success", `¡Correcto! "${exercise.title}" completado.`);
-      if (isNew) setCelebrate(true);
+      setCelebrate(true);
       goToSolution();
     } else {
       setIncorrectKeys(wrong);
@@ -358,6 +365,15 @@ export default function ExerciseWorkspace({
     panelRef.current?.scrollTo({ top: 0 });
   }, [activeTab]);
 
+  // Solución bloqueada: cada visita al tab `code` sin resolver devuelve el
+  // foco al CTA "Ir al desafío" (idempotente, correcto para teclado).
+  useEffect(() => {
+    if (activeTab !== "code" || solved) return;
+    panelRef.current
+      ?.querySelector<HTMLButtonElement>("[data-solution-cta]")
+      ?.focus({ preventScroll: true });
+  }, [activeTab, solved]);
+
   function onTabListKeyDown(e: React.KeyboardEvent) {
     const last = tabs.length - 1;
     const idx = tabs.findIndex((t) => t.id === activeTab);
@@ -512,6 +528,13 @@ export default function ExerciseWorkspace({
                       id={`tab-${tab.id}`}
                       aria-selected={active}
                       aria-controls={`panel-${tab.id}`}
+                      aria-label={
+                        tab.id === "code"
+                          ? solved
+                            ? "Solución"
+                            : "Solución (bloqueada)"
+                          : undefined
+                      }
                       tabIndex={active ? 0 : -1}
                       onClick={() => setActiveTab(tab.id)}
                       className={`relative z-10 flex min-w-[7rem] flex-1 shrink-0 items-center justify-center gap-2 px-4 py-3.5 text-[13px] font-semibold transition-colors ${
@@ -531,6 +554,23 @@ export default function ExerciseWorkspace({
                       {tab.label}
                       {tab.id === "challenge" && !solved && (
                         <span className="inline-block h-1.5 w-1.5 rounded-full bg-brand" />
+                      )}
+                      {tab.id === "code" && !solved && (
+                        <svg
+                          width="14"
+                          height="14"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          aria-hidden="true"
+                          className="h-3.5 w-3.5 shrink-0 text-faint"
+                        >
+                          <rect x="3" y="11" width="18" height="11" rx="2" />
+                          <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                        </svg>
                       )}
                     </button>
                   );
@@ -578,28 +618,38 @@ export default function ExerciseWorkspace({
                     {instruction}
                   </p>
                 </div>
-                <div className="space-y-3 bg-surface-2/60 p-5">
-                  <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-faint">
-                    Cómo avanzar
-                  </p>
-                  <ol className="space-y-3 text-[12px] text-muted">
-                    <li className="flex gap-2.5">
-                      <span className="mod-text font-mono font-bold">01</span>
-                      <span>Lee el contexto y localiza qué debes completar.</span>
-                    </li>
-                    <li className="flex gap-2.5">
-                      <span className="mod-text font-mono font-bold">02</span>
-                      <span>Responde directamente en el ejercicio.</span>
-                    </li>
-                    <li className="flex gap-2.5">
-                      <span className="mod-text font-mono font-bold">03</span>
-                      <span>Verifica y revisa la explicación final.</span>
-                    </li>
-                  </ol>
-                  <div className="flex items-center justify-between border-t border-line-soft pt-3 text-[11px]">
-                    <span className="text-faint">Formato</span>
-                    <span className="font-semibold text-cream">{challengeMeta}</span>
+                <div className="bg-surface-2/60 p-5">
+                  <div className="space-y-3">
+                    <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-faint">
+                      Cómo avanzar
+                    </p>
+                    <ol className="space-y-3 text-[12px] text-muted">
+                      <li className="flex gap-2.5">
+                        <span className="mod-text font-mono font-bold">01</span>
+                        <span>Lee el contexto y localiza qué debes completar.</span>
+                      </li>
+                      <li className="flex gap-2.5">
+                        <span className="mod-text font-mono font-bold">02</span>
+                        <span>Responde directamente en el ejercicio.</span>
+                      </li>
+                      <li className="flex gap-2.5">
+                        <span className="mod-text font-mono font-bold">03</span>
+                        <span>Verifica y revisa la explicación final.</span>
+                      </li>
+                    </ol>
+                    <div className="flex items-center justify-between border-t border-line-soft pt-3 text-[11px]">
+                      <span className="text-faint">Formato</span>
+                      <span className="font-semibold text-cream">{challengeMeta}</span>
+                    </div>
                   </div>
+                  <HintReveal
+                    key={exercise.id}
+                    hints={exercise.hints}
+                    disabled={activeTab !== "challenge"}
+                    solved={solved}
+                    reduceMotion={reduceMotion}
+                    color={color}
+                  />
                 </div>
               </aside>
 
@@ -698,7 +748,15 @@ export default function ExerciseWorkspace({
               className={activeTab === "code" ? "outline-none" : "hidden"}
             >
               <div className="px-4 pb-6 pt-6 sm:px-6 sm:pb-8">
-                <SolutionPanel exercise={exercise} color={color} />
+                {solved ? (
+                  <SolutionPanel exercise={exercise} color={color} />
+                ) : (
+                  <SolutionLocked
+                    color={color}
+                    reduceMotion={reduceMotion}
+                    onGoToChallenge={goToChallenge}
+                  />
+                )}
               </div>
             </div>
           </div>

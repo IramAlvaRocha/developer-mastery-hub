@@ -9,6 +9,7 @@ export const DOCKER_EXERCISES: Exercise[] = [
   {
     id: 1,
     title: "¿Qué es Docker y por qué es importante?",
+    hints: ["🌍 La imagen es la receta y el contenedor es el plato servido: la misma receta se cocina muchas veces, y cada plato es una instancia aislada.","Recuerda: la imagen empaqueta código + dependencias + configuraciones en capas; el contenedor es la instancia ejecutable de esa imagen, corriendo aislado con su propio filesystem."],
     stars: 1,
     category: "CONCEPTOS",
     description: "Comienza entendiendo la diferencia clave entre contenedores y máquinas virtuales basándote en el glosario.",
@@ -39,6 +40,7 @@ export const DOCKER_EXERCISES: Exercise[] = [
   {
     id: 2,
     title: "Arquitectura de Docker: El Daemon",
+    hints: ["🌍 El daemon es el 'gerente de hotel' que corre en segundo plano atendiendo órdenes; el registro es el 'almacén central' de donde salen y vuelven las maletas (imágenes).","El daemon es el servicio persistente que administra contenedores, imágenes, redes y volúmenes; el registro es el servidor externo que almacena y distribuye imágenes."],
     stars: 1,
     category: "CONCEPTOS",
     description: "Identifica el componente del clúster de Docker que corre en segundo plano en el host.",
@@ -67,6 +69,7 @@ export const DOCKER_EXERCISES: Exercise[] = [
   {
     id: 3,
     title: "Descargar una imagen (docker pull)",
+    hints: ["🌍 docker pull es pedir el paquete antes de abrirlo: descarga la imagen al host SIN ejecutarla.","Usa docker pull <imagen> o docker pull <imagen>:<tag>. Un tag explícito como postgres:15.1 fija una versión; 'latest' cambia sin avisar."],
     stars: 1,
     category: "CLI",
     description: "Descarga una imagen específica o con tag de base de datos desde el registro.",
@@ -91,6 +94,7 @@ Ejemplos de la guía de atajos:
   {
     id: 4,
     title: "Correr un contenedor (docker run y banderas combinadas)",
+    hints: ["🌍 -d es 'soltar la orden y seguir con tu vida' (corre en background); -p es instalar un portero que traduce el puerto 80 de tu casa al 80 del contenedor.","docker container run -d -p 80:80 docker/getting-started. Las banderas cortas se combinan: -dp 80:80 es equivalente a -d -p 80:80."],
     stars: 1,
     category: "CONTENEDORES",
     description: "Aprende a ejecutar la imagen 'getting-started' combinando banderas.",
@@ -113,6 +117,7 @@ Pro Tip de la hoja de atajos:
   {
     id: 5,
     title: "Sintaxis de comandos simplificada",
+    hints: ["🌍 Es como usar el nombre completo o el apodo: ambas formas producen el mismo resultado.","docker container run es la sintaxis moderna agrupada por recurso; docker run es el alias corto tradicional. Son equivalentes."],
     stars: 1,
     category: "CLI",
     description: "Compara la sintaxis moderna con el comando simplificado tradicional.",
@@ -135,6 +140,7 @@ Ambos comandos producen el mismo efecto.`,
   {
     id: 6,
     title: "Obtener ayuda de la CLI",
+    hints: ["🌍 --help es la documentación integrada: la consultas en segundos y siempre está actualizada con tu versión instalada.","Ejecuta docker <comando> --help (por ejemplo docker container --help) para ver banderas y ejemplos sin salir de la terminal."],
     stars: 1,
     category: "CLI",
     description: "Consulta los detalles y opciones de cualquier subcomando de Docker.",
@@ -159,6 +165,7 @@ Ejemplos:
   {
     id: 7,
     title: "Asignar un nombre al contenedor",
+    hints: ["🌍 Sin --name, Docker te entrega un contenedor llamado 'ecstatic_shannon'; con --name lo llamas por su nombre en todos los comandos.","Usa la bandera --name <nombre> en docker container run para referenciar el contenedor por palabra en vez de por ID aleatorio."],
     stars: 1,
     category: "CONTENEDORES",
     description: "Especifica un nombre legible por humanos al iniciar tu contenedor.",
@@ -179,6 +186,7 @@ Por defecto, Docker asigna nombres aleatorios a los contenedores. Para poder adm
   {
     id: 8,
     title: "Listar contenedores (docker container ls / docker ps)",
+    hints: ["🌍 Es el 'inventario' de tus contenedores: los activos a simple vista, y con -a también los detenidos que siguen ocupando espacio.","docker container ls y docker ps listan activos; añade -a (all) para incluir los detenidos."],
     stars: 1,
     category: "CLI",
     description: "Lista contenedores corriendo y todos los contenedores usando comandos tradicionales y modernos.",
@@ -204,6 +212,7 @@ Para monitorear los contenedores del host:
   {
     id: 9,
     title: "Detener y eliminar contenedores",
+    hints: ["🌍 stop pausa el proceso pero el contenedor sigue existiendo; rm lo borra del disco junto con su capa de escritura.","Primero docker container stop <id> (envía SIGTERM) y luego docker container rm <id> para liberar nombre y espacio."],
     stars: 1,
     category: "CONTENEDORES",
     description: "Detén un contenedor activo y luego elimínalo para liberar recursos.",
@@ -227,6 +236,7 @@ El ciclo de parada estándar de contenedores consta de dos comandos:
   {
     id: 10,
     title: "Iniciar un contenedor previamente creado",
+    hints: ["🌍 start es 'pausar/reanudar': reutiliza el contenedor existente sin recrearlo desde la imagen.","docker container start <id> enciende un contenedor detenido conservando su configuración y datos de su capa de escritura."],
     stars: 1,
     category: "CONTENEDORES",
     description: "Vuelve a encender un contenedor que fue detenido sin recrearlo.",
@@ -247,6 +257,7 @@ Si detienes un contenedor con 'stop', sus cambios no se borran y el contenedor s
   {
     id: 11,
     title: "Pro Tip: Detención y remoción forzada",
+    hints: ["🌍 rm -f es la salida de emergencia: detiene y borra en un solo paso, ideal cuando el contenedor no responde.","docker container rm -f <id> combina stop + rm. Acepta varios IDs separados por espacio para limpiezas masivas en una sola línea."],
     stars: 2,
     category: "CONTENEDORES",
     description: "Detén y elimina un contenedor activo de forma forzada en un solo paso, o borra varios contenedores.",
@@ -270,6 +281,7 @@ También puedes pasar múltiples IDs separados por espacio para borrar varios a 
   {
     id: 12,
     title: "Autenticación en Docker Hub (docker login)",
+    hints: ["🌍 docker login es la credencial del guardia: sin ella no puedes subir imágenes propias ni bajar repositorios privados.","Usa docker login -u <usuario> y, en automatizaciones, Tokens de Acceso revocables en lugar de tu contraseña en texto plano."],
     stars: 2,
     category: "SEGURIDAD",
     description: "Aprende el comando para iniciar sesión en tu cuenta de Docker Hub.",
@@ -291,6 +303,7 @@ Adicionalmente, se recomienda utilizar Tokens de Acceso en lugar de tu contrase�
   {
     id: 13,
     title: "Construir y asignar un tag a la imagen",
+    hints: ["🌍 -t es la etiqueta de identificación de tu imagen; sin ella obtienes una imagen anónima difícil de rastrear.","docker build -t <nombre> <contexto>: -t asigna el nombre y el '.' final indica el directorio que se envía al daemon como contexto."],
     stars: 2,
     category: "DOCKERFILE",
     description: "Construye una imagen a partir de un Dockerfile en el directorio actual asignándole un tag.",
@@ -314,6 +327,7 @@ Para empaquetar tu código fuente en una imagen utilizando las instrucciones del
   {
     id: 14,
     title: "Renombrar una imagen local (docker tag)",
+    hints: ["🌍 docker tag no copia la imagen: crea una referencia adicional con el nombre objetivo, como un segundo acceso directo al mismo archivo.","docker tag <imagen> <tu-usuario>/<imagen> es el paso previo obligatorio antes de docker push: el registro identifica imágenes por su nombre completo."],
     stars: 2,
     category: "CLI",
     description: "Crea una referencia o renombre a una imagen existente antes de publicarla.",
@@ -338,6 +352,7 @@ Ejemplo de la guía de atajos:
   {
     id: 15,
     title: "Versionamiento de imágenes locales",
+    hints: ["🌍 Un tag de versión (mi-app:2.0.0) es un ancla en el tiempo: puedes reproducir y desplegar esa versión exacta, algo imposible con 'latest'.","Usa docker image tag mi-app mi-app:2.0.0 para crear la referencia con versión. En producción, despliega siempre tags inmutables para poder hacer rollback."],
     stars: 2,
     category: "CLI",
     description: "Agrega etiquetas de versión específicas a tus imágenes.",
@@ -358,6 +373,7 @@ Si deseas colocar un tag de versión específico en lugar de 'latest', puedes us
   {
     id: 16,
     title: "Listar imágenes y eliminar una específica (docker images / rmi)",
+    hints: ["🌍 docker images es el inventario de plantillas locales; docker rmi es la papelera que las elimina.","docker images lista; docker image rm <id> o docker rmi <nombre> elimina. rmi falla si un contenedor sigue usando la imagen: borra primero los contenedores."],
     stars: 1,
     category: "CLI",
     description: "Lista las imágenes guardadas en el host y remueve una de ellas.",
@@ -381,6 +397,7 @@ Si deseas colocar un tag de versión específico en lugar de 'latest', puedes us
   {
     id: 17,
     title: "Limpieza de imágenes colgadas (prune)",
+    hints: ["🌍 Las imágenes dangling (las que salen como <none>) se acumulan con cada rebuild: prune es la limpieza de primavera del host.","docker image prune limpia solo las colgadas; docker image prune -a borra además todas las no usadas por ningún contenedor."],
     stars: 2,
     category: "CLI",
     description: "Elimina imágenes huérfanas sin tag (dangling) o todas las imágenes no utilizadas.",
@@ -402,6 +419,7 @@ Para liberar espacio de almacenamiento ocupado por imágenes intermedias sin nom
   {
     id: 18,
     title: "Logs y monitoreo: docker logs --follow",
+    hints: ["🌍 docker logs es la única ventana a un proceso que corre aislado: lo que la app escribe en stdout/stderr.","docker container logs <id> muestra la salida; con --follow (o -f) la terminal queda abierta e imprime los logs nuevos en vivo."],
     stars: 1,
     category: "CLI",
     description: "Monitorea la salida de consola de tus contenedores de forma activa.",
@@ -423,6 +441,7 @@ Para ver lo que la app escribe en stdout/stderr:
   {
     id: 19,
     title: "Estadísticas de hardware (docker stats)",
+    hints: ["🌍 docker stats es el 'administrador de tareas' de tus contenedores: CPU, memoria, red y disco en vivo.","Ejecuta docker stats para ver el stream interactivo de consumo de todos los contenedores activos. Primer diagnóstico cuando un contenedor se come los recursos del host."],
     stars: 2,
     category: "CLI",
     description: "Monitorea en tiempo real el consumo de CPU, memoria y red de tus contenedores.",
@@ -442,6 +461,7 @@ El comando 'docker stats' muestra un stream interactivo con el consumo en vivo d
   {
     id: 20,
     title: "Entrar al contenedor: docker exec sh/bash",
+    hints: ["🌍 exec es abrir una puerta al contenedor en marcha: -it te da una terminal interactiva, como sentarte en el escritorio.","docker exec -it <contenedor> bash ejecuta un proceso NUEVO dentro del contenedor activo sin reiniciarlo. -i mantiene la entrada abierta y -t asigna pseudo-terminal (juntas: -it)."],
     stars: 2,
     category: "CONTENEDORES",
     description: "Inicia una sesión interactiva sh o bash dentro de tu contenedor.",
@@ -470,6 +490,7 @@ Ejemplos de la guía:
   {
     id: 21,
     title: "Named Volumes: Crear e Inspeccionar",
+    hints: ["🌍 Un volume es una 'caja de almacenamiento' que vive fuera del contenedor: si el contenedor se borra, la caja queda intacta con sus datos.","docker volume create <nombre> prepara la persistencia; ls la lista; inspect muestra su mountpoint y qué contenedores la usan. Sin volumen, los datos de un contenedor se pierden al eliminarlo."],
     stars: 3,
     category: "VOLUMENES",
     description: "Crea y analiza volúmenes con nombre para almacenar datos persistentes.",
@@ -495,6 +516,7 @@ Comandos comunes:
   {
     id: 22,
     title: "Usar un volumen al correr un contenedor",
+    hints: ["🌍 -v es atar la 'caja de almacenamiento' a una ruta del contenedor: todo lo que la app escriba ahí sobrevive al reinicio.","docker run -v <nombre_volumen>:<ruta_interna> <imagen> monta el volumen nombrado en la ruta. Ejemplo: docker run -v todo-db:/etc/todos getting-started."],
     stars: 3,
     category: "VOLUMENES",
     description: "Monta un volumen con nombre en la ruta interna indicada.",
@@ -517,6 +539,7 @@ Ejemplo de la hoja de atajos:
   {
     id: 23,
     title: "Bind Volumes: Desarrollo local (Terminal vs PowerShell)",
+    hints: ["🌍 Un bind mount es prestarle al contenedor tu carpeta de trabajo: los cambios del editor se reflejan al instante dentro del contenedor.","Usa rutas ABSOLUTAS: -v \"$(pwd):/app\" en Linux/Mac, -v \"C:\\ruta:/app\" en PowerShell. -w /app establece el directorio de trabajo donde arranca el comando."],
     stars: 3,
     category: "VOLUMENES",
     description: "Monta tu código local usando rutas absolutas y especificando el working directory.",
@@ -534,6 +557,7 @@ Ejemplo de la hoja de atajos:
   {
     id: 24,
     title: "Anonymous Volumes: Volúmenes Anónimos",
+    hints: ["🌍 Es un volumen sin etiqueta: Docker crea una carpeta automática en el host, sin nombre que puedas reutilizar.","Solo declaras la ruta interna: docker run -v /var/lib/mysql/data. Para datos que importan, prefiere un named volume gestionable."],
     stars: 3,
     category: "VOLUMENES",
     description: "Monta un volumen donde sólo se especifica la ruta interna del contenedor.",
@@ -555,6 +579,7 @@ Ejemplo de la hoja de atajos:
   {
     id: 25,
     title: "Networking: Gestión básica de redes por CLI",
+    hints: ["🌍 Una red Docker es un 'cableado' privado: los contenedores en la misma red se ven por nombre; los de redes distintas ni se conocen.","docker network create <nombre> arma la red; ls la lista; inspect revela contenedores conectados y sus IPs. Pon API y BD en la misma red y publica solo la API."],
     stars: 3,
     category: "REDES",
     description: "Crea y analiza redes usando la interfaz de comandos.",
@@ -580,6 +605,7 @@ Comandos comunes:
   {
     id: 26,
     title: "Networking: Unir contenedor y configurar Network Alias",
+    hints: ["🌍 El alias es el 'número corto' de un contenedor: la IP cambia al recrearse, el alias permanece para que otros contenedores se conecten.","Usa --network <red> y --network-alias mysql al correr el contenedor. Las variables -e (como MYSQL_ROOT_PASSWORD) inyectan configuración sin escribirla en la imagen."],
     stars: 3,
     category: "REDES",
     description: "Corre una imagen uniéndola a la red y configurando su alias de DNS interno.",
@@ -607,6 +633,7 @@ Comando completo de la hoja de atajos:
   {
     id: 27,
     title: "Puertos y Paths: HOST vs CONTAINER",
+    hints: ["🌍 Es la 'puerta de calle' (host) y la 'puerta del cuarto' (contenedor): -p 6000:6379 dice 'el que toque la 6000 de la calle, que entre a la habitación 6379'.","En -p HOST:CONTAINER, el primer puerto es de tu máquina física y el segundo el interno del contenedor. Regla mental: lo que ve el mundo : lo que escucha la app."],
     stars: 2,
     category: "CONCEPTOS",
     description: "Reconoce el mapeo de puertos y la dirección del enlace.",
@@ -630,6 +657,7 @@ Recuerda que el primer puerto representa a la máquina física local (**HOST**),
   {
     id: 28,
     title: "Dockerfile: Declaración de Herencia",
+    hints: ["🌍 FROM es la base de la construcción: como elegir los cimientos sobre los que se levanta tu imagen (node, nginx...).","Toda imagen hereda de otra: FROM node:18.3.1. Con AS builder asignas un alias para usar la etapa en multi-stage builds."],
     stars: 2,
     category: "DOCKERFILE",
     description: "Especifica la base de la imagen a crear usando la instrucción FROM.",
@@ -651,6 +679,7 @@ Toda construcción en Docker hereda de una imagen base existente.
   {
     id: 29,
     title: "Dockerfile: Especificar la Plataforma",
+    hints: ["🌍 --platform es decirle al arquitecto para qué tipo de casa construir, aunque tú trabajes en otra: evita que 'compila en mi Mac' se vuelva 'no funciona en el server'.","FROM --platform=linux/amd64 node:18-alpine fija la arquitectura de la imagen base. Sin declararla, hereda la de tu equipo de build (problema con Apple Silicon vs Intel)."],
     stars: 3,
     category: "DOCKERFILE",
     description: "Configura la arquitectura de destino en el Dockerfile para garantizar compatibilidad con chips Apple Silicon o Intel.",
@@ -671,6 +700,7 @@ Para asegurar que una imagen se construya específicamente para una arquitectura
   {
     id: 30,
     title: "Dockerfile: Variables de entorno internas (ENV)",
+    hints: ["🌍 ENV es la pizarra de configuración de la imagen: la defines una vez y la referencias con $VAR en todas las instrucciones siguientes.","ENV APP_HOME /app crea la variable persistente; RUN mkdir $APP_HOME la usa en tiempo de construcción. Disponible también en runtime."],
     stars: 3,
     category: "DOCKERFILE",
     description: "Crea y utiliza variables de entorno dentro del proceso de construcción.",
@@ -692,6 +722,7 @@ La instrucción 'ENV' permite definir variables persistentes tanto en la compila
   {
     id: 31,
     title: "Dockerfile: Inicialización de paquetes (RUN)",
+    hints: ["🌍 RUN es la fase de preparación: instala lo que la app necesita y graba el resultado como una capa de la imagen.","RUN npm install o RUN yarn install --frozen-lockfile. --frozen-lockfile respeta exactamente las versiones del lockfile para builds reproducibles."],
     stars: 3,
     category: "DOCKERFILE",
     description: "Instala los módulos necesarios para tu aplicación en la imagen.",
@@ -714,6 +745,7 @@ Ejemplos comunes para instalar dependencias:
   {
     id: 32,
     title: "Dockerfile: Establecer directorio de trabajo (WORKDIR)",
+    hints: ["🌍 WORKDIR es el 'cd' del Dockerfile: entras una vez a esa carpeta y todos los comandos siguientes se ejecutan ahí.","WORKDIR /app cambia el directorio base para RUN, COPY, CMD y ENTRYPOINT posteriores, sin repetir rutas absolutas."],
     stars: 2,
     category: "DOCKERFILE",
     description: "Cambia el directorio de trabajo activo dentro de la imagen.",
@@ -734,6 +766,7 @@ Establece que, a partir de ese punto, todos los comandos RUN, CMD, ENTRYPOINT, C
   {
     id: 33,
     title: "Dockerfile: Punto de montaje (VOLUME)",
+    hints: ["🌍 VOLUME es una 'señal de tráfico' en el Dockerfile: le dice a quien use la imagen qué directorios son datos y no deben vivir dentro del contenedor.","VOLUME [\"/data\"] declara la ruta persistente. Si no montas un volumen manual, Docker crea uno anónimo automáticamente en esa ruta."],
     stars: 3,
     category: "DOCKERFILE",
     description: "Declara un punto de montaje para crear volúmenes de forma automática en el arranque.",
@@ -754,6 +787,7 @@ Declara un punto de montaje con la ruta especificada y marca ese directorio como
   {
     id: 34,
     title: "Dockerfile: Copiar archivos (ADD vs COPY)",
+    hints: ["🌍 COPY es la fotocopia exacta; ADD añade magia (descarga URLs y descomprime tarballs). Para copias normales, prefiere lo predecible: COPY.","COPY package.json yarn.lock ./ copia dependencias ANTES del código para aprovechar la caché de capas. Reserva ADD para descarga/extracción puntual."],
     stars: 3,
     category: "DOCKERFILE",
     description: "Aprende a inyectar archivos locales y dependencias en tu imagen.",
@@ -776,6 +810,7 @@ Declara un punto de montaje con la ruta especificada y marca ese directorio como
   {
     id: 35,
     title: "Dockerfile: Comando por defecto (CMD)",
+    hints: ["🌍 CMD es la orden de arranque del contenedor: lo que pasa cuando alguien hace docker run sin especificar comando.","Usa el formato exec (array JSON): CMD [\"node\",\"dist/main\"]. Solo un CMD efectivo por imagen: el último gana."],
     stars: 2,
     category: "DOCKERFILE",
     description: "Establece el comando inicial que arrancará tu aplicación.",
@@ -796,6 +831,7 @@ Determina el comando que ejecutará el contenedor al arrancar. Debe especificars
   {
     id: 36,
     title: "Compilar sin caché de capas",
+    hints: ["🌍 --no-cache es 'no me confíes la memoria': reconstruye cada capa desde cero para verificar que el build es reproducible.","docker build --no-cache -t myImage:myTag . ignora la caché local. Útil cuando dependencias externas cambiaron sin que el Dockerfile lo refleje."],
     stars: 3,
     category: "DOCKERFILE",
     description: "Fuerza a Docker a descargar paquetes e instalar dependencias ignorando la caché.",
@@ -816,6 +852,7 @@ Si deseas evitar que Docker use sus capas previamente construidas (por ejemplo, 
   {
     id: 37,
     title: "Compose: Especificar contexto y Dockerfile",
+    hints: ["🌍 La sección build le dice a Compose 'no uses una imagen precompilada, construye esta': context es de dónde copiar, dockerfile es qué archivo leer.","En docker-compose.yml: build: { context: ., dockerfile: Dockerfile }. context fija el directorio raíz enviado al daemon; dockerfile indica qué Dockerfile usar."],
     stars: 3,
     category: "COMPOSE",
     description: "Configura la construcción de servicios detallando la ruta y el nombre del Dockerfile.",
@@ -838,6 +875,7 @@ En el docker-compose.yml, si un servicio no utiliza una imagen pre-compilada, pu
   {
     id: 38,
     title: "Compose: Establecer el directorio de trabajo y comando",
+    hints: ["🌍 working_dir y command sobrescriben el comportamiento de la imagen sin reconstruirla: ideal para arranque de desarrollo.","working_dir: /app cambia el directorio; command: sh -c \"yarn install && yarn run dev\" sustituye el CMD de la imagen."],
     stars: 3,
     category: "COMPOSE",
     description: "Configura el working directory y el comando del contenedor en tu docker-compose.yml.",
@@ -859,6 +897,7 @@ Puedes sobrescribir las configuraciones por defecto de la imagen desde tu YAML:
   {
     id: 39,
     title: "Compose: Forzar nombres específicos de contenedor",
+    hints: ["🌍 container_name fija un nombre exacto y amigable, anulando el patrón automático <proyecto>_<servicio>_<replica>.","container_name: AnylistApp. El nombre debe ser único en el host: no podrás escalar réplicas del mismo servicio con nombre fijo."],
     stars: 3,
     category: "COMPOSE",
     description: "Asigna un nombre fijo al contenedor de tu servicio en Compose.",
@@ -879,6 +918,7 @@ Por defecto, Compose genera nombres basados en la nomenclatura '<proyecto>_<serv
   {
     id: 40,
     title: "Compose: Políticas de reinicio (restart)",
+    hints: ["🌍 restart: always es el 'modo zombie bueno': si el contenedor se cae o el host se reinicia, vuelve solo.","restart: always relanza el contenedor ante crashes y al arrancar el daemon. Infraestructura crítica (BD, colas) casi siempre lo usa."],
     stars: 3,
     category: "COMPOSE",
     description: "Asegura que tu base de datos o API se reinicie si el sistema del host se detiene.",
@@ -899,6 +939,7 @@ La directiva 'restart' controla los reinicios automáticos ante caídas o reinic
   {
     id: 41,
     title: "Compose: Mapeo de puertos en YAML",
+    hints: ["🌍 Mismo formato HOST:CONTAINER que la CLI, pero en lista YAML.","ports: - 8080:3000 publica el 8080 del host hacia el 3000 del contenedor. Al ser lista, puedes publicar varios puertos."],
     stars: 2,
     category: "COMPOSE",
     description: "Mapea los puertos del host a tu contenedor en Compose.",
@@ -923,6 +964,7 @@ Ejemplo de la guía:
   {
     id: 42,
     title: "Compose: Levantar servicios (docker compose up -d)",
+    hints: ["🌍 docker compose up es 'encender todo el stack de una vez': construye, crea la red y arranca todos los servicios.","docker compose up -d lo hace en segundo plano y te devuelve la terminal. Sin -d te quedas 'pegado' a los logs de todos los servicios."],
     stars: 3,
     category: "COMPOSE",
     description: "Levanta todos los servicios en background usando la CLI de Compose.",
@@ -944,6 +986,7 @@ Para procesar el docker-compose.yml y arrancar todos los servicios en segundo pl
   {
     id: 43,
     title: "Compose: Monitorear logs (docker compose logs -f)",
+    hints: ["🌍 Es la consola unificada del stack: la salida de todos los servicios etiquetada, en un solo comando.","docker compose logs -f consolida stdout/stderr de todos los servicios y sigue en vivo. El diagnóstico por defecto cuando algo no arranca."],
     stars: 3,
     category: "COMPOSE",
     description: "Monitorea los logs en vivo de todos los servicios orquestados.",
@@ -965,6 +1008,7 @@ Para revisar las salidas de terminal de tus contenedores de Compose:
   {
     id: 44,
     title: "Compose: Apagar y limpiar (docker compose down)",
+    hints: ["🌍 Es la 'parada limpia': detiene servicios, elimina contenedores y la red interna, pero conserva tus volúmenes (sin -v).","docker compose down apaga y remueve contenedores + red privada. Los datos persisten porque los volúmenes no se borran a menos que uses -v."],
     stars: 3,
     category: "COMPOSE",
     description: "Detén los contenedores de Compose y remueve las redes privadas de un solo golpe.",
@@ -986,6 +1030,7 @@ Los contenedores se detendrán y la red interna creada se removerá.`,
   {
     id: 45,
     title: "Nomenclatura de contenedores en Compose",
+    hints: ["🌍 Compose pone nombre a tus contenedores con un patrón predecible: <proyecto>_<servicio>_<replica>.","El proyecto es el nombre de la carpeta del YAML, el servicio viene del archivo y la réplica es un correlativo. Conocerlo permite conectarte por nombre sin inspeccionar."],
     stars: 2,
     category: "CONCEPTOS",
     description: "Entiende el patrón de nombres automático que genera Docker Compose.",
@@ -1014,6 +1059,7 @@ Donde:
   {
     id: 46,
     title: "Escaneo de imágenes con docker scan (Best Practices)",
+    hints: ["🌍 docker scan es la 'revisión médica' de la imagen: detecta CVEs con severidad y pasos de remediación antes de publicar.","docker scan <imagen>:<tag> analiza contra la base de datos de vulnerabilidades de Snyk. Escanear en CI evita desplegar fallos conocidos a producción."],
     stars: 4,
     category: "SEGURIDAD",
     description: "Realiza un análisis local de seguridad para buscar vulnerabilidades en tu imagen.",
@@ -1036,6 +1082,7 @@ Esta herramienta está integrada con Snyk para proteger dependencias y código.`
   {
     id: 47,
     title: "Historial de capas (docker image history)",
+    hints: ["🌍 Es el 'recibo de compra' de la imagen: muestra cada capa, qué instrucción del Dockerfile la creó y cuánto pesa.","docker image history <imagen> lista las capas con su tamaño. La herramienta para optimizar: detectas qué instrucción añade el peso innecesario."],
     stars: 4,
     category: "CLI",
     description: "Rastrea las capas de construcción de tu imagen de Docker.",
@@ -1057,6 +1104,7 @@ Para auditar qué instrucciones del Dockerfile crearon cada capa y cuánto peso 
   {
     id: 48,
     title: "Multi-stage build con Yarn (Best Practices)",
+    hints: ["🌍 Es montar el mueble en el taller y llevarte solo la pieza terminada: la primera etapa compila, la segunda copia solo el resultado.","FROM node:18 AS build instala y compila; FROM nginx:alpine + COPY --from=build /app/build /usr/share/nginx/html genera la imagen final solo con lo servible.","Ordena las etapas: primero la de build (FROM node → WORKDIR → COPY lockfiles → RUN install → RUN build) y después la final (FROM nginx → COPY --from=build)."],
     stars: 4,
     category: "DOCKERFILE",
     description: "Escribe un Dockerfile multi-stage usando Yarn y sirviendo la salida en Nginx.",
@@ -1100,6 +1148,7 @@ Ejemplo oficial de la guía de atajos:
   {
     id: 49,
     title: "Variables de entorno desde archivo .env en Compose",
+    hints: ["🌍 ${VAR} en el YAML es el mismo principio que process.env: el secreto vive fuera del repositorio, no en el docker-compose.yml que se sube a git.","environment: - DB_PASSWORD=${DB_PASSWORD} lee el valor del archivo .env local o del entorno. Evita escribir contraseñas y JWT secrets en el YAML."],
     stars: 4,
     category: "COMPOSE",
     description: "Interpolación de contraseñas y configuraciones dinámicas en el docker-compose.yml.",
@@ -1124,6 +1173,7 @@ Para evitar revelar contraseñas y llaves JWT en tu YAML, utiliza archivos '.env
   {
     id: 50,
     title: "Compose: Mapeo de volumen relativo",
+    hints: ["🌍 En Compose las rutas relativas funcionan: ./:/app monta la carpeta actual dentro del contenedor, sin $(pwd).","volumes: - ./:/app es un bind mount de desarrollo: Compose resuelve la ruta contra la ubicación del YAML. Los cambios locales se reflejan al instante."],
     stars: 3,
     category: "COMPOSE",
     description: "Configura un bind mount de desarrollo usando una ruta relativa en Compose.",
@@ -1145,6 +1195,7 @@ A diferencia de Docker CLI donde debes usar rutas absolutas (como \$(pwd)), en D
   {
     id: 51,
     title: "BuildX - Crear un Builder local",
+    hints: ["🌍 buildx es el motor de build moderno; create + --use prepara y activa el 'taller' capaz de compilar multi-arquitectura.","docker buildx create --name mi-builder --use lo crea y activa. Sin un builder activo, los comandos multi-plataforma no están disponibles."],
     stars: 4,
     category: "BUILDX",
     description: "Crea y activa un builder BuildX para compilar imágenes multi-arquitectura.",
@@ -1166,6 +1217,7 @@ Para habilitar la compilación multi-plataforma:
   {
     id: 52,
     title: "BuildX - Compilar multi-plataforma (--platform)",
+    hints: ["🌍 --platform compila para Intel y ARM en una sola pasada; --push lo sube directo al registro. Cada usuario descarga su arquitectura automáticamente.","docker buildx build --platform linux/amd64,linux/arm64 -t miusuario/mi-app:1.0.0 --push . produce una imagen multi-arch."],
     stars: 4,
     category: "BUILDX",
     description: "Compila y empuja una imagen compatible con procesadores Intel y ARM.",
@@ -1186,6 +1238,7 @@ Para construir imágenes y subirlas directamente al registro:
   {
     id: 53,
     title: "GitHub Actions - CI con Docker",
+    hints: ["🌍 Correr las pruebas DENTRO del contenedor garantiza el mismo entorno que producción: si pasan solo en tu máquina, algo está 'maquillando' el resultado.","docker build -t test-image -f Dockerfile.dev . y luego docker run --rm test-image npm run test. --rm elimina el contenedor al terminar para no dejar basura en el runner."],
     stars: 4,
     category: "CI/CD",
     description: "Crea un paso de Integración Continua que ejecute pruebas unitarias dentro del contenedor.",
@@ -1207,6 +1260,7 @@ En entornos de Integración Continua (CI), ejecutamos pruebas dentro del contene
   {
     id: 54,
     title: "GitHub Actions - Login en Docker Hub",
+    hints: ["🌍 Los secrets de GitHub son los 'sobres cerrados' del pipeline: se inyectan como variables y jamás aparecen en los logs.","Usa docker/login-action@v3 con username: ${{ secrets.DOCKERHUB_USERNAME }} y password: ${{ secrets.DOCKERHUB_TOKEN }}. Prefiere un Token de Acceso revocable a la contraseña."],
     stars: 4,
     category: "CI/CD",
     description: "Autentícate de forma segura en Docker Hub usando secretos de GitHub.",
@@ -1228,6 +1282,7 @@ Para subir imágenes a tu registro de contenedores privado o público desde un p
   {
     id: 55,
     title: "GitHub Actions - Autenticación en Digital Ocean Registry",
+    hints: ["🌍 El registro privado de Digital Ocean habla con doctl, no con docker login: primero instalas la CLI, luego autenticas con credenciales temporales.","digitalocean/action-doctl@v2 instala doctl con el token del secret; luego doctl registry login --expiry-seconds 1200 limita la validez a 20 minutos."],
     stars: 4,
     category: "CI/CD",
     description: "Configura el inicio de sesión en el registro de contenedores privado de Digital Ocean.",
@@ -1249,6 +1304,7 @@ DOCR (Digital Ocean Container Registry) requiere autenticarse mediante doctl:
   {
     id: 56,
     title: "GitHub Actions - Build & Push Automatizado",
+    hints: ["🌍 Etiquetar con el hash del commit crea el vínculo imagen↔código: sabes exactamente qué commit produjo esa imagen y puedes hacer rollback.","docker/build-push-action@v5 compila y sube. Tags: latest + ${{ github.sha }} para trazabilidad. push: true activa el envío al registro."],
     stars: 4,
     category: "CI/CD",
     description: "Construye y empuja imágenes etiquetándolas con el commit Hash de Git.",
@@ -1268,6 +1324,7 @@ Es una buena práctica etiquetar las imágenes con el tag ':latest' y adicionalm
   {
     id: 57,
     title: "GitHub Actions - Estrategia de Cache de Capas",
+    hints: ["🌍 type=gha es la 'nevera' del CI: las capas sin cambios (como node_modules) se reutilizan entre builds en vez de reinstalarse siempre.","cache-from: type=gha y cache-to: type=gha,mode=max. mode=max guarda también capas intermedias para maximizar el acierto de caché.","Sin esta configuración, cada push recompila desde cero. Con type=gha, la instalación de dependencias se reutiliza y el build baja de minutos a segundos."],
     stars: 5,
     category: "CI/CD",
     description: "Optimiza los tiempos de build en tus pipelines de GitHub Actions configurando caché de capas.",
@@ -1289,6 +1346,7 @@ El uso de caché evita compilar de nuevo capas que no cambiaron (por ejemplo, la
   {
     id: 58,
     title: "Digital Ocean - Despliegue en App Platform",
+    hints: ["🌍 app.yaml es el 'contrato declarativo' con la plataforma: qué imagen usar, cómo arrancar y qué recursos conectar.","registry_type: digitalocean apunta a tu registro; value: ${db.DATABASE_URL} interpola la URL generada por la base de datos declarada abajo (engine: pg).","El bloque databases: - name: db, engine: pg crea la BD; la referencia ${db.DATABASE_URL} conecta ambos recursos automáticamente sin configurar hosts ni puertos a mano."],
     stars: 4,
     category: "CLOUD",
     description: "Configura el archivo descriptor de Digital Ocean para desplegar tu contenedor.",
@@ -1310,6 +1368,7 @@ App Platform lee la configuración declarada en 'app.yaml' para compilar e inici
   {
     id: 59,
     title: "Límites de recursos en producción",
+    hints: ["🌍 --memory y --cpus son la red de seguridad del servidor: el contenedor usa hasta donde tú decidas, no hasta donde el bug quiera.","docker container run -d --memory=\"512m\" --cpus=1.0 postgres:alpine. Sin límites, un contenedor con fuga puede tumbar servicios vecinos."],
     stars: 4,
     category: "CONTENEDORES",
     description: "Limita la memoria RAM y CPU máxima de tus bases de datos Postgres.",
@@ -1331,6 +1390,7 @@ Para prevenir que un contenedor monopolice todo el servidor físico, establece l
   {
     id: 60,
     title: "Seguridad: Escaneo con Trivy",
+    hints: ["🌍 Trivy escanea el contenido REAL de la imagen: lo que llevas a producción, no lo que crees que llevas.","trivy image node:20 compara las librerías contra bases de datos de CVEs; --severity HIGH,CRITICAL filtra solo los hallazgos graves."],
     stars: 4,
     category: "SEGURIDAD",
     description: "Utiliza herramientas de análisis estático de seguridad para detectar vulnerabilidades.",
@@ -1352,6 +1412,7 @@ Trivy busca brechas de seguridad y librerías vulnerables (CVEs) en tu imagen:
   {
     id: 61,
     title: "Seguridad: Filesystem de solo lectura",
+    hints: ["🌍 --read-only es 'mostrar la tarjeta de la biblioteca pero no prestar el libro': el proceso lee pero no puede escribir en el sistema.","docker container run -d --read-only -v cache-vol:/var/cache/nginx nginx:alpine. Monta volúmenes SOLO donde hace falta escritura: el menor privilegio aplicado al filesystem.","El root fs en read-only impide que un atacante modifique binarios o configuraciones. Como Nginx escribe en /var/cache, monta un volumen ahí con -v."],
     stars: 5,
     category: "SEGURIDAD",
     description: "Protege tu servidor web bloqueando la posibilidad de escribir en el disco del contenedor.",
@@ -1372,6 +1433,7 @@ Montar el sistema de archivos raíz de solo lectura evita que procesos malicioso
   {
     id: 62,
     title: "Kubernetes - Arquitectura del Control Plane",
+    hints: ["🌍 El control plane es el 'cerebro', los nodos los 'músculos' y el kubelet el 'delegado' que vive en cada nodo recibiendo órdenes.","Control plane: gestiona el estado global (API server, scheduler, etcd). Worker nodes: ejecutan los contenedores. Kubelet: componente por nodo que gestiona contenedores locales."],
     stars: 4,
     category: "KUBERNETES",
     description: "Comprende la arquitectura interna de un clúster de Kubernetes.",
@@ -1394,6 +1456,7 @@ La orquestación de contenedores es la automatización de gran parte del esfuerz
   {
     id: 63,
     title: "K8s - kubectl y comandos esenciales",
+    hints: ["🌍 kubectl es el control remoto del clúster: get lista, describe explica, logs -f muestra lo que dice la app.","kubectl get pods → qué existe; kubectl describe pod mi-pod → por qué está así (eventos, condiciones); kubectl logs -f mi-pod → qué dice la app."],
     stars: 4,
     category: "KUBERNETES",
     description: "Aprende los comandos principales de CLI de la utilidad kubectl para auditar tu clúster.",
@@ -1416,6 +1479,7 @@ kubectl es la herramienta oficial de línea de comandos para administrar Kuberne
   {
     id: 64,
     title: "K8s - Definición de un Pod",
+    hints: ["🌍 Un Pod es la unidad mínima de cómputo: agrupa contenedores que comparten IP, almacenamiento y ciclo de vida.","El YAML es declarativo: kind: Pod, metadata.name, spec.containers con la imagen y ports.containerPort. Escribes el estado deseado y el clúster lo hace realidad."],
     stars: 4,
     category: "KUBERNETES",
     description: "Escribe la definición básica en YAML para crear un Pod en Kubernetes.",
@@ -1445,6 +1509,7 @@ Un Pod es la unidad ejecutable más pequeña de K8s. Agrupa uno o más contenedo
   {
     id: 65,
     title: "K8s - Exponer la App con un Service (LoadBalancer)",
+    hints: ["🌍 Un Service es el 'número de centralita' fijo delante de empleados que cambian de despacho: los pods cambian de IP, el Service no.","type: LoadBalancer crea el balanceador público; targetPort: 8080 apunta al puerto real de la app en el pod; kubectl apply -f service.yaml aplica el YAML declarativamente.","El Service usa selector (app: api) para encontrar los pods, type: LoadBalancer para exponerlo, y targetPort para conectar el puerto 80 del balanceador al 8080 de la app."],
     stars: 5,
     category: "KUBERNETES",
     description: "Crea un balanceador de carga público para distribuir tráfico entre tus réplicas de contenedores.",

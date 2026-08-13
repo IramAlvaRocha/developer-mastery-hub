@@ -2,7 +2,7 @@ import type { Exercise } from "@/lib/types";
 
 export const CODE_QUALITY_EXERCISES: Exercise[] = [
   {
-    id: 1, title: "ESLint Flat Config (v9+): Configuración Moderna", stars: 3, category: "ESLINT",
+    id: 1, title: "ESLint Flat Config (v9+): Configuración Moderna", hints: ["🌍 ESLint es el guardián de la calidad: te avisa antes de que un bug llegue a producción y alinea el estilo de todo el equipo.","ESLint v9 usa eslint.config.js (flat config). Los presets vienen de typescript-eslint (tseslint.config) y eslint-plugin-vue (flat/recommended).","el archivo exporta tseslint.config con eslint.configs.recommended, recommendedTypeChecked, vue flat/recommended y reglas como no-explicit-any: 'error'."], stars: 3, category: "ESLINT",
     description: "ESLint v9 usa eslint.config.js (flat config) en lugar de .eslintrc. Es la configuración actual en proyectos nuevos.",
     objective: "eslint.config.js con TypeScript y Vue",
     tags: ["eslint.config.js", "flat config", "typescript-eslint"],
@@ -32,7 +32,7 @@ export default tseslint.config(
     completeCode: "tseslint.config | recommendedTypeChecked | vue flat/recommended | no-explicit-any: error"
   },
   {
-    id: 2, title: "SonarQube: Métricas de Calidad", stars: 4, category: "SONARQUBE",
+    id: 2, title: "SonarQube: Métricas de Calidad", hints: ["🌍 SonarQube es una auditoría de código automatizada: detecta deuda técnica, vulnerabilidades y te da una calificación de calidad.","SonarQube analiza bugs, vulnerabilidades, code smells y cobertura. El Quality Gate falla el CI si no se cumplen los umbrales.","Configura sonar.sources=src, sonar.test.inclusions con los specs, sonar.javascript.lcov.reportPaths=coverage/lcov.info y el Quality Gate pide 80% de cobertura y 0 vulnerabilidades."], stars: 4, category: "SONARQUBE",
     description: "SonarQube analiza el código buscando bugs, vulnerabilidades, code smells y mide cobertura de tests.",
     objective: "Integrar SonarQube en CI",
     tags: ["SonarQube", "Quality Gate", "coverage"],
@@ -61,7 +61,7 @@ sonar.coverage.exclusions=**/*.spec.ts,**/node_modules/**
     completeCode: "sonar.sources=src | lcov.reportPaths | Quality Gate: coverage>80% + 0 vulns"
   },
   {
-    id: 3, title: "Prettier: Configuración por Equipo", stars: 2, category: "PRETTIER",
+    id: 3, title: "Prettier: Configuración por Equipo", hints: ["🌍 Prettier termina los debates de 'tabs vs espacios' para siempre: el equipo se enfoca en lógica, no en formato.","La config compartida (.prettierrc.json) define printWidth, tabWidth, singleQuote, semi y endOfLine para todo el equipo.","printWidth: 100, singleQuote: 'single', endOfLine: 'auto' y plugins con prettier-plugin-tailwindcss."], stars: 2, category: "PRETTIER",
     description: "Prettier formatea el código automáticamente. Una config compartida elimina debates de estilo en code reviews.",
     objective: "Prettier con EditorConfig y VSCode",
     tags: ["prettier", ".prettierrc", "editorconfig"],
@@ -85,7 +85,7 @@ sonar.coverage.exclusions=**/*.spec.ts,**/node_modules/**
     completeCode: "printWidth: 100 | singleQuote | endOfLine: auto | prettier-plugin-tailwindcss"
   },
   {
-    id: 4, title: "ESLint: Reglas de Seguridad", stars: 4, category: "ESLINT",
+    id: 4, title: "ESLint: Reglas de Seguridad", hints: ["🌍 Las reglas de seguridad en ESLint son el primer escudo: detectan eval(), RegEx inseguras y paths sin sanitizar antes de que lleguen a producción.","eslint-plugin-security trae configs.recommended con reglas como detect-unsafe-regex y detect-object-injection.","Reglas: 'no-eval': 'error' (vector de inyección), 'security/detect-unsafe-regex': 'error' (ReDoS), 'security/detect-object-injection': 'warn'."], stars: 4, category: "ESLINT",
     description: "eslint-plugin-security detecta vulnerabilidades comunes en Node.js: injection, RegEx DoS, path traversal.",
     objective: "ESLint para seguridad",
     tags: ["eslint-plugin-security", "no-eval", "injection"],
@@ -112,7 +112,7 @@ export default [
     completeCode: "eslint-plugin-security | no-eval: error | detect-unsafe-regex | detect-object-injection"
   },
   {
-    id: 5, title: "Vitest: Coverage con Istanbul", stars: 3, category: "COVERAGE",
+    id: 5, title: "Vitest: Coverage con Istanbul", hints: ["🌍 La cobertura de tests es como la inspección vehicular: no garantiza que el auto sea perfecto, pero sí que revisaste los puntos críticos.","La cobertura mide qué porcentaje del código está cubierto por tests. El umbral mínimo en producción: 80%.","Configura test.coverage con provider 'v8', thresholds { lines: 80, functions: 80, branches: 75, statements: 80 } y reporter lcov."], stars: 3, category: "COVERAGE",
     description: "La cobertura de código mide qué porcentaje del código está cubierto por tests. El umbral mínimo en producción: 80%.",
     objective: "Configurar coverage en Vitest",
     tags: ["coverage", "v8", "thresholds"],
@@ -141,7 +141,7 @@ export default defineConfig({
     completeCode: "coverage: { provider: 'v8', thresholds: { lines: 80, branches: 75 } }"
   },
   {
-    id: 6, title: "TypeScript: tsconfig.json Estricto", stars: 3, category: "TYPESCRIPT",
+    id: 6, title: "TypeScript: tsconfig.json Estricto", hints: ["🌍 strict: true es el modo difícil de un juego: más exigente al principio, pero te hace mejor y previene bugs serios en producción.","Un tsconfig estricto activa todas las verificaciones: strict, noUncheckedIndexedAccess y exactOptionalPropertyTypes.","strict: true, noUncheckedIndexedAccess: true, exactOptionalPropertyTypes: true, moduleResolution: 'bundler', paths { '@/*': ['./src/*'] } y include con src."], stars: 3, category: "TYPESCRIPT",
     description: "Un tsconfig estricto activa todas las verificaciones de TypeScript. Es el estándar en proyectos senior.",
     objective: "Configuración de TypeScript estricta",
     tags: ["strict", "noUncheckedIndexedAccess", "exactOptionalPropertyTypes"],
@@ -169,7 +169,7 @@ export default defineConfig({
     completeCode: "strict: true | noUncheckedIndexedAccess | moduleResolution: bundler | paths @/*"
   },
   {
-    id: 7, title: "Code Review: Patrones a Rechazar", stars: 4, category: "CODE REVIEW",
+    id: 7, title: "Code Review: Patrones a Rechazar", hints: ["🌍 Un buen reviewer no solo encuentra bugs: enseña mejores alternativas y sube el nivel del equipo.","Tres anti-patrones clásicos: any en vez de unknown, mutación directa del state en vez de actions, y secretos hardcodeados en vez de variables de entorno.","Rechaza any (usa unknown + type guard), la mutación directa del store (usa la action) y el API_KEY en código (usa process.env.API_KEY)."], stars: 4, category: "CODE REVIEW",
     description: "En code reviews, ciertos patrones son señales de alerta. Saber identificarlos es clave para ser un reviewer efectivo.",
     objective: "Anti-patrones a detectar en PRs",
     tags: ["code review", "anti-patterns", "quality"],
@@ -200,7 +200,7 @@ const API_KEY = process.env.[INPUT_4];`,
     completeCode: "any → unknown | mutación directa → actions | hardcoded secrets → process.env"
   },
   {
-    id: 8, title: "ESLint: Reglas de Accesibilidad Vue", stars: 3, category: "A11Y",
+    id: 8, title: "ESLint: Reglas de Accesibilidad Vue", hints: ["🌍 La accesibilidad es el requerimiento más ignorado y uno de los más importantes: detectarla en lint time es mucho más barato que arreglarla en producción.","eslint-plugin-vuejs-accessibility detecta problemas a11y en plantillas Vue: alt-text, anchor-has-content y click-events-have-key-events.","Reglas: 'vuejs-accessibility/alt-text': 'error', 'vuejs-accessibility/anchor-has-content': 'error' y 'click-events-have-key-events': 'warn'."], stars: 3, category: "A11Y",
     description: "eslint-plugin-vuejs-accessibility detecta problemas de accesibilidad en plantillas Vue en tiempo de desarrollo.",
     objective: "ESLint para a11y en Vue",
     tags: ["vuejs-accessibility", "aria", "alt text"],
@@ -227,7 +227,7 @@ export default [
     completeCode: "vuejs-accessibility | alt-text: error | anchor-has-content | click-events-have-key-events"
   },
   {
-    id: 9, title: "Pre-commit: Conventional Commits con commitlint", stars: 3, category: "COMMITS",
+    id: 9, title: "Pre-commit: Conventional Commits con commitlint", hints: ["🌍 commitlint es el policía de los mensajes de commit: sin él, en 6 meses el historial tiene mensajes como 'fix' o 'cambios'; con él, historial profesional.","commitlint valida que cada commit siga Conventional Commits (feat, fix, docs...) vía el hook de husky commit-msg.","extends '@commitlint/config-conventional', type-enum con feat/fix/docs/refactor/test/chore/perf/ci, scope-case lower-case y subject-max-length 100."], stars: 3, category: "COMMITS",
     description: "commitlint valida que todos los commits sigan el formato Conventional Commits antes de aceptarlos.",
     objective: "Forzar conventional commits",
     tags: ["commitlint", "husky", "commit-msg"],
@@ -254,7 +254,7 @@ export default {
     completeCode: "@commitlint/config-conventional | type-enum | scope-case: lower-case | max-length: 100"
   },
   {
-    id: 10, title: "Arquitectura: Principio de Responsabilidad Única", stars: 5, category: "ARCHITECTURE",
+    id: 10, title: "Arquitectura: Principio de Responsabilidad Única", hints: ["🌍 SRP en Vue: el componente dibuja (template), el composable piensa (lógica), el store recuerda (estado). Como en un restaurante: mesero, cocinero y caja.","Un componente con fetch + validación + UI + estado global es un 'Dios objeto'. Separa en composables (lógica) y stores (estado).","useUserForm usa reactive({ name, email }) y devuelve { form, validate }; el store defineStore expone users y addUser."], stars: 5, category: "ARCHITECTURE",
     description: "En Vue, cada archivo debe tener una sola responsabilidad. Componentes pequeños, composables para lógica, stores para estado.",
     objective: "SRP aplicado a Vue.js",
     tags: ["SRP", "separation of concerns", "architecture"],

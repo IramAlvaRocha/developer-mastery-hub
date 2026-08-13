@@ -7,6 +7,7 @@ export const NODEJS_PRO_EXERCISES: Exercise[] = [
   {
     id: 1,
     title: "Express: Estructura Profesional de Proyecto",
+    hints: ["🌍 Piensa en un restaurante: cada estación tiene un rol claro (cocina, servicio, caja). Un solo archivo que hace todo se vuelve inmanejable. ¿Cómo separarías la app en capas?","Separa en archivos por responsabilidad: app.ts (configuración Express), routes, controllers, services y lib/prisma. El punto de entrada llama a la app pero no la define toda."],
     stars: 2,
     category: "SETUP",
     description: "Un proyecto Express profesional separa capas: routes, controllers, services, repositories. Esto se llama Clean Architecture o Layered Architecture.",
@@ -57,6 +58,7 @@ export default router;`,
   {
     id: 2,
     title: "Controller: Separar Request/Response de la Lógica",
+    hints: ["🌍 El controller es el recepcionista: recibe la petición, la pasa al equipo correcto y entrega la respuesta. No debe decidir las reglas del negocio.","El controller lee req (params, body, user), llama al service y responde con res.status()/res.json(). Toda la lógica de negocio vive en el service, no aquí."],
     stars: 3,
     category: "CONTROLLERS",
     description: "El controller recibe req/res de Express y delega TODO la lógica al service. Nunca hace queries directamente.",
@@ -116,6 +118,7 @@ export const userController = {
   {
     id: 3,
     title: "Service Layer: Lógica de Negocio Pura",
+    hints: ["🌍 Si puedes copiar tu service a una app de consola sin cambiar nada, está bien diseñado. No debe saber que Express existe.","El service usa el repository, lanza AppError con statusCode y NO recibe req/res. Valida reglas de negocio como email único o hashear contraseñas."],
     stars: 3,
     category: "SERVICES",
     description: "El service contiene la lógica de negocio. Es independiente de HTTP (sin req/res). Esto lo hace 100% testeable con unit tests.",
@@ -167,6 +170,7 @@ export const userService = {
   {
     id: 4,
     title: ".env y Variables de Entorno: La Forma Correcta",
+    hints: ["🌍 La configuración es como la llave del almacén: no se escribe en la pared. Si la comiteas, está comprometida.","Carga dotenv, lee process.env y valida al arrancar: si falta una variable crítica (JWT_SECRET), la app debe fallar. Agrupa todo en un objeto config tipado."],
     stars: 2,
     category: "CONFIG",
     description: "Las variables de entorno separan la configuración del código. Nunca hardcodees URLs, contraseñas o API keys.",
@@ -231,6 +235,7 @@ export const config = {
   {
     id: 5,
     title: "Middleware: ¿Qué es y Cómo Funciona?",
+    hints: ["🌍 El middleware es como un control de seguridad en el aeropuerto: cada request pasa por varios puestos antes de llegar al avión (handler).","Cada middleware recibe (req, res, next). Debe llamar next() para continuar o responder para terminar. El error handler se distingue por sus 4 parámetros (err, req, res, next)."],
     stars: 2,
     category: "MIDDLEWARE",
     description: "El middleware es una función que se ejecuta ENTRE que llega el request y antes de que llegue al handler final. Es el corazón de Express.",
@@ -290,6 +295,7 @@ app.use(errorHandler); // SIEMPRE al final`,
   {
     id: 6,
     title: "Middleware: Logging con Morgan",
+    hints: ["🌍 Sin logs, una request que falla a las 3am es un misterio imposible de resolver. El log es la caja negra de tu API.","Usa morgan con formato distinto según ambiente: 'dev' en local, 'combined' en producción. Puedes definir tokens custom para capturar el userId o la IP real."],
     stars: 2,
     category: "MIDDLEWARE",
     description: "Morgan es el logger HTTP más usado en Express. Registra cada request con su método, URL, status y tiempo de respuesta.",
@@ -342,6 +348,7 @@ export const detailedLogger = morgan(
   {
     id: 7,
     title: "Middleware: Helmet — Headers de Seguridad",
+    hints: ["🌍 Helmet es como el guardia que revisa qué llevas antes de entrar: le dice al navegador qué ejecutar y a qué no asomarse.","app.use(helmet()) aplica headers de seguridad (CSP, X-Frame-Options, HSTS) en una línea. Para APIs con frontend separado, personaliza contentSecurityPolicy y crossOriginResourcePolicy.","Configura las directivas CSP para permitir tus CDNs en scriptSrc y usa cross-origin en crossOriginResourcePolicy. Además, deshabilita el header X-Powered-By."],
     stars: 3,
     category: "SEGURIDAD",
     description: "Helmet configura automáticamente headers HTTP de seguridad que protegen contra XSS, clickjacking y otros ataques comunes.",
@@ -405,6 +412,7 @@ app.disable('x-powered-by');`,
   {
     id: 8,
     title: "CORS: Entender y Configurar Correctamente",
+    hints: ["🌍 CORS es la política del portero del edificio: decide qué dominios pueden entrar. Un '*' en producción es dejar la puerta abierta con un letrero de 'pasen'.","Configura cors() con una función de origin que revise una whitelist por ambiente: orígenes exactos en producción, localhost en desarrollo.","La función recibe (origin, callback): callback(null, true) si el origen está permitido (o no hay origin, como Postman/móvil) y callback(new Error(...)) si no. Activa credentials para cookies/tokens."],
     stars: 3,
     category: "CORS",
     description: "CORS (Cross-Origin Resource Sharing) es el mecanismo que permite o deniega requests de diferentes dominios. Mal configurado es una vulnerabilidad.",
@@ -469,6 +477,7 @@ export const corsMiddleware = [INPUT_1]({
   {
     id: 9,
     title: "Rate Limiting: Proteger la API de Abuso",
+    hints: ["🌍 Sin límite en /login, un bot puede probar millones de contraseñas por hora. El rate limit es el guardia que corta la fila.","Usa express-rate-limit con ventana (windowMs) y máximo (max) de requests. Define dos limitadores: uno global y otro estricto para /login.","Para autenticación usa windowMs de 1 hora y max bajo (5). Personaliza keyGenerator para diferenciar por IP+ruta y evita que un atacante lo bypasee cambiando de ruta."],
     stars: 3,
     category: "SEGURIDAD",
     description: "Rate limiting limita cuántas requests puede hacer una IP en un período. Protege contra fuerza bruta, scraping y DDoS.",
@@ -534,6 +543,7 @@ app.use('/api/auth/login', authLimiter);`,
   {
     id: 10,
     title: "JWT: Anatomía y Funcionamiento",
+    hints: ["🌍 El JWT es como un sello de cera en una carta: cualquiera puede leer el contenido (Base64), pero nadie puede modificarlo sin romper la firma.","Un JWT tiene 3 partes separadas por puntos: header, payload y firma. Firmar con jwt.sign(payload, secret, { expiresIn }) y verificar con jwt.verify.","Captura el error TokenExpiredError de jsonwebtoken para responder 401 con mensaje de expiración. El payload se puede leer, así que nunca pongas datos sensibles."],
     stars: 3,
     category: "JWT",
     description: "JWT (JSON Web Token) es el estándar para autenticación sin estado en APIs REST. Entender su estructura es fundamental.",
@@ -609,6 +619,7 @@ export const jwtUtils = {
   {
     id: 11,
     title: "Middleware de Autenticación JWT",
+    hints: ["🌍 El middleware de auth es el guardia del torniquete: revisa el boleto (Bearer token) antes de dejarte pasar a las rutas privadas.","Lee req.headers.authorization, verifica que empiece con 'Bearer ', extrae el token y pásalo a jwtUtils.verify.","Con el payload verificado, asigna req.user = payload y llama next(). Si falta el header o el token es inválido, responde 401 con next(new AppError(...))."],
     stars: 3,
     category: "JWT",
     description: "El middleware de autenticación extrae y verifica el JWT de cada request, protegiendo las rutas privadas.",
@@ -678,6 +689,7 @@ export const authorize = (...roles: string[]) =>
   {
     id: 12,
     title: "Login y Generación de Tokens",
+    hints: ["🌍 El login entrega dos llaves: una de corta duración (access token) que usas a diario, y otra de repuesto (refresh token) guardada en un lugar seguro.","Compara la contraseña con bcrypt.compare (nunca ===, evita timing attacks) y usa el mismo error para email o contraseña incorrectos.","Genera accessToken con jwtUtils.sign y refreshToken con jwtUtils.signRefresh. Guarda el refresh token en una cookie httpOnly con secure y sameSite: 'strict'."],
     stars: 3,
     category: "JWT",
     description: "El endpoint de login verifica credenciales, genera Access Token y Refresh Token con estrategias diferentes.",
@@ -742,6 +754,7 @@ Riesgo de timing attack en comparación de contraseñas:
   {
     id: 13,
     title: "Validación con Zod: Nunca Confíes en el Cliente",
+    hints: ["🌍 El cliente manda datos como un desconocido manda un paquete: puede traer cualquier cosa dentro. Zod es la aduana que revisa el contenido.","Define un schema con z.object({ body, params, query }) y usa schema.safeParseAsync para validar sin lanzar excepción. El rol nunca debe permitir 'admin' desde fuera.","El middleware validate recibe el schema, hace safeParseAsync de req.body/params/query y si falla lanza AppError 400; si pasa, hace Object.assign(req, result.data) y next()."],
     stars: 3,
     category: "VALIDACIÓN",
     description: "Zod valida y transforma datos del request con tipado TypeScript automático. Es el estándar moderno para validación en Node.js.",
@@ -813,6 +826,7 @@ export const validate = (schema: z.AnyZodObject) =>
   {
     id: 14,
     title: "Error Handling Global: AppError y Error Handler",
+    hints: ["🌍 El error handler central es el único hospital de tu app: todos los errores van ahí y salen con el mismo formato.","Crea AppError extends Error con statusCode y captureStackTrace. El errorHandler (4 parámetros) es el último middleware y formatea la respuesta.","En producción nunca expongas el stack trace: inclúyelo solo cuando no esté isProduction. Usa status 'fail' para errores < 500 y 'error' para 500+."],
     stars: 4,
     category: "ERRORES",
     description: "Un sistema robusto de manejo de errores centraliza el formato de las respuestas de error y evita exponer detalles internos en producción.",
@@ -879,6 +893,7 @@ export const errorHandler = (err: Error, req: Request, res: Response, next: Next
   {
     id: 15,
     title: "Prisma ORM: Introducción y Setup",
+    hints: ["🌍 Prisma es el traductor entre tu TypeScript y la base de datos: defines el modelo una vez y todo queda type-safe, sin SQL escrito a mano.","En schema.prisma define el generator client, el datasource con env('DATABASE_URL') y los modelos con sus tipos y atributos @id, @unique, @default.","Para el campo id usa @default(autoincrement()) y para createdAt @default(now()). El enum Role se declara con enum y se referencia en el modelo."],
     stars: 3,
     category: "ORM",
     description: "Prisma es el ORM moderno para Node.js/TypeScript. Define el schema una vez y genera tipos TypeScript automáticamente.",
@@ -949,6 +964,7 @@ enum Role {
   {
     id: 16,
     title: "Prisma Client: Singleton y Queries CRUD",
+    hints: ["🌍 Crear un PrismaClient por request es como abrir una nueva conexión telefónica para cada llamada: agotas la línea (las 100 conexiones de PostgreSQL).","Guarda el PrismaClient en globalThis en desarrollo para no acumular instancias con el hot reload. El singleton exporta un solo prisma.","Usa new PrismaClient({ log: [...] }) y asigna globalForPrisma.prisma en dev. Las queries usan findMany/findUnique con { where: { campo } }."],
     stars: 3,
     category: "ORM",
     description: "PrismaClient debe ser un singleton para no agotar las conexiones a la BD. Las queries son type-safe y expresivas.",
@@ -1008,6 +1024,7 @@ export const userRepository = {
   {
     id: 17,
     title: "Prisma: Relaciones y Queries Avanzadas",
+    hints: ["🌍 include sin select es como invitar a tu casa a un desconocido: trae TODO del autor, incluido su password. Selecciona solo lo necesario.","Para cargar relaciones usa include con select anidado. Para paginar usa skip/take y para el total, prisma.post.count en la misma operación.","Ejecuta ambas queries juntas con prisma.$transaction([findMany, count]). El totalPages se calcula con Math.ceil(total / limit)."],
     stars: 4,
     category: "ORM",
     description: "Prisma maneja relaciones 1:N y N:M con include/select. Permite queries complejas con filtros y paginación.",
@@ -1071,6 +1088,7 @@ Filtros:
   {
     id: 18,
     title: "Express Router: Organización de Rutas",
+    hints: ["🌍 express.Router() es como el cuadro de fusibles de la casa: cada circuito (dominio) tiene su propio panel y todos se montan en el principal.","Crea un Router() por dominio, monta cada sub-router con router.use('/users', userRoutes) y monta todo bajo /api/v1 en app.ts.","Versiona con el prefijo /api/v1 en app.use y deja un /health sin versionar para load balancers y monitoreo."],
     stars: 2,
     category: "ROUTES",
     description: "express.Router() crea mini-aplicaciones de rutas que se montan en la app principal. Mantiene el código organizado por dominio.",
@@ -1133,6 +1151,7 @@ app.get('/[INPUT_4]', (req, res) => {
   {
     id: 19,
     title: "Params, Query y Body: Acceso Correcto",
+    hints: ["🌍 La URL es como la dirección postal: params identifican el edificio exacto, query son las instrucciones de entrega y body es el contenido del paquete.","req.params para segmentos de ruta, req.query para filtros/paginación y req.body para datos de creación. Todos los params/query llegan como strings.","Convierte con Number(req.params.id) o Number(req.query.page) || 1, y para booleanos compara con === 'true'."],
     stars: 2,
     category: "ROUTES",
     description: "Express tiene 3 formas de recibir datos: params (URL), query string y body. Cada uno tiene su caso de uso.",
@@ -1195,6 +1214,7 @@ router.post('/', validate(createUserSchema), async (req, res, next) => {
   {
     id: 20,
     title: "SQL Injection Prevention con Prisma",
+    hints: ["🌍 Concatenar strings en SQL es como confiarle a un desconocido la frase de la bóveda: 'OR 1=1' puede abrir todas las puertas.","Prisma parametriza las queries normales (findUnique, findMany), así que son seguras. El peligro está en $queryRawUnsafe con concatenación.","Para raw queries usa $queryRaw con tagged template literal (parametriza) o $queryRawUnsafe con parámetros posicionales ($1). Nunca concatenes con +."],
     stars: 3,
     category: "SEGURIDAD",
     description: "Prisma previene SQL Injection por defecto usando prepared statements. Pero hay casos donde puedes romper esa protección.",
@@ -1256,6 +1276,7 @@ const safe = await prisma.$queryRawUnsafe(
   {
     id: 21,
     title: "XSS Prevention en APIs Node.js",
+    hints: ["🌍 Un <script> guardado en tu BD es como una semilla de mala hierba: crecerá cuando otro lugar lo renderice como HTML.","Sanitiza al entrar con validator.js: escape() para HTML, stripLow() para caracteres de control y valida URLs solo con protocolos http/https.","El middleware global de sanitización recibe (req, res, next), limpia campos del body (name → sanitize.html, bio → sanitize.text) y llama next()."],
     stars: 3,
     category: "SEGURIDAD",
     description: "Las APIs JSON son menos vulnerables a XSS que páginas HTML, pero aún deben sanitizar datos antes de almacenarlos.",
@@ -1322,6 +1343,7 @@ app.use((req, res, [INPUT_4]) => {
   {
     id: 22,
     title: "HTTPS y Seguridad en Producción",
+    hints: ["🌍 Node no necesita el chaleco antibalas en producción: el TLS lo maneja el load balancer/Cloud Run, que va delante como escudo.","Configura app.set('trust proxy', 1) para que req.ip use la IP real del cliente vía X-Forwarded-For, y limita el body con express.json({ limit })","En helmet habilita hsts con maxAge 31536000, includeSubDomains y preload. Escucha en process.env.PORT (Cloud Run lo inyecta) con listen(PORT, '0.0.0.0')."],
     stars: 3,
     category: "SEGURIDAD",
     description: "En producción, la app Node.js no debe manejar TLS directamente. El reverse proxy (Nginx, Cloud Run) se encarga del SSL/TLS.",
@@ -1387,6 +1409,7 @@ app.listen(PORT, '0.0.0.0', () => {
   {
     id: 23,
     title: "Repository Pattern con Prisma",
+    hints: ["🌍 El repository es el enchufe universal: si cambias de Prisma a Firebase, el service sigue funcionando porque solo conoce la interfaz.","Define una interfaz IUserRepository con los métodos CRUD y crea la clase PrismaUserRepository que la implementa usando prisma.","La clase usa implements IUserRepository, findUnique({ where: { id } }) y prisma.user.create({ data }) para crear."],
     stars: 4,
     category: "CLEAN ARCHITECTURE",
     description: "El Repository Pattern encapsula el acceso a datos. Si cambias de Prisma a otro ORM, solo cambias el repository, no el service.",
@@ -1452,6 +1475,7 @@ export class PrismaUserRepository implements [INPUT_2] {
   {
     id: 24,
     title: "Dependency Injection Manual en Node.js",
+    hints: ["🌍 Sin DI, el service es un constructor que también hace de electricista y plomero. Con DI, tú le pasas las herramientas desde fuera.","Crea un container.ts que construya las instancias: new PrismaUserRepository(), new UserService(repo), new UserController(service).","Cada clase recibe su dependencia por constructor. Exporta solo el controller ya compuesto y úsalo en las rutas."],
     stars: 4,
     category: "CLEAN ARCHITECTURE",
     description: "Dependency Injection permite intercambiar implementaciones (real vs mock). Sin DI Container, se hace manualmente en la capa de composición.",
@@ -1507,6 +1531,7 @@ router.post('/', validate(schema), (req, res, next) => userController.create(req
   {
     id: 25,
     title: "Paginación y Filtros: API REST Estándar",
+    hints: ["🌍 Paginar sin límite es como abrir un grifo sin tope: llega un punto en que el sistema se ahoga (skip de 10000 filas).","buildPaginationMeta calcula totalPages con Math.ceil y hasNextPage comparando page con totalPages. buildOrderBy valida el campo sort contra una whitelist.","El meta incluye hasNextPage: page < totalPages. En buildOrderBy, si el campo no está permitido lanza AppError 400; si no hay sort, usa createdAt desc."],
     stars: 3,
     category: "API DESIGN",
     description: "La paginación y los filtros son esenciales en cualquier API real. Seguir estándares facilita la integración con el frontend.",
@@ -1582,6 +1607,7 @@ export function buildOrderBy(opts: PaginationOptions) {
   {
     id: 26,
     title: "Upload de Archivos con Multer",
+    hints: ["🌍 Aceptar cualquier archivo del cliente es como abrir un paquete sin revisar: puede ser un ejecutable, un zip bomb o un ../../ que sobrescriba tu código.","Usa multer con memoryStorage y un fileFilter que valide el MIME type contra una whitelist (jpeg, png, webp). Limita el tamaño.","El filtro rechaza con cb(new AppError(...), false) si el mimetype no está permitido. Define limits con fileSize y genera el nombre con crypto.randomBytes(16).toString('hex') + la extensión original."],
     stars: 3,
     category: "ARCHIVOS",
     description: "Multer maneja multipart/form-data para subida de archivos. En producción, los archivos van a Cloud Storage, no al disco local.",
@@ -1646,6 +1672,7 @@ const safeFilename = crypto.[INPUT_4]('hex') + path.extname(file.originalname);`
   {
     id: 27,
     title: "Caché con Redis: Acelerar Respuestas",
+    hints: ["🌍 Redis es la nevera de la cocina: lo que preparaste hace rato lo sirves al instante (2ms) en vez de cocinar de nuevo (200ms).","Crea el cliente con createClient, usa redis.get para buscar la clave y redis.set con opción EX (TTL) al guardar.","El middleware guarda la clave 'cache:' + req.originalUrl, si existe responde res.json(JSON.parse(cached)) y si no, intercepta res.json para hacer redis.set con { EX: ttlSeconds }."],
     stars: 4,
     category: "PERFORMANCE",
     description: "Redis guarda respuestas en memoria para evitar queries repetidas a la BD. Reduce latencia de 200ms a 2ms.",
@@ -1715,6 +1742,7 @@ export function cacheMiddleware(ttlSeconds = 60) {
   {
     id: 28,
     title: "Async/Await y manejo de errores con asyncHandler",
+    hints: ["🌍 Repetir try/catch en cada handler es como pegar 50 cintas de seguridad: si una falla, fallan todas. El asyncHandler centraliza la red.","Crea un wrapper que reciba una función async y devuelva un handler Express que capture sus rechazos y los pase a next().","Internamente hace Promise.resolve(fn(req, res, next)).catch(next). Así, un error en el async handler llega directo al error handler global."],
     stars: 3,
     category: "PATRONES",
     description: "Envolver cada handler en try/catch es repetitivo. El patrón asyncHandler centraliza el manejo de errores async.",
@@ -1780,6 +1808,7 @@ router.get('/', asyncHandler(async (req, res) => {
   {
     id: 29,
     title: "Variables de Entorno por Ambiente: .env.development vs .env.production",
+    hints: ["🌍 Cada ambiente es un país distinto con sus propias reglas: en desarrollo todo es abierto (debug), en producción todo es estricto (errores).","Usa dotenv-flow/config para cargar .env base y el .env.{NODE_ENV} correspondiente. El .env.production nunca va al git: va en Secret Manager o en las env vars del servicio.","Con isProduction (NODE_ENV === 'production') decide valores: JWT_EXPIRES_IN='15m' en prod, LOG_LEVEL='debug' en dev y 'error' en prod."],
     stars: 3,
     category: "CONFIG",
     description: "Cada ambiente (dev, staging, prod) tiene su propia configuración. dotenv-flow gestiona múltiples archivos .env.",
@@ -1845,6 +1874,7 @@ export const config = {
   {
     id: 30,
     title: "Health Check y Graceful Shutdown",
+    hints: ["🌍 El health check es el pulso que toma el load balancer: si no responde 200, te saca del turno. El graceful shutdown es bajar el telón sin cortar la obra a medias.","En /health verifica la BD con una query simple y responde 200/503. Para el shutdown, escucha SIGTERM y cierra el servidor con server.close().","El handler de shutdown llama server.close() para dejar de aceptar conexiones y luego prisma.$disconnect() antes de process.exit(0). Agrega un setTimeout de respaldo (9s)."],
     stars: 3,
     category: "PRODUCCIÓN",
     description: "El health check le dice al load balancer si la instancia está lista. Graceful shutdown termina las requests en curso antes de apagar.",
@@ -1917,6 +1947,7 @@ process.on('SIGINT', () => shutdown('SIGINT')); // Ctrl+C en local`,
   {
     id: 31,
     title: "Testing de APIs con Supertest + Vitest",
+    hints: ["🌍 Supertest es como un cliente de pruebas: hace requests HTTP reales a tu app sin abrir un puerto, y verifica que cada pieza responda bien.","Exporta app sin .listen() (el server.ts llama app.listen). En los tests, usa beforeEach para limpiar la BD y afterAll para cerrar Prisma.","Con request(app).post('/api/v1/users').send({...}) haces el request real. Verifica status 201 y que la respuesta no incluya password (toBeUndefined)."],
     stars: 4,
     category: "TESTING",
     description: "Supertest hace requests HTTP reales a tu app Express sin levantar un servidor. Ideal para integration tests de endpoints.",
@@ -1977,6 +2008,7 @@ describe('POST /api/v1/users', () => {
   {
     id: 32,
     title: "Mocking de Servicios Externos en Tests",
+    hints: ["🌍 Un test que envía emails reales o cobra tarjetas es como un ensayo de obra que alquila el teatro completo: lento, caro y frágil.","Usa vi.mock('../src/services/emailService', () => ({ emailService: { sendWelcome: vi.fn().mockResolvedValue(...) } })) para aislar dependencias externas.","En el test verifica que el mock se llamó con expect(emailService.sendWelcome).toHaveBeenCalledOnce() y con expect.objectContaining({ email })."],
     stars: 4,
     category: "TESTING",
     description: "Los tests no deben llamar a servicios externos reales (Firebase, Stripe, email). Se mockean con vi.mock() o MSW.",
@@ -2041,6 +2073,7 @@ it('sends welcome email after registration', async () => {
   {
     id: 33,
     title: "WebSockets con Socket.io: Comunicación Bidireccional",
+    hints: ["🌍 HTTP es un teléfono donde solo tú llamas y escuchas respuesta; WebSocket es una llamada abierta donde ambos hablan cuando quieran.","Crea el servidor con new Server(httpServer, { cors }) y autentica en el handshake con io.use() verificando el token del socket.handshake.auth.","En el middleware de io.use, si el token es válido guarda socket.data.user y llama next(); si no, next(new Error('Authentication failed')). Para mensajes por sala usa socket.join(room) y io.to(room).emit()."],
     stars: 4,
     category: "REALTIME",
     description: "Socket.io implementa WebSockets con fallback a polling. Permite comunicación en tiempo real: chats, notificaciones, dashboards.",
@@ -2112,6 +2145,7 @@ export function setupSocket(httpServer: any) {
   {
     id: 34,
     title: "Event-Driven: Node.js EventEmitter",
+    hints: ["🌍 El event bus es el tablón de anuncios de la oficina: el service publica 'user:created' y cada departamento reacciona sin coordinar entre sí.","Crea un singleton con new EventEmitter() (configura setMaxListeners). El productor hace emit('user:created', data) y los consumidores on('user:created', handler).","El evento se emite después de userRepository.create con los datos del usuario. Los listeners (email, analytics) usan eventBus.on con el nombre exacto del evento."],
     stars: 4,
     category: "PATRONES",
     description: "EventEmitter permite desacoplar operaciones: cuando se crea un usuario, varios módulos reaccionan sin conocerse entre sí.",
@@ -2174,6 +2208,7 @@ eventBus.on('user:[INPUT_4]', ({ userId }) => analytics.track('user_created', us
   {
     id: 35,
     title: "Logging Estructurado con Winston",
+    hints: ["🌍 console.log es un post-it suelto; Winston es el expediente organizado con niveles, metadatos y destino configurable (consola, archivo, Cloud).","Usa winston.createLogger con level desde LOG_LEVEL, format.errors({ stack: true }) y un transporte Console. En producción usa format.json() para Cloud Logging.","Combina format.timestamp() con json() en producción (Cloud Logging lo parsea) o colorize() en desarrollo. El transporte siempre presente es winston.transports.Console."],
     stars: 3,
     category: "LOGGING",
     description: "Winston es el logger más usado en Node.js. Soporta múltiples transportes (consola, archivo, Cloud Logging) y niveles de severidad.",
@@ -2240,6 +2275,7 @@ export const logger = winston.createLogger({
   {
     id: 36,
     title: "Scheduled Jobs: Tareas Programadas con Node-cron",
+    hints: ["🌍 Node-cron es el despertador de tu app: ejecuta tareas a horas fijas sin que nadie las recuerde, como limpiar tokens expirados cada hora.","Usa cron.schedule('0 * * * *', fn) para tareas por hora. Para limpiar tokens expirados usa prisma.refreshToken.deleteMany con filtro de fecha.","El filtro es where: { expiresAt: { lt: new Date() } }. Ojo: en producción multi-instancia, usa Cloud Scheduler en vez de cron dentro de cada instancia."],
     stars: 3,
     category: "JOBS",
     description: "Node-cron ejecuta tareas en intervalos programados: limpiar tokens expirados, generar reportes diarios, sincronizar datos.",
@@ -2302,6 +2338,7 @@ export function startScheduler() {
   {
     id: 37,
     title: "Documentación de API con Swagger/OpenAPI",
+    hints: ["🌍 Swagger es el manual de instrucciones de tu API: el frontend y QA lo leen, prueban endpoints y dejan de preguntarte cómo funciona cada ruta.","Genera la spec con swaggerJsdoc(options) leyendo JSDoc de tus rutas, y sírvela con swaggerUi.serve + swaggerUi.setup(spec) en /api-docs.","Define components.securitySchemes con bearerAuth tipo http/bearer. Sirve la UI solo fuera de producción (o con auth básica) y documenta endpoints con @openapi."],
     stars: 3,
     category: "DOCUMENTACIÓN",
     description: "Swagger genera documentación interactiva de tu API automáticamente desde comentarios JSDoc o con swagger-jsdoc.",
@@ -2374,6 +2411,7 @@ if (process.env.NODE_ENV !== 'production') {
   {
     id: 38,
     title: "Compression y Performance: Express Optimization",
+    hints: ["🌍 Comprimir respuestas es como enviar la mudanza en cajas al vacío: 100KB de JSON pueden quedar en 10KB por el cable.","Activa compression() con un filter que excluya Server-Sent Events y un nivel balanceado. Desactiva ETag en APIs y evita el caché del browser en respuestas /api.","El filter devuelve false si el header accept es text/event-stream y si no, compression.filter(req, res). app.set('etag', false) y Cache-Control: no-store para rutas /api."],
     stars: 3,
     category: "PERFORMANCE",
     description: "Compression reduce el tamaño de las respuestas HTTP. Junto con otras optimizaciones, reduce la latencia y el ancho de banda.",
@@ -2435,6 +2473,7 @@ app.use((req, res, next) => {
   {
     id: 39,
     title: "Multitenancy: APIs para Múltiples Clientes",
+    hints: ["🌍 Multitenancy es un edificio de departamentos: todos comparten la estructura, pero cada cliente tiene llaves que solo abren su puerta (y nunca la del vecino).","Identifica el tenant por request (JWT claim o header X-Tenant-ID), valida que exista y esté activo, y guárdalo en req.tenant.","El middleware extrae tenantId de req.user.tenantId o del header, busca en prisma.tenant y verifica tenant.active. En TODAS las queries filtra por where: { tenantId }."],
     stars: 5,
     category: "ARQUITECTURA",
     description: "Multitenancy permite que una sola API sirva a múltiples organizaciones/clientes con datos completamente separados.",
@@ -2502,6 +2541,7 @@ export const userRepository = {
   {
     id: 40,
     title: "Proyecto Completo: Checklist de API en Producción",
+    hints: ["🌍 Un junior hace que funcione; un senior hace que funcione, sea seguro, monitoreable y escalable. Esta lista es tu entrevista respondida.","Repasa las 4 áreas: seguridad (helmet, rate limit, CORS whitelist, JWT corto, bcrypt, Zod, Secret Manager), observabilidad (winston JSON, requestId, /health, SIGTERM, métricas), performance (compression, Redis, paginación) y mantenibilidad (clean architecture, tests, Swagger, CI/CD).","Los huecos del checklist: helmet(), bcrypt, /health, compression. El resto (rate limit, CORS, JWT 15min, Zod, Winston, Prisma, Redis, CI/CD) ya aparecen en el código."],
     stars: 5,
     category: "PRODUCCIÓN",
     description: "Checklist final de todos los puntos que debe tener una API Node.js lista para producción en una empresa como NLINEA.",
@@ -2555,6 +2595,7 @@ sea monitoreable, sea mantenible y sea escalable.`,
   {
     id: 41,
     title: "ES Modules: import/export en Node.js",
+    hints: ["🌍 ESM es el idioma moderno del ecosistema: import/export en lugar del require() de la generación anterior.","Para habilitarlo: \"type\": \"module\" en package.json (o extensión .mjs). Declara con export e importa con import { ... } from '...'.","Exporta la función con export function add y el objeto con export { multiply }; al importar usa import { add, multiply } from './math.mjs'."],
     stars: 1,
     category: "MODULES",
     description: "Node.js soporta ES Modules nativamente. Es el estándar moderno para APIs TypeScript y proyectos nuevos.",
@@ -2591,6 +2632,7 @@ En entrevistas te preguntan:
   {
     id: 42,
     title: "Interceptors con Axios en el Backend",
+    hints: ["🌍 Los interceptors de Axios son el middleware de Express, pero para llamadas SALIENTES: cada request que tu API hace a otro servicio pasa por ahí.","Crea un cliente con axios.create({ baseURL }) y registra interceptors con api.interceptors.request.use y api.interceptors.response.use.","El request interceptor inyecta el header Authorization y retorna config. El response interceptor maneja errores globales; detecta el 401 para renovar el token."],
     stars: 3,
     category: "INTERCEPTORS",
     description: "Cuando tu API Node llama a servicios externos (Stripe, Firebase, otro microservicio), Axios interceptors centralizan auth, logging y retry.",
@@ -2645,6 +2687,7 @@ api.interceptors.[INPUT_3].use(
   {
     id: 43,
     title: "fs/promises: Lectura Asíncrona de Archivos",
+    hints: ["🌍 readFileSync es como leer un libro bloqueando la puerta de la biblioteca: nadie más entra hasta que terminas. En APIs usa async siempre.","Importa desde 'node:fs/promises' y usa await readFile(path, 'utf-8') para no bloquear el event loop. Para archivos grandes, usa streams.","El código queda: import { readFile } de node:fs/promises, await readFile(path, 'utf-8') y JSON.parse(content) al cargar configs."],
     stars: 2,
     category: "FS",
     description: "Node.js accede al filesystem nativamente. fs/promises expone operaciones como async/await sin bloquear el event loop.",
@@ -2681,6 +2724,7 @@ export async function loadConfig(path) {
   {
     id: 44,
     title: "package.json: Scripts npm y type module",
+    hints: ["🌍 package.json es la ficha del proyecto: quién es, de qué depende y qué comandos lo ponen en marcha. La primera parada en cualquier setup.","Define scripts: dev con tsx watch, start apuntando al build compilado (node dist/server.js) y test con vitest. Documenta engines.node.","Agrega \"type\": \"module\" para habilitar ESM y \"engines\": { \"node\": \">=20\" }. En Cloud Run/Docker el CMD ejecuta npm start."],
     stars: 1,
     category: "CONFIG",
     description: "package.json define metadatos, dependencias y scripts de automatización. Es la primera pregunta en setup de cualquier proyecto Node.",
