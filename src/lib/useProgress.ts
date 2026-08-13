@@ -378,12 +378,14 @@ export function useProgress(moduleKeys: string[]) {
     void (async () => {
       // 1) Merge aditivo con `progress`: lo local se conserva, la nube suma.
       try {
-        const { data: rows } = await supabase
-          .from("progress")
-          .select(
-            "module_key, exercise_ref, attempts, last_correct, last_error_keys, last_attempt_at",
-          )
-          .eq("user_id", uid);
+        const { data: rows } =
+          moduleKeys.length > 0
+            ? await supabase
+                .from("progress")
+                .select("module_key, exercise_ref")
+                .eq("user_id", uid)
+                .in("module_key", moduleKeys)
+            : { data: [] };
         if (!active) return;
         const cloudRows = (rows ?? []) as AttemptCloudRow[];
         const merged = mergeRows(local, cloudRows as ProgressRow[]);

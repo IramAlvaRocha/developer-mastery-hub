@@ -1,0 +1,96 @@
+---
+import { COURSE_DEFINITIONS } from "@/data/courseDefinitions";
+import { getModulePalette } from "@/lib/moduleColors";
+
+const FEATURED_KEYS = [
+  "aws",
+  "typescript",
+  "frontend",
+  "backend-data",
+  "apis-security",
+  "solid-clean-code",
+];
+
+const courses = FEATURED_KEYS.flatMap((key) => {
+  const course = COURSE_DEFINITIONS.find((item) => item.key === key);
+  if (!course) return [];
+  const palette = getModulePalette(course.color);
+  return [{ ...course, palette }];
+});
+---
+
+<section id="cursos" class="mx-auto max-w-[1280px] px-4 py-20 sm:px-6 sm:py-28">
+  <div class="relative flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
+    <div>
+      <p class="section-eyebrow text-brand">{"{ Cursos destacados }"}</p>
+      <h2 class="mt-3 max-w-3xl text-[clamp(2.2rem,5vw,4rem)] font-semibold leading-[1.04] tracking-[-0.04em] text-cream">
+        Elige una ruta y mira el temario antes de registrarte.
+      </h2>
+      <p class="mt-5 max-w-2xl text-base leading-relaxed text-muted sm:text-lg">
+        El catálogo y las fichas son públicos. Crea una cuenta solo cuando quieras
+        inscribirte, guardar tu avance y resolver ejercicios.
+      </p>
+    </div>
+    <a href="/cursos" class="btn-secondary shrink-0">
+      Ver todos los cursos
+      <span aria-hidden="true">→</span>
+    </a>
+    <svg class="absolute -top-12 right-40 hidden h-16 w-32 text-pink lg:block" viewBox="0 0 128 64" fill="none" aria-hidden="true">
+      <path d="M3 44c19-23 34-25 45-7 10 16 25 14 36-6 9-17 22-18 40-3" stroke="currentColor" stroke-width="4" stroke-linecap="round" />
+      <path d="m113 18 12 10-15 5" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" />
+    </svg>
+  </div>
+
+  <div class="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+    {
+      courses.map((course, index) => (
+        <a
+          href={`/cursos/${course.key}`}
+          class={`landing-course landing-course-${index + 1} group relative flex min-h-72 flex-col overflow-hidden rounded-[28px] border border-line bg-surface p-6 transition duration-300 hover:-translate-y-2 hover:border-[rgb(var(--course-rgb)/0.55)] hover:shadow-float`}
+          style={`--course-rgb:${course.palette.rgb};--course-rgb-light:${course.palette.rgbLight}`}
+        >
+          <div
+            class="pointer-events-none absolute -right-12 -top-12 h-40 w-40 rounded-full opacity-20 blur-3xl transition-opacity duration-300 group-hover:opacity-35"
+            style={`background:rgb(${course.palette.rgb})`}
+            aria-hidden="true"
+          />
+          <div class="pointer-events-none absolute bottom-5 right-5 grid grid-cols-3 gap-1 opacity-20 transition-opacity group-hover:opacity-50" aria-hidden="true">
+            {Array.from({ length: 9 }).map(() => <span class="h-1 w-1 rounded-full bg-current" />)}
+          </div>
+          <div class="relative flex items-start justify-between gap-4">
+            <span
+              class="flex h-14 w-14 items-center justify-center rounded-[20px] border text-2xl"
+              style={`border-color:rgb(${course.palette.rgb} / .28);background:rgb(${course.palette.rgb} / .12)`}
+              aria-hidden="true"
+            >
+              {course.icon}
+            </span>
+            <span class="font-mono text-xs text-faint">
+              {String(index + 1).padStart(2, "0")}
+            </span>
+          </div>
+          <div class="relative mt-auto pt-10">
+            <p
+              class="text-xs font-bold uppercase tracking-[0.16em]"
+              style={`color:rgb(${course.palette.rgbLight})`}
+            >
+              Ruta completa
+            </p>
+            <h3 class="mt-2 text-2xl font-semibold tracking-tight text-cream">
+              {course.name}
+            </h3>
+            <p class="mt-3 line-clamp-2 text-sm leading-relaxed text-muted">
+              {course.description}
+            </p>
+            <span
+              class="mt-6 inline-flex items-center gap-2 text-sm font-semibold"
+              style={`color:rgb(${course.palette.rgbLight})`}
+            >
+              Ver programa <span aria-hidden="true">↗</span>
+            </span>
+          </div>
+        </a>
+      ))
+    }
+  </div>
+</section>

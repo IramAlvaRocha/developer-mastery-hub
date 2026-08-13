@@ -10,28 +10,40 @@ import {
   readUrlLocation,
   type UrlLocation,
 } from "@/lib/urlLocation";
-import { getModuleFormats } from "@/lib/formatMeta";
-import type { ExerciseFormat } from "@/lib/types";
-import ModuleMenu from "./ModuleMenu";
+import { courseKeyForModule } from "@/lib/courseCatalog";
+import LearningDashboard from "./LearningDashboard";
 import ExerciseSidebar from "./ExerciseSidebar";
 import ExerciseWorkspace from "./ExerciseWorkspace";
-import SettingsModal from "./SettingsModal";
 import Toasts from "./Toasts";
 import UserMenu from "./auth/UserMenu";
+import BrandMark from "./brand/BrandMark";
 
-const ROUTES_SIDEBAR_KEY = "dmh-routes-sidebar-open";
 const EXERCISE_SIDEBAR_KEY = "dmh-exercise-sidebar-collapsed";
 
 export default function MasteryHub() {
-  const { modules, groups, loading } = useModules();
-  const moduleKeys = useMemo(() => modules.map((m) => m.key), [modules]);
+  const {
+    enrolledKeys,
+    loading: enrollmentsLoading,
+    lastOpenedAt,
+    touchLastOpened,
+  } = useEnrollments();
+  const { modules, loading } = useModules(enrolledKeys);
+  const moduleKeys = useMemo(
+    () =>
+      modules
+        .filter(
+          (module) =>
+            enrolledKeys.includes(courseKeyForModule(module)) &&
+            module.exercises.length > 0,
+        )
+        .map((module) => module.key),
+    [modules, enrolledKeys],
+  );
 
   const [currentSubject, setCurrentSubject] = useState<string>("menu");
   const [activeIndex, setActiveIndex] = useState(0);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [routesSidebarOpen, setRoutesSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [formatFilter, setFormatFilter] = useState<ExerciseFormat | null>(null);
 
   const {
     isCompleted,
@@ -40,22 +52,10 @@ export default function MasteryHub() {
     getPercent,
     lastVisited,
     setLastVisited,
-    exportProgress,
-    importProgress,
     lastPersistError,
-    syncModule,
   } = useProgress(moduleKeys);
-  const {
-    enrolledKeys,
-    loading: enrollmentsLoading,
-    lastOpenedAt,
-    enroll,
-    unenroll,
-    touchLastOpened,
-  } = useEnrollments(syncModule);
   const { toasts, showToast, dismissToast } = useToasts();
 
-  const [settingsOpen, setSettingsOpen] = useState(false);
   const mobileMenuButtonRef = useRef<HTMLButtonElement>(null);
 
   const closeMobileMenu = useCallback(() => {
@@ -65,29 +65,9 @@ export default function MasteryHub() {
 
   useEffect(() => {
     try {
-      const saved = localStorage.getItem(ROUTES_SIDEBAR_KEY);
-      // Solo restaura si el usuario lo dejó abierto en desktop.
-      if (saved === "1" && window.matchMedia("(min-width: 1024px)").matches) {
-        setRoutesSidebarOpen(true);
-      }
-    } catch {
-      /* ignore */
-    }
-  }, []);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem(ROUTES_SIDEBAR_KEY, routesSidebarOpen ? "1" : "0");
-    } catch {
-      /* ignore */
-    }
-  }, [routesSidebarOpen]);
-
-  useEffect(() => {
-    try {
       const saved = localStorage.getItem(EXERCISE_SIDEBAR_KEY);
-      // Solo restaura el colapso en desktop.
-      if (saved === "1" && window.matchMedia("(min-width: 1024px)").matches) {
+      // Solo restaura el colapso cuando la sidebar deja de ser un drawer.
+      if (saved === "1" && window.matchMedia("(min-width: 768px)").matches) {
         setSidebarCollapsed(true);
       }
     } catch {
@@ -123,51 +103,23 @@ export default function MasteryHub() {
     [modules, currentSubject],
   );
 
-  const handleEnroll = useCallback(
-    async (key: string) => {
-      const ok = await enroll(key);
-      if (ok) {
-        showToast("success", "Curso añadido a Mis Cursos");
-      } else {
-        showToast("error", "No se pudo suscribir al curso");
-      }
-    },
-    [enroll, showToast],
-  );
-
-  const handleUnenroll = useCallback(
-    async (key: string) => {
-      const ok = await unenroll(key);
-      if (ok) {
-        showToast("info", "Suscripción eliminada");
-      } else {
-        showToast("error", "No se pudo quitar la suscripción");
-      }
-    },
-    [unenroll, showToast],
-  );
-
   const exercises = currentModule?.exercises ?? [];
-  const formats = useMemo(
-    () => (currentModule ? getModuleFormats(currentModule.exercises) : []),
-    [currentModule],
-  );
-  const filteredExercises = useMemo(
-    () =>
-      formatFilter
-        ? exercises.filter((ex) => ex.format === formatFilter)
-        : exercises,
-    [exercises, formatFilter],
-  );
+  const filteredExercises = exercises;
   const activeExercise = filteredExercises[activeIndex] ?? filteredExercises[0];
   const color = currentModule?.color ?? "blue";
 
   function startSubject(key: string, index = 0) {
+    const target = modules.find((module) => module.key === key);
+    if (!target) return;
+    const courseKey = courseKeyForModule(target);
+    if (!enrolledKeys.includes(courseKey)) {
+      window.location.assign(`/cursos/${courseKey}`);
+      return;
+    }
     runViewTransition(() => {
       setCurrentSubject(key);
       setActiveIndex(index);
       setIsMobileMenuOpen(false);
-      setFormatFilter(null);
     });
   }
 
@@ -181,17 +133,6 @@ export default function MasteryHub() {
   function selectExercise(index: number) {
     setActiveIndex(index);
     setIsMobileMenuOpen(false);
-  }
-
-  function changeFormatFilter(next: ExerciseFormat | null) {
-    const prevId = filteredExercises[activeIndex]?.id;
-    setFormatFilter(next);
-    if (prevId == null) return;
-    const list = next
-      ? exercises.filter((ex) => ex.format === next)
-      : exercises;
-    const pos = list.findIndex((ex) => ex.id === prevId);
-    setActiveIndex(pos >= 0 ? pos : 0);
   }
 
   const goNext = useCallback(() => {
@@ -226,8 +167,9 @@ export default function MasteryHub() {
         realIndex >= 0 ? realIndex : activeIndex,
       );
       // Marca el curso como reciente en "Mis Cursos" (solo si está suscrito).
-      if (enrolledKeys.includes(currentModule.key)) {
-        void touchLastOpened(currentModule.key);
+      const courseKey = courseKeyForModule(currentModule);
+      if (enrolledKeys.includes(courseKey)) {
+        void touchLastOpened(courseKey);
       }
     }
   }, [
@@ -248,6 +190,11 @@ export default function MasteryHub() {
       setActiveIndex(0);
       return;
     }
+    const courseKey = courseKeyForModule(mod);
+    if (!enrolledKeys.includes(courseKey)) {
+      window.location.assign(`/cursos/${courseKey}`);
+      return;
+    }
     let index = 0;
     if (exerciseId != null) {
       const found = mod.exercises.findIndex((ex) => ex.id === exerciseId);
@@ -255,8 +202,7 @@ export default function MasteryHub() {
     }
     setCurrentSubject(mod.key);
     setActiveIndex(index);
-    setFormatFilter(null);
-  }, [modules]);
+  }, [modules, enrolledKeys]);
 
   useEffect(() => {
     applyUrlToState();
@@ -300,27 +246,13 @@ export default function MasteryHub() {
 
   return (
     <div className="relative flex h-full flex-col overflow-hidden">
-      <header className="flex shrink-0 items-center gap-3 border-b border-line/80 bg-canvas/90 px-4 py-3 backdrop-blur-md md:gap-4 md:px-6">
-        {!inModule && (
-          <button
-            type="button"
-            onClick={() => setRoutesSidebarOpen((v) => !v)}
-            className="icon-btn shrink-0 border border-line"
-            aria-label={routesSidebarOpen ? "Ocultar rutas" : "Mostrar rutas"}
-            aria-expanded={routesSidebarOpen}
-            title={routesSidebarOpen ? "Ocultar menú de rutas" : "Abrir menú de rutas"}
-          >
-            ☷
-          </button>
-        )}
+      <header className="flex shrink-0 items-center gap-3 border-b border-line/80 bg-canvas/90 px-4 py-3 md:gap-4 md:px-6">
         <a
           href="/"
           className="flex min-w-0 shrink-0 items-center gap-3"
           aria-label="Ir a la landing"
         >
-          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-brand/15 text-lg text-brand">
-            ◆
-          </span>
+          <BrandMark className="h-11 w-11" />
           <div className="min-w-0 text-left">
             <span className="block truncate text-base font-semibold tracking-tight text-cream sm:text-lg">
               Mastery Hub
@@ -328,7 +260,7 @@ export default function MasteryHub() {
             <p className="hidden truncate text-[12px] font-medium text-muted sm:block">
               {inModule
                 ? currentModule.name
-                : "Catálogo · práctica guiada"}
+                : "Mis cursos · práctica guiada"}
             </p>
           </div>
         </a>
@@ -340,7 +272,7 @@ export default function MasteryHub() {
                 onClick={goBackToMenu}
                 className="shrink-0 text-brand transition-colors hover:text-brand-strong"
               >
-                Catálogo
+                Mis cursos
               </button>
               <span className="text-faint">/</span>
               <span className="truncate text-muted">{currentModule.group}</span>
@@ -351,15 +283,15 @@ export default function MasteryHub() {
             </nav>
           ) : (
             <p className="rounded-full border border-line bg-canvas/60 px-4 py-2 text-sm text-cream">
-              {"{ Elige tu ruta }"}
+              {"{ Mi aprendizaje }"}
             </p>
           )}
         </div>
 
         <div className="ml-auto flex shrink-0 items-center gap-2">
           {!inModule && (
-            <a href="/" className="btn-secondary !min-h-10 !px-4 !text-sm">
-              Inicio
+            <a href="/cursos" className="btn-secondary !min-h-10 !px-4 !text-sm">
+              Explorar
             </a>
           )}
           {inModule && (
@@ -373,39 +305,17 @@ export default function MasteryHub() {
               <span className="hidden sm:inline"> Menú</span>
             </button>
           )}
-          {inModule && (
+          {inModule && sidebarCollapsed && (
             <button
-              onClick={() => setSidebarCollapsed((v) => !v)}
+              onClick={() => setSidebarCollapsed(false)}
               className="icon-btn hidden border border-line md:inline-flex"
-              aria-label="Mostrar/ocultar lista de ejercicios"
-              aria-expanded={!sidebarCollapsed}
-              title={
-                sidebarCollapsed
-                  ? "Mostrar lista de ejercicios"
-                  : "Ocultar lista de ejercicios"
-              }
+              aria-label="Mostrar lista de ejercicios"
+              aria-expanded="false"
+              title="Mostrar lista de ejercicios"
             >
-              {sidebarCollapsed ? "☰" : "▤"}
+              ☰
             </button>
           )}
-          {inModule && (
-            <button
-              onClick={shareCurrent}
-              className="icon-btn border border-line"
-              aria-label="Compartir ejercicio"
-              title="Compartir ejercicio"
-            >
-              🔗
-            </button>
-          )}
-          <button
-            onClick={() => setSettingsOpen(true)}
-            className="icon-btn border border-line"
-            aria-label="Configuración"
-            title="Configuración"
-          >
-            ⚙
-          </button>
           <UserMenu />
           {inModule && (
             <button
@@ -426,21 +336,14 @@ export default function MasteryHub() {
           loading && modules.length === 0 ? (
             <ModuleMenuSkeleton />
           ) : (
-            <ModuleMenu
+            <LearningDashboard
               modules={modules}
-              groups={groups}
+              enrolledKeys={enrolledKeys}
               getPercent={getPercent}
-              onStart={startSubject}
               onResume={(key, index) => startSubject(key, index)}
               lastVisited={lastVisited}
-              onToast={showToast}
-              sidebarOpen={routesSidebarOpen}
-              onSidebarOpenChange={setRoutesSidebarOpen}
-              enrolledKeys={enrolledKeys}
-              enrollmentsLoading={enrollmentsLoading}
               lastOpenedAt={lastOpenedAt}
-              onEnroll={handleEnroll}
-              onUnenroll={handleUnenroll}
+              loading={loading || enrollmentsLoading}
             />
           )
         ) : (
@@ -456,6 +359,7 @@ export default function MasteryHub() {
               collapsed={sidebarCollapsed}
               onSelect={selectExercise}
               onClose={closeMobileMenu}
+              onCollapse={() => setSidebarCollapsed(true)}
             />
 
             <div
@@ -475,21 +379,14 @@ export default function MasteryHub() {
                   )}
                   index={activeIndex}
                   total={filteredExercises.length}
-                  formats={formats}
-                  formatFilter={formatFilter}
-                  onFormatFilterChange={changeFormatFilter}
                   onPrev={goPrev}
                   onNext={goNext}
                   onComplete={(id) => markComplete(currentModule.key, id)}
-                  onAttempt={(id, correct, errorKeys) =>
-                    recordAttempt(currentModule.key, id, correct, errorKeys)
-                  }
+                  onShare={shareCurrent}
                   onToast={showToast}
                 />
               ) : (
-                <ExerciseFilterEmpty
-                  onClear={() => changeFormatFilter(null)}
-                />
+                <ExerciseFilterEmpty />
               )}
             </div>
 
@@ -502,14 +399,6 @@ export default function MasteryHub() {
           </>
         )}
       </div>
-
-      <SettingsModal
-        open={settingsOpen}
-        onClose={() => setSettingsOpen(false)}
-        onToast={showToast}
-        onExportProgress={exportProgress}
-        onImportProgress={importProgress}
-      />
 
       <Toasts toasts={toasts} onDismiss={dismissToast} />
     </div>
@@ -551,8 +440,8 @@ function ModuleMenuSkeleton() {
   );
 }
 
-/** Defensa: filtro de formato sin resultados dentro del módulo (no vuelve al catálogo). */
-function ExerciseFilterEmpty({ onClear }: { onClear: () => void }) {
+/** Defensa para módulos publicados sin ejercicios disponibles. */
+function ExerciseFilterEmpty() {
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-y-auto overflow-x-hidden px-4 py-4 md:px-6 md:py-6">
       <div className="mx-auto flex min-h-full w-full max-w-5xl flex-col items-center justify-center rounded-[28px] border border-line bg-surface p-8 text-center sm:p-12">
@@ -561,19 +450,14 @@ function ExerciseFilterEmpty({ onClear }: { onClear: () => void }) {
         </span>
         <p className="section-eyebrow mt-4 text-cream">{"{ Sin ejercicios }"}</p>
         <h1 className="mt-2 text-xl font-semibold tracking-tight text-cream sm:text-2xl">
-          No hay ejercicios de este formato en este módulo
+          Este módulo todavía no tiene ejercicios
         </h1>
         <p className="mt-2 max-w-md text-[15px] leading-relaxed text-muted">
-          Quita el filtro de tipo de ejercicio para ver todos los desafíos del
-          módulo.
+          Vuelve a tus cursos y elige otro módulo mientras se publica el contenido.
         </p>
-        <button
-          type="button"
-          onClick={onClear}
-          className="btn-filled-soft mt-6 !min-h-11"
-        >
-          Ver todos los ejercicios
-        </button>
+        <a href="/aprender" className="btn-filled-soft mt-6 !min-h-11">
+          Volver a mis cursos
+        </a>
       </div>
     </div>
   );

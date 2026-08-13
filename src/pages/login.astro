@@ -1,18 +1,76 @@
 ---
 import Base from "@/layouts/Base.astro";
 import LoginForm from "@/components/auth/LoginForm.tsx";
+import BrandMark from "@/components/brand/BrandMark.tsx";
+
+export const prerender = false;
+
+const requestedNext = Astro.url.searchParams.get("next");
+const initialMode =
+  Astro.url.searchParams.get("mode") === "register" ? "register" : "login";
+const redirectTo =
+  requestedNext?.startsWith("/") && !requestedNext.startsWith("//")
+    ? requestedNext
+    : "/aprender";
 ---
 
 <Base title="Iniciar sesión — Developer Mastery Hub" bodyClass="is-landing">
-  <main class="flex min-h-screen items-center justify-center px-4 py-12">
-    <div class="w-full max-w-md">
-      <a
-        href="/"
-        class="mb-5 inline-flex items-center gap-1.5 text-sm font-semibold text-muted transition-colors hover:text-cream"
-      >
-        ← Volver al inicio
+  <main class="grid min-h-screen lg:grid-cols-[1.05fr_.95fr]">
+    <section class="relative hidden overflow-hidden border-r border-line bg-surface-2 p-10 lg:flex lg:flex-col xl:p-14">
+      <div class="pointer-events-none absolute -left-24 top-20 h-80 w-80 rounded-full bg-brand/15 blur-3xl" aria-hidden="true"></div>
+      <div class="pointer-events-none absolute -bottom-24 right-0 h-80 w-80 rounded-full bg-lilac/15 blur-3xl" aria-hidden="true"></div>
+
+      <a href="/" class="relative inline-flex self-start" aria-label="Mastery Hub — inicio">
+        <BrandMark showWordmark className="h-11 w-auto" />
       </a>
-      <LoginForm client:load />
-    </div>
+
+      <div class="relative my-auto max-w-2xl py-16">
+        <p class="font-mono text-sm text-brand">{"{ Tu espacio de práctica }"}</p>
+        <h1 class="mt-5 text-[clamp(3rem,5.5vw,5.8rem)] font-semibold leading-[.95] tracking-[-0.055em] text-cream">
+          Aprende.<br />
+          Practica.<br />
+          <span class="text-brand">Domina.</span>
+        </h1>
+        <p class="mt-7 max-w-lg text-lg leading-relaxed text-muted">
+          Guarda tu progreso, continúa donde te quedaste y convierte cada concepto
+          en una habilidad que puedes aplicar.
+        </p>
+
+        <div class="mt-10 grid max-w-lg gap-3">
+          <div class="flex items-center gap-3 rounded-[18px] border border-line-soft bg-surface/70 px-4 py-3">
+            <span class="flex h-9 w-9 items-center justify-center rounded-full bg-sky/15 text-sky" aria-hidden="true">⌁</span>
+            <span class="text-sm font-semibold text-cream">Todos tus cursos en un solo lugar</span>
+          </div>
+          <div class="flex items-center gap-3 rounded-[18px] border border-line-soft bg-surface/70 px-4 py-3">
+            <span class="flex h-9 w-9 items-center justify-center rounded-full bg-lilac/15 text-lilac" aria-hidden="true">✓</span>
+            <span class="text-sm font-semibold text-cream">Progreso sincronizado por ejercicio</span>
+          </div>
+          <div class="flex items-center gap-3 rounded-[18px] border border-line-soft bg-surface/70 px-4 py-3">
+            <span class="flex h-9 w-9 items-center justify-center rounded-full bg-orangey/15 text-orangey" aria-hidden="true">✦</span>
+            <span class="text-sm font-semibold text-cream">Explicaciones para aprender de verdad</span>
+          </div>
+        </div>
+      </div>
+
+      <p class="relative text-xs text-faint">
+        Sin prisas. Sin rutas rígidas. A tu propio ritmo.
+      </p>
+    </section>
+
+    <section class="relative flex items-center justify-center px-4 py-8 sm:px-8 sm:py-12">
+      <div class="pointer-events-none absolute right-0 top-0 h-56 w-56 rounded-full bg-brand/10 blur-3xl lg:hidden" aria-hidden="true"></div>
+      <div class="relative w-full max-w-[500px]">
+        <a href="/" class="mb-8 inline-flex lg:hidden" aria-label="Mastery Hub — inicio">
+          <BrandMark showWordmark className="h-10 w-auto" />
+        </a>
+      <a
+          href="/cursos"
+          class="mb-5 flex w-fit items-center gap-2 text-sm font-semibold text-muted transition-colors hover:text-cream"
+      >
+          <span aria-hidden="true">←</span> Volver a los cursos
+      </a>
+      <LoginForm redirectTo={redirectTo} initialMode={initialMode} client:load />
+      </div>
+    </section>
   </main>
 </Base>

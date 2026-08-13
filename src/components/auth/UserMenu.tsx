@@ -5,6 +5,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useAuth } from "@/lib/auth/AuthContext";
+import BrandMark from "@/components/brand/BrandMark";
 
 export default function UserMenu() {
   const { user, role, isDemoMode, signOut } = useAuth();
@@ -40,7 +41,7 @@ export default function UserMenu() {
         ref={toggleRef}
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="flex items-center gap-2 rounded-full border border-line py-1 pl-1 pr-2.5 transition-colors hover:border-brand/40"
+        className="flex h-11 w-11 items-center justify-center gap-2 rounded-full border border-line p-0 transition-colors hover:border-brand/40 sm:h-auto sm:w-auto sm:justify-start sm:py-1 sm:pl-1 sm:pr-2.5"
         aria-haspopup="menu"
         aria-expanded={open}
         aria-label="Menú de usuario"
@@ -69,7 +70,7 @@ export default function UserMenu() {
       {open && (
         <div
           role="menu"
-          className="absolute right-0 top-[calc(100%+8px)] z-50 w-64 rounded-[24px] border border-line bg-surface p-2 shadow-float animate-fade-in"
+          className="isolate absolute right-0 top-[calc(100%+8px)] z-50 w-64 rounded-[24px] border border-line bg-surface p-2 shadow-float animate-fade-in"
         >
           {user ? (
             <>
@@ -96,9 +97,7 @@ export default function UserMenu() {
                     onClick={() => setOpen(false)}
                     className="flex w-full items-center gap-2 rounded-full px-3 py-2 text-left text-sm font-semibold text-brand transition-colors hover:bg-brand/10"
                   >
-                    <span aria-hidden className="text-base">
-                      ◆
-                    </span>
+                    <BrandMark className="h-5 w-5" />
                     Panel admin
                   </a>
                 </>
