@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ALL_MODULES, MODULE_GROUPS } from "@/data";
 import { getSupabase, isSupabaseConfigured } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth/AuthContext";
 import type {
@@ -57,11 +56,22 @@ interface ExerciseRow {
   simulation: unknown;
   format: ExerciseFormat | null;
   format_payload: unknown;
+  hints: unknown;
   position: number;
 }
 
 function deriveGroups(modules: Module[]): string[] {
   return Array.from(new Set(modules.map((m) => m.group || "Otros")));
+}
+
+interface StaticCatalog {
+  modules: Module[];
+  groups: string[];
+}
+
+async function loadStaticCatalog(): Promise<StaticCatalog> {
+  const { ALL_MODULES, MODULE_GROUPS } = await import("@/data");
+  return { modules: ALL_MODULES, groups: MODULE_GROUPS };
 }
 
 function readCache(): CachedModules | null {
@@ -121,6 +131,25 @@ function deserializeFormat(exercise: Exercise, row: ExerciseRow): Exercise {
   return exercise;
 }
 
+/** Normaliza la columna `hints` (jsonb o text[]) a un array de strings limpio. */
+function normalizeHints(raw: unknown): string[] | undefined {
+  if (!raw) return undefined;
+  let list: unknown = raw;
+  // Defensa: si PostgREST entregara el jsonb como string crudo, se parsea.
+  if (typeof raw === "string") {
+    try {
+      list = JSON.parse(raw);
+    } catch {
+      return undefined;
+    }
+  }
+  if (!Array.isArray(list)) return undefined;
+  const cleaned = list.filter(
+    (h): h is string => typeof h === "string" && h.trim().length > 0,
+  );
+  return cleaned.length > 0 ? cleaned : undefined;
+}
+
 function exerciseFromRow(row: ExerciseRow): Exercise {
   const exercise: Exercise = {
     id: row.exercise_ref,
@@ -133,6 +162,7 @@ function exerciseFromRow(row: ExerciseRow): Exercise {
     fileName: row.file_name,
     instruction: row.instruction ?? undefined,
     theory: row.theory ?? undefined,
+    hints: normalizeHints(row.hints),
     explanationText: row.explanation_text,
     codeSnippet: row.code_snippet,
     inputs: (row.inputs ?? {}) as Record<string, ExpectedAnswer>,
@@ -165,13 +195,9 @@ export function useModules() {
   const { user } = useAuth();
   const supabaseReady = isSupabaseConfigured && !!user;
 
-  const [modules, setModules] = useState<Module[]>(() =>
-    isSupabaseConfigured ? [] : ALL_MODULES,
-  );
-  const [groups, setGroups] = useState<string[]>(() =>
-    isSupabaseConfigured ? [] : MODULE_GROUPS,
-  );
-  const [loading, setLoading] = useState<boolean>(() => isSupabaseConfigured);
+  const [modules, setModules] = useState<Module[]>([]);
+  const [groups, setGroups] = useState<string[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
   const modulesRef = useRef(modules);
@@ -239,11 +265,23 @@ export function useModules() {
 
   useEffect(() => {
     if (!supabaseReady) {
-      setModules(ALL_MODULES);
-      setGroups(MODULE_GROUPS);
-      setLoading(false);
+      let cancelled = false;
       setError(null);
-      return;
+      loadStaticCatalog()
+        .then(({ modules: staticModules, groups: staticGroups }) => {
+          if (cancelled) return;
+          setModules(staticModules);
+          setGroups(staticGroups);
+        })
+        .catch(() => {
+          if (!cancelled) setError("No se pudo cargar el catálogo de módulos.");
+        })
+        .finally(() => {
+          if (!cancelled) setLoading(false);
+        });
+      return () => {
+        cancelled = true;
+      };
     }
     setLoading(true);
     const cached = readCache();

@@ -33,13 +33,13 @@ export default function BugHuntFormat({
       >
         {bug.options.map((option, i) => (
           <ChoiceOption
-            key={i}
+            key={option.id}
             index={i}
-            label={option}
-            selected={selected === String(i)}
-            correct={i === bug.correct}
+            label={option.text}
+            selected={selected === option.id}
+            correct={option.id === bug.correct}
             solved={solved}
-            onSelect={() => onAnswerChange("choice", String(i))}
+            onSelect={() => onAnswerChange("choice", option.id)}
           />
         ))}
       </div>

@@ -8,7 +8,7 @@ export const VUETIFY_EXERCISES: Exercise[] = [
     tags: ["createVuetify", "plugin", "Material Design"],
     fileName: "plugins/vuetify.ts",
     completed: false,
-    explanationText: "Vuetify es como una caja de LEGO premium: ya viene con piezas (componentes) diseñadas profesionalmente. Solo las ensamblas.",
+    explanationText: "🌍 Ejemplo cotidiano: Vuetify es una caja de LEGO premium: piezas (componentes) ya diseñadas, solo las ensamblas.\n\ncreateVuetify({ blueprint: md3, theme }) registra Material Design 3 con un tema por defecto. Configurar el blueprint y los colores del tema desde el inicio evita pelear con estilos después.",
     codeSnippet:
 `// plugins/vuetify.ts
 import { createVuetify } from '[INPUT_1]';
@@ -38,7 +38,7 @@ export default createVuetify({
     tags: ["v-row", "v-col", "cols", "responsive"],
     fileName: "Dashboard.vue",
     completed: false,
-    explanationText: "El grid de 12 columnas es como dividir una pizza en 12 rebanadas. Puedes dar 6 a un elemento (mitad) y 6 a otro, o 4+4+4 para tercios.",
+    explanationText: "🌍 Ejemplo cotidiano: el grid de 12 columnas es dividir una pizza en 12 rebanadas: 6+6 o 4+4+4.\n\nv-row es el contenedor y v-col con cols/md/lg define cuántas columnas ocupa por breakpoint. La responsividad (móvil 12, tablet 6, desktop 4) se declara con atributos, sin media queries manuales.",
     codeSnippet:
 `<template>
   <v-[INPUT_1]>
@@ -64,7 +64,7 @@ export default createVuetify({
     tags: ["v-btn", "variant", "loading", "color"],
     fileName: "ActionButtons.vue",
     completed: false,
-    explanationText: "Tip: Usa siempre el color del tema ('primary', 'error') en lugar de colores hardcodeados. Así el theming dinámico funciona correctamente.",
+    explanationText: "🌍 Ejemplo cotidiano: usar el color del tema ('primary') en vez de hardcodear: así el botón sigue al tema oscuro/claro.\n\nv-btn tiene variantes (filled, outlined), estado loading y colores del tema. El loading con prepend-icon es lo que evita dobles clics en formularios reales.",
     codeSnippet:
 `<template>
   <!-- Filled (default) -->
@@ -92,7 +92,17 @@ export default createVuetify({
     tags: ["v-text-field", "rules", "v-form"],
     fileName: "LoginForm.vue",
     completed: false,
-    explanationText: "Las rules en Vuetify son funciones que retornan true si es válido, o un string con el mensaje de error. Similar a los validadores de Angular.",
+    theory: `## Validación con rules en Vuetify
+Una rule es una función (v) => boolean | string: true si pasa, o el mensaje de error si no.
+
+### El patrón
+- Define rules como array de funciones.
+- Pásalas al campo con :rules.
+- En el submit, form.value.validate() las ejecuta todas y devuelve valid.
+
+### Por qué importa
+Centraliza la validación en el formulario y evita el envío de datos inválidos. Recuerda: la validación del front es UX; la del back es la que de verdad protege.`,
+    explanationText: "🌍 Ejemplo cotidiano: las rules son el inspector del formulario: cada una dice 'ok' o el mensaje de error.\n\nUna rule es una función que devuelve true o el string de error; v-form.validate() las ejecuta todas. Validar en el submit (y no en cada tecla) es la UX correcta.",
     codeSnippet:
 `<script setup lang="ts">
 const email = ref('');
@@ -130,7 +140,7 @@ const submit = async () => {
     tags: ["v-data-table", "headers", "items", "pagination"],
     fileName: "UsersTable.vue",
     completed: false,
-    explanationText: "En el mundo laboral, las tablas de datos son casi omnipresentes en dashboards. Vuetify las maneja con muy poco código comparado con implementarlas desde cero.",
+    explanationText: "🌍 Ejemplo cotidiano: la tabla de datos es la reina de los dashboards; Vuetify la da hecha con poco código.\n\nheaders define columnas (title, key, sortable) e items los datos; v-data-table ya trae orden, paginación y slots por celda (#item.actions). Implementar eso a mano son cientos de líneas.",
     codeSnippet:
 `<script setup lang="ts">
 const headers = [
@@ -163,7 +173,7 @@ const headers = [
     tags: ["v-navigation-drawer", "v-app-bar", "drawer"],
     fileName: "AppLayout.vue",
     completed: false,
-    explanationText: "El patrón Drawer+AppBar es el layout estándar de Material Design. Lo ves en Gmail, Google Drive, la mayoría de dashboards empresariales.",
+    explanationText: "🌍 Ejemplo cotidiano: el patrón Drawer+AppBar es el layout estándar que ves en Gmail y Drive.\n\nv-navigation-drawer es el sidebar (con v-model para abrir/colapsar) y v-app-bar la barra superior con el botón hamburguesa. v-main envuelve el contenido; el patrón se repite en casi todo dashboard.",
     codeSnippet:
 `<script setup lang="ts">
 const drawer = ref(true);
@@ -201,7 +211,7 @@ const drawer = ref(true);
     tags: ["v-dialog", "v-model", "persistent"],
     fileName: "ConfirmDialog.vue",
     completed: false,
-    explanationText: "Tip: Crea un composable useConfirmDialog() para reutilizar la lógica de confirmación en toda la app en lugar de duplicar el modal.",
+    explanationText: "🌍 Ejemplo cotidiano: un solo useConfirmDialog() reutilizable en vez de duplicar el modal en cada pantalla.\n\nv-dialog se controla con :model-value + @update:modelValue; persistent impide cerrarlo con clic fuera. La lógica de confirmación centralizada evita diez modales ligeramente distintos.",
     codeSnippet:
 `<script setup lang="ts">
 const props = defineProps<{ modelValue: boolean; title: string }>();
@@ -237,7 +247,7 @@ const emit = defineEmits<{
     tags: ["v-snackbar", "timeout", "composable"],
     fileName: "composables/useSnackbar.ts",
     completed: false,
-    explanationText: "En proyectos reales, crear un composable useSnackbar() evita repetir la lógica de notificaciones en cada componente.",
+    explanationText: "🌍 Ejemplo cotidiano: un useSnackbar() global en vez de repetir la lógica de toast en cada componente.\n\nv-snackbar muestra el mensaje temporal; registrarlo una vez en el layout y exponer notify() hace que cualquier componente avise al usuario sin duplicar código.",
     codeSnippet:
 `// composables/useSnackbar.ts
 const snackbar = [INPUT_1]({
@@ -270,7 +280,17 @@ export function useSnackbar() {
     tags: ["useTheme", "dark", "light", "toggle"],
     fileName: "composables/useAppTheme.ts",
     completed: false,
-    explanationText: "Buena práctica de UX: el tema debe persistir en localStorage y respetar la preferencia del sistema operativo como valor inicial.",
+    theory: `## Theming dinámico en Vuetify
+El tema se cambia en runtime sin recargar, y debe recordar la preferencia del usuario.
+
+### El patrón
+- useTheme() expone theme.global.name (light/dark).
+- El toggle alterna el valor y lo guarda en localStorage.
+- Al montar, inicializa desde localStorage (o usePreferredDark).
+
+### Por qué importa
+Sin persistencia, el usuario elige el tema en cada visita. Respetar la preferencia del sistema como valor inicial es el detalle que separa una app pulida.`,
+    explanationText: "🌍 Ejemplo cotidiano: el tema oscuro/claro debe recordarse entre visitas y respetar la preferencia del sistema.\n\nuseTheme().global.name.value alterna 'light'/'dark' en runtime; persistir en localStorage (e inicializar desde ahí) evita que el usuario elija cada vez. Es UX básica en 2026.",
     codeSnippet:
 `import { useTheme } from '[INPUT_1]';
 
@@ -302,7 +322,7 @@ export function useAppTheme() {
     tags: ["v-autocomplete", "async", "search"],
     fileName: "UserSelector.vue",
     completed: false,
-    explanationText: "Patrón muy común en apps empresariales: seleccionar un cliente, producto o usuario buscando por nombre mientras escribes.",
+    explanationText: "🌍 Ejemplo cotidiano: buscar un cliente mientras escribes, con las opciones llegando de la API.\n\nv-model:search + watch dispara el $fetch cuando hay 2+ caracteres; :loading muestra el spinner. El debounce del watch evita martillar la API con cada tecla.",
     codeSnippet:
 `<script setup lang="ts">
 const search = ref('');
@@ -338,7 +358,7 @@ watch(search, async (val) => {
     tags: ["aria-label", "role", "focus", "a11y"],
     fileName: "AccessibleDialog.vue",
     completed: false,
-    explanationText: "Accesibilidad no es opcional en proyectos empresariales. Muchos clientes corporativos lo exigen y en algunos países es requisito legal.",
+    explanationText: "🌍 Ejemplo cotidiano: la accesibilidad no es opcional: clientes corporativos la exigen y en algunos países es ley.\n\nVuetify aporta roles ARIA y focus trap automáticos, pero debes completar: aria-label en íconos sin texto y role/aria-describedby en diálogos. Lo automático no cubre el 100%.",
     codeSnippet:
 `<template>
   <!-- v-btn automáticamente tiene role='button' -->
@@ -374,7 +394,19 @@ watch(search, async (val) => {
     tags: ["SCSS", "variables", "deep customization"],
     fileName: "assets/vuetify-overrides.scss",
     completed: false,
-    explanationText: "Tip senior: Los design tokens (variables SCSS) son el contrato entre diseño y desarrollo. Cambias la variable una vez y aplica en toda la app.",
+    theory: `## Customización profunda con SCSS
+Las variables SCSS de Vuetify son design tokens: el contrato entre diseño y desarrollo.
+
+### Cómo se sobreescriben
+\`@use 'vuetify' with ($body-font-family: ..., $card-border-radius: ...)\` antes de importar Vuetify.
+
+### Por qué importa
+- Cambias el token una vez y se propaga a toda la app.
+- Mantiene consistencia sin CSS de parche con !important.
+
+### Cuándo
+Solo para personalización profunda. Para ajustes puntuales, los props y el tema alcanzan.`,
+    explanationText: "🌍 Ejemplo cotidiano: los design tokens son el contrato entre diseño y desarrollo: cambias la variable una vez y aplica en toda la app.\n\n@use 'vuetify' with (...) sobreescribe variables SCSS (fuente, radios, transiciones) antes de importar Vuetify. Así personalizas de raíz sin pelear con la especificidad de CSS.",
     codeSnippet:
 `// assets/vuetify-overrides.scss
 // Importar ANTES de Vuetify

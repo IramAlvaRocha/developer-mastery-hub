@@ -25,7 +25,7 @@ const BASH_EXERCISES_RAW: Exercise[] = [
     objective: "moverte por el sistema de archivos",
     tags: ["pwd", "ls", "cd"],
     fileName: "terminal", completed: false,
-    explanationText: "La terminal es como explorar una casa a oscuras: pwd te dice en qué cuarto estás, ls enciende la luz para ver qué hay, y cd es caminar a otra habitación.",
+    explanationText: "🌍 Ejemplo cotidiano: explorar una casa a oscuras: pwd te dice en qué cuarto estás, ls enciende la luz para ver qué hay y cd es caminar a otra habitación.\n\npwd (print working directory) imprime tu carpeta actual, ls lista su contenido y cd cambia de directorio. Sin estos tres no puedes orientarte: son el primer filtro de cualquier entrevista de terminal.",
     codeSnippet: "# Empareja cada comando con su efecto",
     inputs: {},
     completeCode: "pwd | ls | cd proyectos | cd ..",
@@ -52,7 +52,7 @@ const BASH_EXERCISES_RAW: Exercise[] = [
     objective: "leer detalles de los archivos con ls",
     tags: ["ls", "flags", "hidden"],
     fileName: "terminal", completed: false,
-    explanationText: "Las flags son como lentes intercambiables sobre la misma cámara: -l añade detalle, -a revela lo oculto, -h traduce los tamaños a algo humano.",
+    explanationText: "🌍 Ejemplo cotidiano: las flags son lentes intercambiables sobre la misma cámara: el mismo ls, con más detalle o revelando lo oculto.\n\n-l muestra permisos, dueño y fecha; -a incluye los archivos que empiezan con punto (ocultos); -h traduce los bytes a K/M/G legibles. Combinarlas (-lah) es la forma habitual de inspeccionar un directorio.",
     codeSnippet:
 `# Listado largo: permisos, dueño, tamaño y fecha
 ls [INPUT_1]
@@ -75,7 +75,7 @@ ls [INPUT_3]`,
     objective: "crear y eliminar archivos y carpetas",
     tags: ["mkdir", "touch", "rm"],
     fileName: "terminal", completed: false,
-    explanationText: "mkdir es construir un cajón, touch es meter una hoja en blanco, rm es la trituradora: en la terminal no hay papelera de reciclaje, lo borrado se va para siempre.",
+    explanationText: "🌍 Ejemplo cotidiano: mkdir construye el cajón, touch mete una hoja en blanco y rm es la trituradora: no hay papelera de reciclaje.\n\nmkdir crea carpetas, touch crea archivos vacíos (o actualiza su fecha) y rm borra de forma permanente. Por eso un rm -rf en la carpeta equivocada es un desastre irrecuperable: piensa antes de borrar.",
     codeSnippet: "# Empareja cada comando con su efecto",
     inputs: {},
     completeCode: "mkdir src | touch index.js | rm index.js | rmdir src",
@@ -102,7 +102,7 @@ ls [INPUT_3]`,
     objective: "copiar, mover y renombrar archivos",
     tags: ["cp", "mv", "rename"],
     fileName: "terminal", completed: false,
-    explanationText: "cp es una fotocopia (quedan dos), mv es trasladar el original (queda uno). Renombrar es simplemente mover algo... a sí mismo con otro nombre.",
+    explanationText: "🌍 Ejemplo cotidiano: cp es una fotocopia (quedan dos), mv traslada el original (queda uno). Renombrar es mover algo... a sí mismo con otro nombre.\n\ncp copia y mv mueve/renombra: en bash renombrar y mover son el mismo comando. Confundirlos te deja archivos duplicados o extraviados; en entrevistas preguntan justamente por qué renombrar es mv.",
     codeSnippet:
 `# Copiar config.json a config.backup.json
 [INPUT_1] config.json config.backup.json
@@ -121,7 +121,7 @@ mv viejo.txt [INPUT_3]`,
     objective: "operar sobre carpetas completas",
     tags: ["mkdir -p", "cp -r", "rm -rf"],
     fileName: "terminal", completed: false,
-    explanationText: "Sin -r tratas solo una hoja; con -r mueves el árbol entero con sus ramas. rm -rf es una motosierra sin freno: rapidísima y sin perdón, úsala con respeto.",
+    explanationText: "🌍 Ejemplo cotidiano: sin -r tocas una hoja; con -r mueves el árbol entero con sus ramas. rm -rf es una motosierra sin freno.\n\n-r (recursive) hace que cp/rm operen sobre carpetas completas, y -p crea los directorios padre que falten. rm -rf no pregunta ni perdona y no hay undo en la terminal: úsalo con respeto.",
     codeSnippet:
 `# Crear una ruta anidada de una sola vez (crea los padres que falten)
 mkdir [INPUT_1] src/components/ui
@@ -144,7 +144,7 @@ rm [INPUT_3] node_modules`,
     objective: "inspeccionar el contenido de un archivo",
     tags: ["cat", "head", "tail", "tail -f"],
     fileName: "terminal", completed: false,
-    explanationText: "cat vacía el archivo entero de golpe; head/tail leen solo los extremos (como hojear el inicio o el final de un libro); tail -f es una cámara en directo del log.",
+    explanationText: "🌍 Ejemplo cotidiano: cat vuelca el libro entero, head/tail hojean solo el inicio o el final, y tail -f es una cámara en directo del log.\n\ncat imprime todo el archivo, head -n y tail -n recortan las primeras/últimas líneas, y tail -f sigue mostrando lo nuevo en vivo. Elegir bien evita llenar la terminal o perderte el error en logs enormes.",
     codeSnippet: "# Empareja cada comando con su efecto",
     inputs: {},
     completeCode: "cat | head -n 20 | tail -n 20 | tail -f (streaming)",
@@ -173,7 +173,7 @@ rm [INPUT_3] node_modules`,
     objective: "buscar archivos por nombre",
     tags: ["find", "-name", "-type"],
     fileName: "terminal", completed: false,
-    explanationText: "find es un perro rastreador: le das un punto de partida (.) y una pista (-name) y olfatea todas las subcarpetas hasta dar con la presa.",
+    explanationText: "🌍 Ejemplo cotidiano: find es un perro rastreador: le das el punto de partida (.) y una pista (-name) y olfatea todas las subcarpetas.\n\nfind busca archivos por nombre con comodines (*.log) y puede filtrar por tipo (-type f). Saber usarlo te evita el explorador lento cuando no recuerdas dónde quedó un archivo.",
     codeSnippet:
 `# Buscar un archivo por nombre desde la carpeta actual
 find . [INPUT_1] "package.json"
@@ -192,7 +192,7 @@ find . -type [INPUT_3] -name "*.ts"`,
     objective: "filtrar por tiempo/tamaño y actuar",
     tags: ["find", "-mtime", "-size", "-delete"],
     fileName: "terminal", completed: false,
-    explanationText: "find no solo encuentra: también actúa. Es como un robot que recoge la basura (-name '*.tmp') y la tira (-delete) en una sola pasada.",
+    explanationText: "🌍 Ejemplo cotidiano: find no solo encuentra: también actúa, como un robot que recoge la basura y la tira en una sola pasada.\n\n-mtime -1 filtra lo modificado hace menos de 1 día, -size +100M lo de más de 100 MB, y -delete ejecuta el borrado. Combinar filtro + acción es el truco para limpiar discos sin revisar carpeta por carpeta.",
     codeSnippet:
 `# Archivos modificados en las últimas 24h (menos de 1 día)
 find . -type f -mtime [INPUT_1]
@@ -211,7 +211,7 @@ find . -name "*.tmp" -[INPUT_3]`,
     objective: "buscar texto dentro de archivos",
     tags: ["grep", "-i", "-n"],
     fileName: "terminal", completed: false,
-    explanationText: "grep es el Ctrl+F de la terminal, pero capaz de mirar dentro de miles de archivos a la vez. -i lo vuelve daltónico a mayúsculas; -n te dice la línea exacta.",
+    explanationText: "🌍 Ejemplo cotidiano: grep es el Ctrl+F de la terminal, pero mira dentro de miles de archivos a la vez.\n\ngrep busca texto en archivos; -i ignora mayúsculas y -n muestra el número de línea. Es la herramienta diaria para rastrear errores en logs o TODOs en el código.",
     codeSnippet:
 `# Buscar "TODO" dentro de un archivo
 grep "TODO" [INPUT_1]
@@ -234,7 +234,7 @@ grep [INPUT_3] "import" main.ts`,
     objective: "buscar de forma recursiva en carpetas",
     tags: ["grep -r", "-l", "--include"],
     fileName: "terminal", completed: false,
-    explanationText: "grep -r es soltar el sabueso por toda la casa en vez de un solo cuarto. -l te da solo la lista de habitaciones donde encontró algo, no cada pelo hallado.",
+    explanationText: "🌍 Ejemplo cotidiano: grep -r suelta el sabueso por toda la casa; -l te da solo la lista de habitaciones, no cada pelo hallado.\n\n-r busca de forma recursiva en carpetas, -l lista solo nombres de archivo y --include filtra por extensión. En un repo grande, esta combinación localiza una cadena en segundos sin inundarte de líneas.",
     codeSnippet:
 `# Buscar "useState" en TODO el proyecto (recursivo)
 grep [INPUT_1] "useState" .
@@ -259,7 +259,7 @@ grep -r --[INPUT_3]="*.ts" "TODO" .`,
     objective: "encadenar comandos con un pipe",
     tags: ["pipe", "|", "grep"],
     fileName: "terminal", completed: false,
-    explanationText: "El pipe es una cinta transportadora: la fábrica A escupe piezas y la fábrica B las recibe sin que toquen el suelo. Así combinas comandos pequeños en herramientas potentes.",
+    explanationText: "🌍 Ejemplo cotidiano: el pipe es una cinta transportadora: la fábrica A escupe piezas y la B las recibe sin tocar el suelo.\n\nEl | conecta la salida (stdout) de un comando con la entrada (stdin) del siguiente. Es el superpoder de la shell: encadenas herramientas simples para resolver problemas que ninguna resuelve sola.",
     codeSnippet: "# Ordena la cadena: leer el log → filtrar ERRORES → contarlos",
     inputs: {},
     completeCode: "cat app.log | grep \"ERROR\" | wc -l",
@@ -280,7 +280,7 @@ grep -r --[INPUT_3]="*.ts" "TODO" .`,
     objective: "ordenar y contar líneas repetidas",
     tags: ["sort", "uniq", "pipe"],
     fileName: "terminal", completed: false,
-    explanationText: "uniq solo ve duplicados pegados, por eso SIEMPRE va detrás de sort (como agrupar cartas por palo antes de contarlas). sort -rn al final = ranking de mayor a menor.",
+    explanationText: "🌍 Ejemplo cotidiano: uniq solo ve duplicados pegados, por eso siempre va detrás de sort, como agrupar cartas por palo antes de contarlas.\n\nsort ordena líneas, uniq elimina consecutivas y uniq -c cuenta repeticiones; sort -rn al final arma el ranking de mayor a menor. Es la receta clásica para analizar logs de acceso.",
     codeSnippet:
 `# Ordenar líneas alfabéticamente
 sort nombres.txt
@@ -302,7 +302,7 @@ sort access.log | uniq -c | sort [INPUT_3]`,
     objective: "extraer columnas de texto",
     tags: ["cut", "awk", "-F"],
     fileName: "terminal", completed: false,
-    explanationText: "Piensa en cada línea como una fila de Excel: cut y awk son las tijeras que recortan justo la columna que te interesa, ignorando el resto.",
+    explanationText: "🌍 Ejemplo cotidiano: cada línea es una fila de Excel; cut y awk son las tijeras que recortan justo la columna que te interesa.\n\ncut -d: -f1 extrae la 1ª columna con separador :, mientras awk '{print $1}' separa por espacios. Son imprescindibles para procesar logs, CSV y /etc/passwd sin abrir una hoja de cálculo.",
     codeSnippet:
 `# Extraer la 1ª columna usando ":" como separador
 cut [INPUT_1]: -f1 /etc/passwd
@@ -321,7 +321,7 @@ awk -F[INPUT_3] '{print $2}' data.csv`,
     objective: "sustituir texto con sed",
     tags: ["sed", "s///", "-i"],
     fileName: "terminal", completed: false,
-    explanationText: "sed es buscar-y-reemplazar de Word, pero por línea de comandos y sin abrir nada. La 'g' es 'todas las del renglón'; sin g, solo la primera de cada línea.",
+    explanationText: "🌍 Ejemplo cotidiano: sed es buscar-y-reemplazar de Word, pero por línea de comandos y sin abrir nada.\n\ns/foo/bar/ cambia la primera aparición por línea, la flag g las cambia todas, y -i edita el archivo en el sitio. Es la base del refactor masivo y de editar configs en servidores sin editor.",
     codeSnippet:
 `# Reemplazar la 1ª aparición de "foo" por "bar" en cada línea
 sed 's/foo/[INPUT_1]/' archivo.txt
@@ -340,7 +340,7 @@ sed [INPUT_3] 's/v1/v2/g' config.yml`,
     objective: "pasar resultados como argumentos",
     tags: ["xargs", "-0", "pipe"],
     fileName: "terminal", completed: false,
-    explanationText: "Algunos comandos (rm, mv...) no leen del pipe, esperan argumentos. xargs es el traductor: toma la lista que llega por la cinta y la entrega 'en la mano' al siguiente comando.",
+    explanationText: "🌍 Ejemplo cotidiano: xargs es el traductor: algunos comandos (rm, mv) esperan argumentos y no leen de la cinta; él les entrega la lista 'en la mano'.\n\nxargs convierte las líneas de stdin en argumentos del siguiente comando, y -0 lo hace seguro con nombres que llevan espacios. Sin él, un find ... | rm no haría nada.",
     codeSnippet:
 `# Borrar todos los .tmp que encuentre find
 find . -name "*.tmp" | [INPUT_1] rm
@@ -361,7 +361,7 @@ find . -name "*.log" -print0 | xargs [INPUT_3] rm`,
     objective: "cambiar permisos de archivos",
     tags: ["chmod", "+x", "755"],
     fileName: "deploy.sh", completed: false,
-    explanationText: "Los permisos son las llaves de una puerta: r (leer), w (escribir), x (ejecutar). 755 en binario = dueño con todas las llaves, los demás solo entran y miran.",
+    explanationText: "🌍 Ejemplo cotidiano: los permisos son las llaves de una puerta: r lee, w escribe, x ejecuta.\n\nchmod +x da permiso de ejecución a un script; 755 = dueño todo (rwx), grupo y otros solo leen/ejecutan; 644 = dueño escribe, resto lee. Mal configurados, un script no arranca o un secreto queda expuesto.",
     codeSnippet:
 `# Dar permiso de EJECUCIÓN a un script
 chmod [INPUT_1] deploy.sh
@@ -380,7 +380,7 @@ chmod [INPUT_3] config.env`,
     objective: "cambiar el dueño de un archivo",
     tags: ["chown", "ls -l", "owner"],
     fileName: "terminal", completed: false,
-    explanationText: "chown es cambiar la escritura de propiedad de una casa. La sintaxis usuario:grupo es como decir 'dueño:familia que también tiene llave'.",
+    explanationText: "🌍 Ejemplo cotidiano: chown cambia la escritura de propiedad de la casa; usuario:grupo es 'dueño : familia que también tiene llave'.\n\nchown transfiere el propietario/grupo de un archivo y ls -l lo muestra en el orden dueño:grupo. Importa cuando un servicio (nginx, deploy) debe leer archivos que creó otro usuario.",
     codeSnippet:
 `# Cambiar el dueño del archivo a "deploy"
 sudo chown [INPUT_1] app.conf
@@ -399,7 +399,7 @@ ls [INPUT_3] app.conf`,
     objective: "encontrar y terminar procesos",
     tags: ["ps aux", "kill", "kill -9"],
     fileName: "terminal", completed: false,
-    explanationText: "kill (SIGTERM) es tocar el hombro: 'oye, ve cerrando'. kill -9 (SIGKILL) es desenchufar de golpe: úsalo solo si el proceso está colgado y no responde.",
+    explanationText: "🌍 Ejemplo cotidiano: kill (SIGTERM) es tocar el hombro 've cerrando'; kill -9 (SIGKILL) es desenchufar de golpe.\n\nps aux lista procesos, grep los filtra y kill envía señales por PID. SIGTERM deja al proceso cerrar limpio; reserva -9 para procesos colgados, porque no libera recursos de forma ordenada.",
     codeSnippet:
 `# Listar TODOS los procesos del sistema
 ps [INPUT_1]
@@ -421,7 +421,7 @@ kill [INPUT_4] 4521`,
     objective: "inspeccionar puertos y disco",
     tags: ["lsof", "df", "du"],
     fileName: "terminal", completed: false,
-    explanationText: "'Port 3000 already in use' es el error más común del dev. lsof -i :3000 es el detective que descubre quién okupó tu puerto para poder echarlo.",
+    explanationText: "🌍 Ejemplo cotidiano: 'Port 3000 already in use' es el error diario del dev; lsof -i :3000 es el detective que descubre quién okupó tu puerto.\n\nlsof -i :PUERTO muestra qué proceso escucha ahí, df -h el disco libre y du -sh el peso de una carpeta. Son los tres diagnósticos rápidos cuando algo 'no arranca'.",
     codeSnippet:
 `# ¿Qué proceso está usando el puerto 3000?
 lsof [INPUT_1]:3000
@@ -444,7 +444,7 @@ du [INPUT_3] .`,
     objective: "manejar procesos en segundo plano",
     tags: ["&", "jobs", "fg", "nohup"],
     fileName: "terminal", completed: false,
-    explanationText: "& manda el proceso a trabajar 'en otra mesa' para que tú sigas escribiendo. nohup es ponerle tapones en los oídos: ignora la señal de 'colgamos la terminal' y sigue vivo.",
+    explanationText: "🌍 Ejemplo cotidiano: & manda el proceso a trabajar 'en otra mesa'; nohup le pone tapones para que siga vivo aunque cuelgues la terminal.\n\n& lanza en segundo plano, jobs los lista y fg %1 los trae al frente. nohup desliga el proceso de la sesión: sin él, cerrar la terminal mata tu servidor.",
     codeSnippet:
 `# Lanzar el servidor en segundo plano
 npm run dev [INPUT_1]
@@ -466,7 +466,7 @@ fg [INPUT_3]
     objective: "definir variables y atajos",
     tags: ["export", "$PATH", "alias"],
     fileName: "~/.bashrc", completed: false,
-    explanationText: "Las variables de entorno son notas adhesivas que dejas para los programas ($NODE_ENV les dice en qué modo correr). PATH es la lista de cajones donde la shell busca comandos.",
+    explanationText: "🌍 Ejemplo cotidiano: las variables de entorno son notas adhesivas para los programas; PATH es la lista de cajones donde la shell busca comandos.\n\nexport define una variable visible para los procesos hijos, $VAR la lee y alias crea atajos. Añade al PATH con $PATH:... para no pisar lo que ya estaba.",
     codeSnippet:
 `# Definir una variable de entorno para la sesión
 [INPUT_1] NODE_ENV=production
@@ -511,7 +511,7 @@ Esta es la causa #1 de pánico: abres vim, escribes... y nada funciona.
 4. Escribes \`:wq\` → **w**rite (guardar) + **q**uit (salir).
 
 Regla de oro: si algo raro pasa, pulsa \`Esc\` y respira.`,
-    explanationText: "Vim es un coche con marchas: el modo NORMAL es el embrague (controlas el coche), INSERCIÓN es el acelerador (escribes). Mucha gente choca por querer acelerar sin soltar el embrague.",
+    explanationText: "🌍 Ejemplo cotidiano: Vim es un coche con marchas: NORMAL es el embrague (controlas), INSERCIÓN es el acelerador (escribes).\n\nAl abrir estás en modo NORMAL: las teclas son comandos. Entras con i, vuelves con Esc y guardas/sales con :wq. La mayoría 'choca' por escribir sin entrar antes en inserción.",
     codeSnippet:
 `# Abrir un archivo en vim (apareces en modo NORMAL)
 vim notas.txt
@@ -541,7 +541,7 @@ vim notas.txt
     objective: "descartar cambios y deshacer en vim",
     tags: ["vim", ":q!", "undo"],
     fileName: "vim", completed: false,
-    explanationText: "El ! en :q! es vim diciendo '¿seguro? pues a la fuerza': tira los cambios sin preguntar. 'u' es el Ctrl+Z de toda la vida.",
+    explanationText: "🌍 Ejemplo cotidiano: :q! es vim diciendo '¿seguro? pues a la fuerza': tira los cambios sin preguntar.\n\n:q! sale descartando cambios, u deshace y Ctrl-r rehace. Memoriza :q! primero: es tu salida de emergencia cuando entras sin querer y no quieres romper nada.",
     codeSnippet:
 `# Salir SIN guardar, descartando los cambios (forzado con !)
 [INPUT_1]
@@ -567,7 +567,7 @@ vim notas.txt
     objective: "navegar y editar líneas en vim",
     tags: ["vim", "dd", "yy", "gg"],
     fileName: "vim", completed: false,
-    explanationText: "En vim los comandos se 'leen': dd = delete-delete (borra línea), yy = yank-yank (copia línea), gg sube arriba del todo, G (mayúscula) baja al final. Es un idioma, no atajos sueltos.",
+    explanationText: "🌍 Ejemplo cotidiano: los comandos de vim se 'leen': dd = borrar línea, yy = copiar, gg sube, G baja. Es un idioma, no atajos sueltos.\n\nEn modo NORMAL, letras dobles y mayúsculas son verbos compuestos. Dominar unos pocos (dd, yy, p, gg, G) te hace editar sin ratón, clave en servidores remotos y rebases interactivos.",
     codeSnippet:
 `# Ir al FINAL del archivo (modo normal)
 [INPUT_1]
@@ -592,7 +592,7 @@ p`,
     objective: "buscar y reemplazar en vim",
     tags: ["vim", "search", ":%s"],
     fileName: "vim", completed: false,
-    explanationText: ":%s/v1/v2/g se lee 'en todo el archivo (%), sustituye (s) v1 por v2, todas las del renglón (g)'. Es el mismo idioma de sed: ya sabías más vim de lo que creías.",
+    explanationText: "🌍 Ejemplo cotidiano: :%s/v1/v2/g se lee 'en todo el archivo, sustituye v1 por v2, todas las del renglón'.\n\n/ busca hacia abajo y n salta a la siguiente coincidencia; :%s hace reemplazo global. Es el mismo dialecto que sed: si sabes sed, ya sabías más vim de lo que creías.",
     codeSnippet:
 `# Buscar la palabra "config" hacia abajo (modo normal)
 [INPUT_1]config
@@ -620,7 +620,7 @@ n
     objective: "crear y cambiar entre ramas",
     tags: ["git branch", "switch", "checkout"],
     fileName: "terminal", completed: false,
-    explanationText: "Una rama es una línea temporal paralela: experimentas en feature/login sin tocar la realidad oficial (main). git switch es la versión moderna y clara de checkout para ramas.",
+    explanationText: "🌍 Ejemplo cotidiano: una rama es una línea temporal paralela: experimentas en feature/login sin tocar la realidad oficial (main).\n\ngit branch lista, git switch -c crea y cambia (moderno) y checkout -b es el equivalente clásico. Aislar el trabajo en ramas es la base del trabajo en equipo sin pisarse.",
     codeSnippet:
 `# Ver en qué rama estás y listar las ramas locales
 git [INPUT_1]
@@ -642,7 +642,7 @@ git switch [INPUT_4]`,
     objective: "guardar y subir tus cambios",
     tags: ["git add", "commit", "push"],
     fileName: "terminal", completed: false,
-    explanationText: "add es meter cosas en la caja (staging), commit es cerrarla y etiquetarla (foto del momento), push es enviarla al almacén compartido (remoto). -u conecta tu rama local con la remota.",
+    explanationText: "🌍 Ejemplo cotidiano: add mete cosas en la caja, commit la cierra y etiqueta, push la envía al almacén compartido.\n\nstatus muestra el estado, add . prepara todo, commit -m crea la foto y push -u sube la rama por primera vez. El orden importa: sin add no hay commit, sin commit no hay push.",
     codeSnippet:
 `# Ver el estado: qué cambió, qué está en staging
 git [INPUT_1]
@@ -669,7 +669,7 @@ git push [INPUT_4] origin feature/login`,
     objective: "traer e integrar cambios remotos",
     tags: ["git fetch", "pull", "merge"],
     fileName: "terminal", completed: false,
-    explanationText: "fetch es ir al buzón y traer las cartas SIN abrirlas (descarga, no toca tu código). pull = fetch + abrir y fusionar de golpe. --rebase mantiene la historia en línea recta.",
+    explanationText: "🌍 Ejemplo cotidiano: fetch trae las cartas del buzón SIN abrirlas; pull las trae y las fusiona de golpe.\n\nfetch solo descarga, pull = fetch + merge, y pull --rebase reaplica tus commits encima manteniendo la historia lineal. Elegir bien evita sorpresas al integrar el trabajo del equipo.",
     codeSnippet:
 `# Descargar cambios del remoto SIN fusionarlos aún
 git [INPUT_1]
@@ -712,7 +712,7 @@ la otra versión (la rama que fusionas)
 5. \`git commit\` → confirma la fusión.
 
 Tip: \`git merge --abort\` cancela todo y te devuelve al estado previo si te agobias.`,
-    explanationText: "Un conflicto es git diciendo 'dos personas editaron la misma frase del documento, decide tú cuál vale'. Los <<<< ==== >>>> solo marcan dónde está el desacuerdo.",
+    explanationText: "🌍 Ejemplo cotidiano: un conflicto es git diciendo 'dos editaron la misma frase: decide tú cuál vale'.\n\nLos marcadores <<<<<<< ======= >>>>>>> delimitan tu versión y la otra; borras los tres, dejas el código final y haces git add + commit. Sin resolverlo, no puedes seguir fusionando.",
     codeSnippet:
 `# Intentas fusionar y aparece el conflicto
 git merge feature/x
@@ -744,7 +744,7 @@ git commit`,
     objective: "guardar cambios temporalmente",
     tags: ["git stash", "pop", "list"],
     fileName: "terminal", completed: false,
-    explanationText: "stash es el cajón mágico del escritorio: barres ahí los papeles a medias para dejar la mesa limpia, atiendes lo urgente en otra rama, y luego con pop los sacas tal cual estaban.",
+    explanationText: "🌍 Ejemplo cotidiano: stash es el cajón mágico: barres ahí los papeles a medias, atiendes lo urgente y con pop los sacas tal cual.\n\nstash guarda cambios sin commitear para cambiar de rama limpio; stash list los lista y pop recupera el último y lo elimina. Evita commits basura solo para poder cambiar de contexto.",
     codeSnippet:
 `# Guardar tus cambios sin commitear (para cambiar de rama limpio)
 git stash
@@ -775,7 +775,7 @@ git stash apply`,
     objective: "deshacer commits y recuperar trabajo",
     tags: ["git reset", "reflog", "--soft"],
     fileName: "terminal", completed: false,
-    explanationText: "reflog es la red de seguridad secreta de git: registra CADA movimiento de HEAD. Aunque creas que borraste un commit con reset --hard, casi siempre sigue ahí, recuperable.",
+    explanationText: "🌍 Ejemplo cotidiano: reflog es la red de seguridad secreta: registra CADA movimiento de HEAD, así 'lo borrado' casi siempre es recuperable.\n\nreset --soft deshace el commit y conserva los cambios; --hard los descarta. Antes de entrar en pánico, git reflog te da el hash para recuperar cualquier commit perdido.",
     codeSnippet:
 `# Deshacer el último commit pero MANTENER los cambios (en staging)
 git reset [INPUT_1] HEAD~1
@@ -802,7 +802,7 @@ git reset --hard [INPUT_4]`,
     objective: "aplicar commits sueltos de otra rama",
     tags: ["cherry-pick", "--no-commit", "--continue"],
     fileName: "terminal", completed: false,
-    explanationText: "cherry-pick es ir al árbol de otra rama y arrancar SOLO la cereza que quieres, sin llevarte la rama entera. Perfecto para pasar un fix puntual de develop a main.",
+    explanationText: "🌍 Ejemplo cotidiano: cherry-pick arranca SOLO la cereza que quieres de otra rama, sin llevarte el árbol entero.\n\ncherry-pick <hash> aplica un commit concreto, -n lo deja en staging sin commitear y --continue sigue tras resolver un conflicto. Es la vía limpia para portar un hotfix sin fusionar la rama completa.",
     codeSnippet:
 `# Traer UN commit específico (por su hash) a la rama actual
 git cherry-pick [INPUT_1]
@@ -828,7 +828,7 @@ git cherry-pick [INPUT_3]`,
     objective: "encontrar el commit que rompió algo",
     tags: ["git bisect", "good", "bad"],
     fileName: "terminal", completed: false,
-    explanationText: "bisect es el '¿caliente o frío?' del detective: parte el historial por la mitad una y otra vez. De 1000 commits, encuentra el culpable en ~10 pasos en lugar de revisarlos uno a uno.",
+    explanationText: "🌍 Ejemplo cotidiano: bisect es el '¿caliente o frío?' del detective: parte el historial a la mitad una y otra vez.\n\nMarcando bad el commit roto y good uno sano, bisect hace búsqueda binaria: en ~10 pasos encuentra el culpable entre 1000 commits. Imbatible para cazar regresiones.",
     codeSnippet:
 `# Iniciar la búsqueda binaria del commit culpable
 git bisect [INPUT_1]
@@ -850,7 +850,7 @@ git bisect [INPUT_4]`,
     objective: "usar worktrees y descartar cambios",
     tags: ["worktree", "restore", "--staged"],
     fileName: "terminal", completed: false,
-    explanationText: "worktree te da una segunda mesa de trabajo: revisas un hotfix en main en otra carpeta SIN tener que stashear lo que tienes a medias en tu feature. git restore es el reemplazo claro y seguro de checkout para descartar.",
+    explanationText: "🌍 Ejemplo cotidiano: worktree te da una segunda mesa de trabajo: atiendes un hotfix en main sin stashear tu feature a medias.\n\nworktree add abre otra rama en una carpeta aparte, list las enumera, y git restore descarta cambios (--staged los saca del staging). Evita el malabar stash-pop-stash al cambiar de contexto.",
     codeSnippet:
 `# Crear un worktree: editar otra rama en una carpeta aparte
 git worktree [INPUT_1] ../hotfix main
@@ -879,7 +879,7 @@ git restore [INPUT_4] app.js`,
     objective: "construir una tubería de análisis de logs",
     tags: ["awk", "sort", "uniq", "pipeline"],
     fileName: "terminal", completed: false,
-    explanationText: "Esta es la receta de oro del análisis de logs: cada comando hace UNA cosa y el pipe los une en una cadena de montaje. Memorízala, la usarás toda tu carrera.",
+    explanationText: "🌍 Ejemplo cotidiano: la receta de oro de logs: cada comando hace UNA cosa y el pipe los une en cadena de montaje.\n\nawk extrae la IP, sort ordena, uniq -c cuenta y sort -rn + head -5 dejan el top. Es un patrón que usarás toda la carrera para responder '¿quién abusa de mi API?'.",
     codeSnippet:
 `# Objetivo: las 5 IPs con MÁS peticiones en el access.log
 # 1) extrae la 1ª columna (IP) → 2) ordena → 3) cuenta repetidas
@@ -899,7 +899,7 @@ awk '{print $1}' access.log [INPUT_1] sort | uniq [INPUT_2] | sort [INPUT_3] | [
     objective: "matar el proceso que ocupa un puerto",
     tags: ["lsof", "xargs", "kill"],
     fileName: "terminal", completed: false,
-    explanationText: "Junta tres cosas que ya sabes: lsof encuentra al okupa, -t da solo su PID limpio, xargs se lo entrega a kill. El error 'port in use' resuelto en un comando.",
+    explanationText: "🌍 Ejemplo cotidiano: lsof encuentra al okupa, -t da solo su PID limpio y xargs se lo entrega a kill: 'port in use' resuelto en un comando.\n\nlsof -i :3000 -t | xargs kill -9 encadena detección y cierre. Saber esta línea te ahorra reiniciar el equipo cuando un proceso zombi bloquea tu puerto.",
     codeSnippet:
 `# El puerto 3000 está ocupado. Libéralo en una sola línea:
 # 1) encuentra el proceso del puerto  2) toma solo su PID (-t)
@@ -914,7 +914,7 @@ lsof [INPUT_1]:3000 -t | [INPUT_2] kill [INPUT_3]`,
     objective: "reemplazar texto en muchos archivos a la vez",
     tags: ["grep", "xargs", "sed", "refactor"],
     fileName: "terminal", completed: false,
-    explanationText: "Cuando el 'Renombrar símbolo' del IDE no alcanza, esta tubería sí: grep -rl lista solo los archivos afectados, xargs se los pasa a sed, y -i reescribe cada uno. Refactor en segundos.",
+    explanationText: "🌍 Ejemplo cotidiano: cuando el 'Renombrar símbolo' del IDE no alcanza, esta tubería sí: grep localiza, xargs pasa y sed reescribe.\n\ngrep -rl lista los archivos que contienen la cadena, xargs los entrega y sed -i sustituye in-place. Refactor masivo en segundos, con la misma receta en cualquier repo.",
     codeSnippet:
 `# Renombrar getUser → fetchUser en TODOS los .ts del proyecto:
 # 1) lista los archivos .ts que contienen "getUser"
@@ -929,7 +929,7 @@ grep [INPUT_1] "getUser" --include="*.ts" . | [INPUT_2] sed [INPUT_3] 's/getUser
     objective: "ejecutar un flujo de feature completo",
     tags: ["branch", "conflict", "rebase", "push"],
     fileName: "terminal", completed: false,
-    explanationText: "Este es el día a día de un senior condensado: aislar el trabajo en una rama, resolver el inevitable conflicto al sincronizar, y dejar un historial limpio con rebase -i antes de abrir el PR.",
+    explanationText: "🌍 Ejemplo cotidiano: el día a día de un senior condensado: aislar en rama, resolver el conflicto inevitable y limpiar antes del PR.\n\nswitch -c crea la rama, push -u la publica, pull trae main (conflicto), git add marca el archivo resuelto y rebase -i compacta tu historia. Así queda un historial limpio y un PR fácil de revisar.",
     codeSnippet:
 `# 1) Crear y cambiar a una rama nueva desde main
 git switch [INPUT_1] feature/perfil

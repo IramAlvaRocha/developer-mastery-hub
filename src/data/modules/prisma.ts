@@ -47,7 +47,7 @@ Analogía cotidiana:
   ✅ Menos SQL injection (API parametrizada)
   ✅ Relaciones con include/select sin JOINs manuales`,
     explanationText:
-      "Completa los nombres de las tres piezas: Schema, Migrate y Client.",
+      "🌍 Ejemplo cotidiano: Prisma son tres piezas: el plano (Schema), la obra (Migrate) y el mando a distancia (Client).\n\nEl schema define el modelo, Migrate lo convierte en SQL y Client genera la API TypeScript. Juntos dan type-safety y prepared statements sin escribir SQL a mano.",
     codeSnippet:
 `// Prisma = 3 piezas
 // 1) Prisma [INPUT_1]  → modelos en schema.prisma
@@ -103,7 +103,7 @@ Requisitos recientes (Prisma ORM 7):
   • Node.js 20.19+
   • TypeScript 5.4+`,
     explanationText:
-      "Instala el paquete del cliente y ejecuta el comando de inicialización.",
+      "🌍 Ejemplo cotidiano: arrancar Prisma es instalar el cliente y pedir el kit base: npx prisma init.\n\n@prisma/client es la dependencia de runtime y prisma la CLI de desarrollo; prisma init crea schema y configuración. Sin este paso no hay nada que migrar ni generar.",
     codeSnippet:
 `# Dependencia de runtime
 npm install @prisma/[INPUT_1]
@@ -159,7 +159,7 @@ En versiones anteriores (v6) era frecuente:
   provider = "prisma-client-js"
   url = env("DATABASE_URL") dentro del datasource`,
     explanationText:
-      "Completa el provider del generator, el output y el provider de la base de datos.",
+      "🌍 Ejemplo cotidiano: el schema declara 'qué cliente generar' (generator) y 'a qué BD conectarse' (datasource).\n\nEn Prisma 7 el provider es prisma-client con output obligatorio; el datasource solo declara el proveedor (postgresql). La URL se movió a prisma.config.ts.",
     codeSnippet:
 `// prisma/schema.prisma
 generator client {
@@ -221,7 +221,7 @@ Este archivo configura el CLI (migrate, db push, etc.):
 
 Nunca hardcodees la contraseña: usa .env + env("DATABASE_URL").`,
     explanationText:
-      "Usa defineConfig y env para leer DATABASE_URL de forma segura.",
+      "🌍 Ejemplo cotidiano: la URL de la BD vive aparte del plano, como la llave del gas fuera de casa.\n\nEn Prisma 7 la conexión va en prisma.config.ts con env('DATABASE_URL'), separando secretos del data model. Nunca hardcodees la contraseña en el schema.",
     codeSnippet:
 `import "dotenv/config";
 import { defineConfig, [INPUT_1] } from "prisma/config";
@@ -273,7 +273,7 @@ Tipos escalares: String, Int, Float, Boolean, DateTime, Json, Bytes, Decimal
 
 Analogía: @id es el DNI; @default(now()) es el sello automático de "fecha de ingreso".`,
     explanationText:
-      "Marca la PK, el autoincrement y el default de createdAt.",
+      "🌍 Ejemplo cotidiano: @id es el DNI del registro y @default(now()) el sello automático de ingreso.\n\nUn model mapea a una tabla; @id define la clave primaria y @default(autoincrement())/now() los valores automáticos. @updatedAt se actualiza solo en cada update.",
     codeSnippet:
 `model User {
   id        Int      @[INPUT_1] @[INPUT_2](autoincrement())
@@ -323,7 +323,7 @@ Block attributes (van al final del model):
   Campos que filtras u ordenas mucho (email, tenantId, createdAt).
   Sin índice, la BD hace full scan → lento a escala.`,
     explanationText:
-      "Declara el enum, el default del role y un índice compuesto.",
+      "🌍 Ejemplo cotidiano: el enum fija las opciones válidas (USER/EDITOR/ADMIN) y el índice es el atajo para no barrer toda la tabla.\n\n@@index acelera las consultas que filtras mucho; @@unique garantiza unicidad compuesta. Sin índice, la BD hace full scan y se arrastra a escala.",
     codeSnippet:
 `[INPUT_1] Role {
   USER
@@ -377,7 +377,7 @@ Reglas:
 
 Analogía: un autor tiene muchos artículos; cada artículo guarda el id del autor.`,
     explanationText:
-      "Completa el array en User, @relation y el nombre de la FK.",
+      "🌍 Ejemplo cotidiano: un autor con muchos artículos: cada artículo guarda el id de su autor.\n\nEl lado N declara @relation(fields: [authorId], references: [id]) y el padre el array Post[]. El array no crea columna: solo navega la relación; la FK es la que persiste el vínculo.",
     codeSnippet:
 `model User {
   id    Int    @id @default(autoincrement())
@@ -427,7 +427,7 @@ La diferencia clave con 1:N es @unique en la FK:
 Sin @unique en profileId, Prisma lo trataría como 1:N.
 El lado opcional (?) depende de en qué model pongas la FK.`,
     explanationText:
-      "Marca la relación, la FK y el atributo que la hace 1:1.",
+      "🌍 Ejemplo cotidiano: un usuario con un solo perfil: la FK con @unique es el candado que impide un segundo perfil.\n\nSin @unique en profileId, Prisma lo leería como 1:N. La unicidad de la FK es justo lo que convierte la relación en uno a uno.",
     codeSnippet:
 `model User {
   id        Int      @id @default(autoincrement())
@@ -479,7 +479,7 @@ Limitaciones de la N:M implícita:
 
 La API del Client queda más simple: menos anidamiento en nested writes.`,
     explanationText:
-      "Completa los tipos de los arrays en ambos models.",
+      "🌍 Ejemplo cotidiano: un post con varias etiquetas y etiquetas en varios posts: Prisma crea la tabla de unión sola.\n\nDeclaras Tag[] y Post[] en ambos lados y Prisma genera _PostToTag sin que aparezca en el schema. La limitación: no puedes meter campos extra en la unión.",
     codeSnippet:
 `model Post {
   id    Int    @id @default(autoincrement())
@@ -524,7 +524,7 @@ En queries, filtras con some/every/none anidados:
 Usa explícita cuando la unión es un hecho de negocio
 (quién asignó el tag, cuándo, con qué score).`,
     explanationText:
-      "Completa las relaciones del join model y la PK compuesta.",
+      "🌍 Ejemplo cotidiano: cuando la tabla de unión es un hecho de negocio (quién asignó, cuándo), la modelas tú mismo.\n\nCategoriesOnPosts con @@id([postId, categoryId]) permite campos extra como assignedBy. Usa explícita cuando la unión tiene datos propios.",
     codeSnippet:
 `model Post {
   id         Int                 @id @default(autoincrement())
@@ -583,7 +583,7 @@ Restrict / NoAction:
 
 ⚠️ Elige con cuidado: Cascade en producción puede borrar más de lo que esperas.`,
     explanationText:
-      "Añade onDelete Cascade en la relación author.",
+      "🌍 Ejemplo cotidiano: Cascade es 'si borras el padre, se van los hijos'; Restrict es 'ni lo pienses'.\n\nonDelete: Cascade borra los Posts al borrar el User; SetNull deja la FK en null; Restrict impide el borrado. Elegir mal en producción borra más de lo que esperas.",
     codeSnippet:
 `model Post {
   id       Int    @id @default(autoincrement())
@@ -631,7 +631,7 @@ Prisma 7 + PostgreSQL:
 
 Importa el Client desde el output generado (ej. ../generated/prisma/client).`,
     explanationText:
-      "Completa el adapter, PrismaClient y el guardado en globalThis.",
+      "🌍 Ejemplo cotidiano: una sola instancia de PrismaClient, no una por request: el pool de conexiones se agota.\n\nEl singleton en globalThis sobrevive al hot-reload; en Prisma 7 usas un driver adapter (PrismaPg) para PostgreSQL. Sin singleton, cada reload fuga conexiones.",
     codeSnippet:
 `import { PrismaClient } from "../generated/prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
@@ -687,7 +687,7 @@ Regla de oro:
   Usa findUnique cuando buscas por PK/unique.
   Usa findFirst cuando el criterio puede repetirse.`,
     explanationText:
-      "Completa findUnique, where y findMany con orderBy.",
+      "🌍 Ejemplo cotidiano: findUnique es pedir por DNI; findMany es listar con filtro y orden.\n\nfindUnique devuelve null si no existe (busca por @id/@unique); findMany devuelve [] y acepta orderBy, skip y take. Elegir el método correcto evita N+1 y null inesperados.",
     codeSnippet:
 `export const userRepository = {
   byId: (id: number) =>
@@ -738,7 +738,7 @@ Errores comunes (códigos Prisma):
   P2002 → unique constraint (email duplicado)
   P2025 → registro no encontrado en update/delete`,
     explanationText:
-      "Rellena create, update y delete con data/where correctos.",
+      "🌍 Ejemplo cotidiano: create es alta, update edita por clave y delete borra: cada uno con su where.\n\ncreate usa data, update/delete usan where (único) + data. Los códigos P2002 (duplicado) y P2025 (no encontrado) son los errores que verás a diario.",
     codeSnippet:
 `export const userRepository = {
   create: (email: string, name: string) =>
@@ -794,7 +794,7 @@ Ideal para:
 
 where debe identificar de forma única (id, email @unique, etc.).`,
     explanationText:
-      "Completa upsert y las tres claves: where, create, update.",
+      "🌍 Ejemplo cotidiano: upsert es 'guárdalo sí o sí': si existe lo actualiza, si no lo crea, en una sola operación atómica.\n\nEvita la carrera 'busco → si no existe creo'. Ideal para sync de usuarios o webhooks idempotentes; where debe ser campo único.",
     codeSnippet:
 `export async function saveUser(email: string, name: string) {
   return prisma.user.[INPUT_1]({
@@ -843,7 +843,7 @@ Analogía:
   include = "trae la caja entera"
   select  = "solo saca lo que pedí de la caja"`,
     explanationText:
-      "Usa include para relaciones y select para campos del author.",
+      "🌍 Ejemplo cotidiano: include trae la caja entera; select saca solo lo que pediste de la caja.\n\nselect es la defensa contra filtrar password al cliente: pides solo id/name/email. No combines include y select en el mismo nivel del mismo objeto.",
     codeSnippet:
 `const posts = await prisma.post.findMany({
   where: { published: true },
@@ -890,7 +890,7 @@ Relaciones:
   some / every / none sobre colecciones
   is / isNot sobre relaciones 1:1 opcionales`,
     explanationText:
-      "Completa where, contains y el combinador AND.",
+      "🌍 Ejemplo cotidiano: donde el SQL pondría WHERE y AND, Prisma anida objetos tipados.\n\ncontains/startsWith con mode: 'insensitive' filtran texto; AND/OR/NOT combinan condiciones. El type-safe del where evita typos que el SQL crudo no detecta.",
     codeSnippet:
 `const posts = await prisma.post.findMany({
   [INPUT_1]: {
@@ -934,7 +934,7 @@ Patrón API:
 
 Offset es fácil de implementar; en tablas enormes preferir cursor.`,
     explanationText:
-      "Completa $transaction, skip, take y Math.ceil.",
+      "🌍 Ejemplo cotidiano: skip/take es la página del menú; $transaction trae datos y total juntos.\n\nskip = (page-1)*limit y take = limit; count en la misma transacción da el totalPages. Offset es fácil; para tablas enormes, el cursor escala mejor.",
     codeSnippet:
 `export async function listPosts(page: number, limit: number) {
   const where = { published: true };
@@ -994,7 +994,7 @@ Ejemplo Post + tags existentes (N:M implícita):
 
 Todo ocurre en una transacción interna: si falla una parte, no queda a medias.`,
     explanationText:
-      "Conecta el author y los tags con connect dentro de create.",
+      "🌍 Ejemplo cotidiano: en una sola orden creas el post y conectas autor y etiquetas existentes.\n\nconnect enlaza registros ya creados; create anida uno nuevo. Todo ocurre en una transacción interna: si falla una parte, no queda a medias.",
     codeSnippet:
 `const post = await prisma.post.create({
   data: {
@@ -1051,7 +1051,7 @@ Reglas:
 
 Analogía: es una caja fuerte — o salen todos los movimientos juntos, o ninguno.`,
     explanationText:
-      "Abre $transaction, usa tx.update y resta/suma el amount.",
+      "🌍 Ejemplo cotidiano: la caja fuerte: o salen todos los movimientos juntos, o ninguno.\n\n$transaction(async (tx) => ...) usa tx (no prisma) y revierte todo si lanzas un error. Ideal para transferencias y reservas de stock, donde el segundo paso depende del primero.",
     codeSnippet:
 `export async function transfer(fromId: number, toId: number, amount: number) {
   return prisma.$[INPUT_1](async ([INPUT_2]) => {
@@ -1115,7 +1115,7 @@ Scripts típicos en package.json:
   "db:deploy": "prisma migrate deploy"
   "db:studio": "prisma studio"`,
     explanationText:
-      "Completa generate, migrate dev y db push en los scripts.",
+      "🌍 Ejemplo cotidiano: db push es el borrador rápido; migrate dev es el historial oficial.\n\nmigrate dev crea historial en prisma/migrations; migrate deploy lo aplica en producción; db push es para prototipos. En Prisma 7, generate ya no corre solo tras migrar.",
     codeSnippet:
 `{
   "scripts": {
@@ -1158,7 +1158,7 @@ Buenas prácticas:
 En package.json (según setup):
   "prisma": { "seed": "tsx prisma/seed.ts" }`,
     explanationText:
-      "Crea el usuario admin y cierra la conexión con $disconnect.",
+      "🌍 Ejemplo cotidiano: el seed siembra la BD con los datos base (admin, roles) cada vez que se necesita.\n\nUn script con create + $disconnect, ejecutado con prisma db seed. Hazlo idempotente (upsert) y nunca pongas secretos reales de producción.",
     codeSnippet:
 `import { PrismaClient } from "../generated/prisma/client";
 
@@ -1216,7 +1216,7 @@ Regla de oro:
   Si usas raw, tagged templates.
   Unsafe solo con parámetros posicionales ($1, $2) y nunca concatenando input.`,
     explanationText:
-      "Elige $queryRaw (seguro) y evita Unsafe con concat.",
+      "🌍 Ejemplo cotidiano: $queryRaw parametriza; $queryRawUnsafe + concatenación es la puerta al SQL injection.\n\nEl tagged template $queryRaw trata el valor como parámetro; concatenar input en Unsafe lo convierte en código. Prefiere la API de Prisma; si usas raw, siempre tagged templates.",
     codeSnippet:
 `// ✅ Seguro: tagged template
 const rows = await prisma.$[INPUT_1]\`
@@ -1273,7 +1273,7 @@ having (cuando aplica) filtra DESPUÉS del agrupado.
 
 Úsalos en servicios de analytics, no en cada request de listado simple.`,
     explanationText:
-      "Completa count, aggregate con _avg y groupBy.",
+      "🌍 Ejemplo cotidiano: count, aggregate y groupBy son el panel de reportes: totales, promedios y agrupados.\n\ncount({ where }) cuenta, aggregate({ _avg, _sum }) resume y groupBy agrupa por columna. Úsalos en servicios de analytics, no en cada listado simple.",
     codeSnippet:
 `export const statsRepository = {
   publishedPosts: () =>

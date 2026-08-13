@@ -382,7 +382,7 @@ mount -t nfs4 -o nfsvers=4.1 \\
   fs-0abc123.efs.us-east-1.amazonaws.com:/ /mnt/efs`,
         },
       ],
-      correct: 1,
+      correct: "efs-mount",
     }
   },
 
@@ -428,7 +428,7 @@ aws ec2 attach-volume \\
   --volume-id vol-0abc123 --instance-id i-0def456`,
         },
       ],
-      correct: 1,
+      correct: "ebs-persistente",
     }
   },
 ];

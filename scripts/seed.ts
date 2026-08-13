@@ -184,6 +184,7 @@ function serializeFormat(exercise: Exercise): {
               options: f.options,
               answer: f.answer,
               allowFreeText: f.allowFreeText,
+              acceptedFreeText: f.acceptedFreeText,
             }),
           }
         : { format: null, payload: null };
@@ -309,6 +310,7 @@ function buildExerciseRows(module: Module) {
       simulation: ex.simulation ?? null,
       format,
       format_payload: payload,
+      hints: ex.hints ?? null,
       position: j,
       is_published: true,
     };

@@ -34,6 +34,7 @@ interface Props {
   onPrev: () => void;
   onNext: () => void;
   onComplete: (id: number) => void;
+  onAttempt: (id: number, correct: boolean, errorKeys: string[]) => void;
   onToast: (type: "success" | "error" | "info", message: string) => void;
 }
 
@@ -51,6 +52,7 @@ export default function ExerciseWorkspace({
   onPrev,
   onNext,
   onComplete,
+  onAttempt,
   onToast,
 }: Props) {
   const [activeTab, setActiveTab] = useState<Tab>(
@@ -62,6 +64,10 @@ export default function ExerciseWorkspace({
   const [incorrectKeys, setIncorrectKeys] = useState<Set<string>>(new Set());
   const [solved, setSolved] = useState(alreadyCompleted);
   const [celebrate, setCelebrate] = useState(false);
+  const [revealedHints, setRevealedHints] = useState(0);
+  const [hasAttempted, setHasAttempted] = useState(false);
+  const [solutionUnlocked, setSolutionUnlocked] = useState(false);
+  const [showFailedFeedback, setShowFailedFeedback] = useState(false);
   const codeNavTimerRef = useRef<number | null>(null);
 
   const isFirst = index === 0;
@@ -74,6 +80,10 @@ export default function ExerciseWorkspace({
     );
     setIncorrectKeys(new Set());
     setUserAnswers(readAnswers(moduleKey, exercise.id));
+    setRevealedHints(0);
+    setHasAttempted(false);
+    setSolutionUnlocked(false);
+    setShowFailedFeedback(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [exercise.id, exercise.theory, exercise.simulation, moduleKey]);
 
@@ -103,13 +113,14 @@ export default function ExerciseWorkspace({
 
   function handleAnswerChange(key: string, value: string) {
     setUserAnswers((prev) => ({ ...prev, [key]: value }));
-    // Al editar, limpia la marca de error de ese hueco.
+    // Al editar, limpia la marca de error de ese hueco y el feedback de fallo.
     setIncorrectKeys((prev) => {
       if (!prev.has(key)) return prev;
       const next = new Set(prev);
       next.delete(key);
       return next;
     });
+    setShowFailedFeedback(false);
   }
 
   const reduceMotion = usePrefersReducedMotion();
@@ -118,6 +129,8 @@ export default function ExerciseWorkspace({
     clearAnswers(moduleKey, exercise.id);
     setUserAnswers({});
     setIncorrectKeys(new Set());
+    setRevealedHints(0);
+    setShowFailedFeedback(false);
   }
 
   // Tras verificar correcto, deja que la celebración (1600ms) tome protagonismo
@@ -144,16 +157,20 @@ export default function ExerciseWorkspace({
         onToast("info", "Completa todas las partes antes de verificar.");
         return;
       }
+      setHasAttempted(true);
       if (result.correct) {
         const isNew = !solved;
         setIncorrectKeys(new Set());
         setSolved(true);
         onComplete(exercise.id);
+        onAttempt(exercise.id, true, []);
         onToast("success", `¡Correcto! "${exercise.title}" completado.`);
         if (isNew) setCelebrate(true);
         goToSolution();
       } else {
         setIncorrectKeys(new Set(result.incorrectKeys));
+        setShowFailedFeedback(true);
+        onAttempt(exercise.id, false, Array.from(result.incorrectKeys));
         const n = result.incorrectKeys.length;
         onToast(
           "error",
@@ -180,21 +197,47 @@ export default function ExerciseWorkspace({
       onToast("info", "Completa todos los campos antes de verificar.");
       return;
     }
+    setHasAttempted(true);
     if (wrong.size === 0) {
       const isNew = !solved;
       setIncorrectKeys(new Set());
       setSolved(true);
       onComplete(exercise.id);
+      onAttempt(exercise.id, true, []);
       onToast("success", `¡Correcto! "${exercise.title}" completado.`);
       if (isNew) setCelebrate(true);
       goToSolution();
     } else {
       setIncorrectKeys(wrong);
+      setShowFailedFeedback(true);
+      onAttempt(exercise.id, false, Array.from(wrong));
       const n = wrong.size;
       onToast(
         "error",
         `Revisa ${n} ${n === 1 ? "campo marcado" : "campos marcados"} en rojo.`,
       );
+    }
+  }
+
+  // ── Pistas progresivas y feedback pedagógico ──────────────────────────────
+  const totalHints = exercise.hints?.length ?? 0;
+  const allHintsRevealed = totalHints === 0 || revealedHints >= totalHints;
+  const revealedHintList = (exercise.hints ?? []).slice(0, revealedHints);
+  const feedbackHint =
+    exercise.hints?.[0] ??
+    "revisa la teoría de este ejercicio y vuelve a intentarlo, lo tienes más cerca de lo que crees.";
+  const showSolution = solved || hasAttempted || solutionUnlocked;
+  const canReviewTheory = !!exercise.theory;
+
+  function revealHint() {
+    setRevealedHints((n) => Math.min(n + 1, totalHints));
+  }
+
+  function handleReviewTheory() {
+    if (exercise.theory) {
+      setActiveTab("theory");
+    } else {
+      setRevealedHints((n) => Math.min(n + 1, totalHints));
     }
   }
 
@@ -535,6 +578,30 @@ export default function ExerciseWorkspace({
                 </p>
               </div>
 
+              {showFailedFeedback && (
+                <div
+                  role="status"
+                  aria-live="polite"
+                  className="animate-fade-in mt-4 rounded-[20px] border border-danger/25 bg-danger/10 px-4 py-3.5"
+                >
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <p className="text-[14px] leading-relaxed text-cream/90">
+                      <span className="font-semibold text-peach">Casi.</span>{" "}
+                      <span className="text-muted">Pista:</span> {feedbackHint}
+                    </p>
+                    {(canReviewTheory || totalHints > 0) && (
+                      <button
+                        type="button"
+                        onClick={handleReviewTheory}
+                        className="btn-ghost shrink-0 !py-1.5 !text-[12px] text-peach hover:text-peach"
+                      >
+                        {canReviewTheory ? "Revisa la Teoría" : "Ver pista"}
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
+
               {/* Caja dev-tool: solo el código conserva el marco de ventana */}
               <div
                 style={colorStyle}
@@ -585,6 +652,53 @@ export default function ExerciseWorkspace({
                   )}
                 </div>
               </div>
+
+              {totalHints > 0 && (
+                <section
+                  style={colorStyle}
+                  aria-label="Pistas"
+                  className="mt-4 rounded-[24px] border border-line bg-surface-2/40 px-4 py-3.5"
+                >
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="text-[11px] font-bold uppercase tracking-wide text-muted">
+                      Pistas
+                    </p>
+                    <button
+                      type="button"
+                      onClick={revealHint}
+                      disabled={allHintsRevealed}
+                      aria-expanded={revealedHints > 0}
+                      aria-controls={revealedHints > 0 ? "hints-list" : undefined}
+                      className="btn-ghost !py-1.5 !text-[12px] disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                      {allHintsRevealed ? "Sin más pistas" : "Mostrar pista"}
+                    </button>
+                  </div>
+                  {revealedHintList.length > 0 && (
+                    <ul id="hints-list" aria-live="polite" className="mt-3 space-y-2">
+                      {revealedHintList.map((hint, i) => (
+                        <li
+                          key={i}
+                          className="animate-fade-in flex gap-2.5 text-[14px] leading-relaxed text-muted"
+                        >
+                          <span
+                            className="mod-text mt-0.5 shrink-0 font-bold"
+                            aria-hidden
+                          >
+                            •
+                          </span>
+                          <span>
+                            <span className="font-semibold text-cream">
+                              Pista {i + 1}/{totalHints}:
+                            </span>{" "}
+                            {hint}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </section>
+              )}
             </div>
 
             {exercise.theory && (
@@ -629,7 +743,11 @@ export default function ExerciseWorkspace({
               className={activeTab === "code" ? "outline-none" : "hidden"}
             >
               <div className="px-4 pb-6 sm:px-6 sm:pb-8">
-                <SolutionPanel exercise={exercise} color={color} />
+                {showSolution ? (
+                  <SolutionPanel exercise={exercise} color={color} />
+                ) : (
+                  <SolutionGate onReveal={() => setSolutionUnlocked(true)} />
+                )}
               </div>
             </div>
           </div>
@@ -736,6 +854,31 @@ function FormatFilterSelect({
 function formatChipLabel(format: ExerciseFormat): string {
   const meta = FORMAT_LABELS[format];
   return `${meta.icon} ${meta.label}`;
+}
+
+/** Estado bloqueado de la tab Solución (soft gate): invita a intentarlo antes de ver la referencia. */
+function SolutionGate({ onReveal }: { onReveal: () => void }) {
+  return (
+    <div className="mx-auto max-w-prose">
+      <div className="rounded-[24px] border border-line bg-surface-2/40 px-5 py-6 sm:px-7 sm:py-8">
+        <p className="section-eyebrow text-cream">{"{ Solución }"}</p>
+        <h2 className="mt-1 text-xl font-semibold tracking-tight text-cream sm:text-2xl">
+          Antes de ver la solución
+        </h2>
+        <p className="mt-3 text-[15px] leading-relaxed text-muted">
+          Resuelve o inténtalo primero. Ver el código de referencia ahora
+          reduce lo que retienes.
+        </p>
+        <button
+          type="button"
+          onClick={onReveal}
+          className="btn-ghost mt-5 border border-line !px-5 !text-[13px] hover:border-muted"
+        >
+          Revelar solución de todos modos
+        </button>
+      </div>
+    </div>
+  );
 }
 
 const CONFETTI_COLORS = [

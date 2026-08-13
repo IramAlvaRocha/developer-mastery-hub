@@ -66,6 +66,11 @@ CREATE TABLE IF NOT EXISTS public.exercises (
   CONSTRAINT exercises_module_ref_key UNIQUE (module_key, exercise_ref)
 );
 
+-- Pistas progresivas (general → concreta) para el sistema de hints pedagógicos.
+-- `jsonb` mantiene el array de strings, coherente con `inputs` y `format_payload`.
+ALTER TABLE public.exercises
+  ADD COLUMN IF NOT EXISTS hints jsonb;
+
 -- Suscripciones del usuario a cursos (alimenta la vista "Mis Cursos").
 CREATE TABLE IF NOT EXISTS public.enrollments (
   user_id        uuid NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
@@ -89,6 +94,16 @@ CREATE TABLE IF NOT EXISTS public.progress (
     REFERENCES public.exercises (module_key, exercise_ref) ON DELETE CASCADE
 );
 
+-- Señal rica de repaso espaciado (SRS-ready), aditiva sobre `progress`.
+-- `completed_at` se conserva como "primera vez completado"; el cliente no lo
+-- envía en el upsert para no sobrescribirlo. `attempts`/`last_correct`/
+-- `last_error_keys`/`last_attempt_at` alimentan el repaso de "mis fallos".
+ALTER TABLE public.progress
+  ADD COLUMN IF NOT EXISTS attempts        int NOT NULL DEFAULT 1,
+  ADD COLUMN IF NOT EXISTS last_correct    boolean,
+  ADD COLUMN IF NOT EXISTS last_error_keys jsonb,
+  ADD COLUMN IF NOT EXISTS last_attempt_at timestamptz;
+
 -- "Continuar donde lo dejaste".
 CREATE TABLE IF NOT EXISTS public.user_state (
   user_id             uuid PRIMARY KEY REFERENCES public.profiles(id) ON DELETE CASCADE,
@@ -104,6 +119,8 @@ CREATE TABLE IF NOT EXISTS public.user_state (
 CREATE INDEX IF NOT EXISTS idx_exercises_module    ON public.exercises(module_key);
 CREATE INDEX IF NOT EXISTS idx_exercises_published ON public.exercises(is_published) WHERE is_published;
 CREATE INDEX IF NOT EXISTS idx_progress_user       ON public.progress(user_id);
+CREATE INDEX IF NOT EXISTS idx_progress_user_attempt
+  ON public.progress (user_id, last_attempt_at DESC);
 CREATE INDEX IF NOT EXISTS idx_enrollments_user    ON public.enrollments(user_id);
 CREATE INDEX IF NOT EXISTS idx_enrollments_module  ON public.enrollments(module_key);
 
@@ -331,6 +348,42 @@ GRANT UPDATE (display_name, avatar_url) ON public.profiles TO authenticated;
 -- enrollments: UPDATE solo permite tocar last_opened_at.
 REVOKE UPDATE ON public.enrollments FROM authenticated;
 GRANT UPDATE (last_opened_at) ON public.enrollments TO authenticated;
+
+-- progress: `completed_at` es inmutable una vez fijado (defensa en profundidad).
+-- NO se aplica el patrón REVOKE UPDATE + GRANT columnar de profiles/enrollments
+-- porque PostgREST incluye en el `DO UPDATE SET` del upsert TODAS las columnas
+-- del payload —incluidas las de la PK— como `col = EXCLUDED.col` (v. QueryBuilder
+-- de PostgREST: `DO UPDATE SET <col> = EXCLUDED.<col>` sobre `iCols`, que son
+-- todas las claves del body). Consecuencia: revocar UPDATE sobre user_id,
+-- module_key o exercise_ref rompería los tres upserts del cliente:
+--   (a) markComplete / migrateModule envían SOLO las 3 columnas de la PK; esas
+--       columnas SÍ entran en el DO UPDATE SET (no se omiten) y requerirían
+--       UPDATE sobre la PK → "permission denied".
+--   (b) persistAttemptToCloud (recordAttempt) envía la PK + las 4 columnas de
+--       señal; el SET también incluye la PK → mismo fallo.
+-- Por eso la inmutabilidad se garantiza con un trigger BEFORE UPDATE que rechaza
+-- cualquier cambio a completed_at. El cliente nunca envía completed_at en el
+-- upsert (no entra en el SET), así que los upserts siguen funcionando; el primer
+-- INSERT fija completed_at por DEFAULT now().
+CREATE OR REPLACE FUNCTION public.protect_progress_completed_at()
+RETURNS trigger
+LANGUAGE plpgsql
+SET search_path = ''
+AS $$
+BEGIN
+  IF NEW.completed_at IS DISTINCT FROM OLD.completed_at THEN
+    RAISE EXCEPTION 'progress.completed_at no se puede modificar'
+      USING ERRCODE = 'check_violation';
+  END IF;
+  RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS progress_completed_at_immutable ON public.progress;
+CREATE TRIGGER progress_completed_at_immutable
+  BEFORE UPDATE ON public.progress
+  FOR EACH ROW
+  EXECUTE FUNCTION public.protect_progress_completed_at();
 
 -- ----------------------------------------------------------------------------
 -- 7. Fase 8 (B4): acceso anónimo nulo

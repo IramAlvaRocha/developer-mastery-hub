@@ -573,8 +573,8 @@ sin depender de copias de seguridad.`,
     stars: 3,
     category: "SEGURIDAD",
     description:
-      "El cifrado se decide en el lanzamiento, el tráfico viaja con TLS y la autenticación puede ser con IAM.",
-    objective: "Aplicar las reglas de seguridad de RDS y Aurora",
+      "La conexión a RDS tiene credenciales embebidas en el código fuente. Encuentra el fallo de seguridad.",
+    objective: "Detectar credenciales de base de datos embebidas en el código",
     tags: ["KMS", "TLS", "IAM auth", "security group"],
     fileName: "rds-security",
     completed: false,
@@ -603,45 +603,42 @@ sin depender de copias de seguridad.`,
   • Los logs de auditoría pueden activarse y enviarse a **CloudWatch
     Logs** para mayor retención`,
     explanationText:
-      "🌍 Ejemplo cotidiano: una caja fuerte que se decide en la fábrica (cifrado KMS al lanzar la BD), documentos sellados que viajan en sobre certificado (TLS en vuelo) y una tarjeta de empleado para entrar (rol IAM en vez de contraseña). Si la caja nació sin cerradura, no puedes añadirla después: hay que pedir una nueva (snapshot + restaurar).\n\nLa regla de oro: el cifrado en reposo se decide al lanzar; una BD sin cifrar no puede tener réplicas cifradas; y para cifrarla, snapshot → restaurar cifrada. La autenticación con IAM elimina contraseñas estáticas en tus servidores: un win de seguridad.",
-    codeSnippet: "// Valida las reglas de seguridad de RDS y Aurora",
+      "🌍 Ejemplo cotidiano: dejar la contraseña de la caja fuerte escrita en un post-it pegado a la puerta. Cualquiera que vea el post-it (el repositorio) se queda con la llave de la caja.\n\nLa regla de oro de RDS: usa autenticación con rol IAM para que la instancia EC2 se conecte sin credenciales estáticas en el código. Si el repositorio se filtra, la base de datos queda expuesta. Las credenciales nunca deben embeberse: van en un gestor de secretos o, mejor, se sustituyen por IAM auth.",
+    codeSnippet: "// Encuentra el fallo de seguridad en la conexión a la base de datos",
     inputs: {},
-    completeCode: "Cifrado KMS al lanzar | TLS en vuelo | IAM auth | security groups | sin SSH (salvo RDS Custom)",
-    format: "true-false",
-    trueFalse: {
-      prompt: "Evalúa estas afirmaciones sobre la seguridad de RDS y Aurora.",
-      statements: [
+    completeCode:
+      "IAM auth en vez de credenciales estáticas | TLS en vuelo | cifrado KMS al lanzar",
+    format: "bug-hunt",
+    bugHunt: {
+      prompt:
+        "¿Qué vulnerabilidad introduce esta conexión a Amazon RDS?",
+      snippet: `// Conexión desde una instancia EC2 a Amazon RDS
+import mysql from "mysql2";
+
+const db = mysql.createConnection({
+  host: process.env.DB_HOST,
+  user: "admin",
+  password: "S3cret#2024!"   // ← credencial embebida en el código
+});`,
+      options: [
         {
-          id: "a",
-          text: "El cifrado en reposo con KMS se define en el momento del lanzamiento de la base de datos.",
-          answer: true,
-          explanation: "Se decide al crear la BD: después no se puede activar sin snapshot + restauración.",
+          id: "hardcoded-creds",
+          text: "Credenciales de la base de datos embebidas en el código: si el repo se filtra, la BD queda expuesta. Debería usar autenticación IAM.",
         },
         {
-          id: "b",
-          text: "Si la base de datos maestra no está cifrada, las réplicas de lectura pueden cifrarse por separado.",
-          answer: false,
-          explanation: "No: si la maestra no está cifrada, las réplicas tampoco pueden estarlo.",
+          id: "xss",
+          text: "Cross-Site Scripting: el password se interpola en el DOM sin sanitizar.",
         },
         {
-          id: "c",
-          text: "Para cifrar una BD RDS existente sin cifrar, se crea un snapshot y se restaura como base de datos cifrada.",
-          answer: true,
-          explanation: "Es el proceso que describe el instructor para cifrar a posteriori.",
+          id: "sql-injection",
+          text: "Inyección SQL: el usuario 'admin' se concatena en la sentencia sin parametrizar.",
         },
         {
-          id: "d",
-          text: "RDS y Aurora permiten acceso SSH a la instancia para administrar el sistema operativo.",
-          answer: false,
-          explanation: "Son gestionados: no hay SSH, excepto en RDS Custom (Oracle y SQL Server).",
-        },
-        {
-          id: "e",
-          text: "Una instancia EC2 puede autenticarse contra la base de datos usando un rol IAM en lugar de usuario y contraseña.",
-          answer: true,
-          explanation: "La autenticación IAM para RDS evita credenciales estáticas en el código.",
+          id: "path-traversal",
+          text: "Path Traversal: el host incluye caracteres ../ que escapan del directorio.",
         },
       ],
+      correct: "hardcoded-creds",
     },
   },
 

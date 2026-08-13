@@ -36,6 +36,7 @@ export default function MasteryHub() {
   const {
     isCompleted,
     markComplete,
+    recordAttempt,
     getPercent,
     lastVisited,
     setLastVisited,
@@ -480,6 +481,9 @@ export default function MasteryHub() {
                   onPrev={goPrev}
                   onNext={goNext}
                   onComplete={(id) => markComplete(currentModule.key, id)}
+                  onAttempt={(id, correct, errorKeys) =>
+                    recordAttempt(currentModule.key, id, correct, errorKeys)
+                  }
                   onToast={showToast}
                 />
               ) : (

@@ -4,11 +4,21 @@ export const CODE_QUALITY_EXERCISES: Exercise[] = [
   {
     id: 1, title: "ESLint Flat Config (v9+): Configuración Moderna", stars: 3, category: "ESLINT",
     description: "ESLint v9 usa eslint.config.js (flat config) en lugar de .eslintrc. Es la configuración actual en proyectos nuevos.",
-    objective: "eslint.config.js con TypeScript y Vue",
+    objective: "configurar ESLint con TypeScript y Vue",
     tags: ["eslint.config.js", "flat config", "typescript-eslint"],
     fileName: "eslint.config.js",
     completed: false,
-    explanationText: "ESLint es el guardián de la calidad del código: te avisa antes de que un bug llegue a producción. En equipos grandes, alinea el estilo de todos los desarrolladores.",
+    theory: `## De .eslintrc a flat config
+ESLint v9 unificó la configuración en un solo archivo ESM (eslint.config.js), en lugar de los viejos .eslintrc.* dispersos.
+
+### Por qué importa
+- tseslint.config() combina las reglas de JS y TypeScript en un único export.
+- recommendedTypeChecked usa el parser de tipos: caza errores que las reglas sintácticas no ven.
+- Poner eslint-config-prettier al final desactiva las reglas de estilo que chocan con Prettier.
+
+### Analogía
+.eslintrc era una lista de notas sueltas; la flat config es un único manual de estilo por proyecto.`,
+    explanationText: "🌍 Ejemplo cotidiano: ESLint es el inspector de obra que no deja pasar un cable suelto: avisa del bug antes de que llegue a producción.\n\nLa flat config (eslint.config.js) reemplaza a .eslintrc y se arma con tseslint.config() combinando reglas de JS, TypeScript y Vue. Fijar 'no-explicit-any' en 'error' corta el 'any' que silencia el compilador y deja pasar errores.",
     codeSnippet:
 `import eslint from '@eslint/js';
 import tseslint from '[INPUT_1]';
@@ -38,7 +48,7 @@ export default tseslint.config(
     tags: ["SonarQube", "Quality Gate", "coverage"],
     fileName: "sonar-project.properties",
     completed: false,
-    explanationText: "SonarQube es como una auditoría de código automatizada: detecta deuda técnica, vulnerabilidades de seguridad y te da una 'calificación' de calidad.",
+    explanationText: "🌍 Ejemplo cotidiano: SonarQube es una auditoría de código automatizada: detecta deuda técnica y vulnerabilidades, y te da una calificación de calidad.\n\nEl Quality Gate es el semáforo del CI: si la cobertura baja del 80% o aparece un bug crítico, el build falla. Así la calidad se controla en cada merge, no a fin de mes.",
     codeSnippet:
 `# sonar-project.properties
 sonar.projectKey=my-vue-app
@@ -63,11 +73,11 @@ sonar.coverage.exclusions=**/*.spec.ts,**/node_modules/**
   {
     id: 3, title: "Prettier: Configuración por Equipo", stars: 2, category: "PRETTIER",
     description: "Prettier formatea el código automáticamente. Una config compartida elimina debates de estilo en code reviews.",
-    objective: "Prettier con EditorConfig y VSCode",
+    objective: "configurar Prettier con EditorConfig y VSCode",
     tags: ["prettier", ".prettierrc", "editorconfig"],
     fileName: ".prettierrc.json",
     completed: false,
-    explanationText: "Prettier termina los debates de 'tabs vs espacios', 'single vs double quotes' para siempre. El equipo se enfoca en lógica, no en formato.",
+    explanationText: "🌍 Ejemplo cotidiano: Prettier acaba para siempre el debate de 'tabs vs espacios': formatea solo y el equipo vuelve a la lógica.\n\nLa config compartida (.prettierrc.json) es la fuente de verdad del formato; acompañada de eslint-config-prettier, ESLint y Prettier no se pisan. Así los code reviews no gastan tiempo en estilo.",
     codeSnippet:
 `// .prettierrc.json
 {
@@ -87,11 +97,21 @@ sonar.coverage.exclusions=**/*.spec.ts,**/node_modules/**
   {
     id: 4, title: "ESLint: Reglas de Seguridad", stars: 4, category: "ESLINT",
     description: "eslint-plugin-security detecta vulnerabilidades comunes en Node.js: injection, RegEx DoS, path traversal.",
-    objective: "ESLint para seguridad",
+    objective: "configurar ESLint para seguridad",
     tags: ["eslint-plugin-security", "no-eval", "injection"],
     fileName: "eslint.config.js",
     completed: false,
-    explanationText: "Las reglas de seguridad en ESLint son el primer escudo contra vulnerabilidades. Detectan patrones peligrosos como eval(), RegEx inseguras y acceso a paths sin sanitizar.",
+    theory: `## Seguridad en el linter
+Las reglas de seguridad corren en el editor y en el CI: son el análisis estático más barato que existe.
+
+### Qué detecta eslint-plugin-security
+- no-eval: bloquea eval() y Function(), vectores de ejecución de código.
+- detect-unsafe-regex: marca patrones con backtracking exponencial (ReDoS).
+- detect-object-injection: avisa del acceso a objetos por clave dinámica (posible prototype pollution).
+
+### Por qué importa
+Un linter no reemplaza una auditoría, pero evita que el patrón peligroso llegue a producción: cuesta una dependencia y cero tiempo de ejecución.`,
+    explanationText: "🌍 Ejemplo cotidiano: las reglas de seguridad son el primer escudo: detectan el patrón peligroso antes de que un atacante lo explote.\n\neslint-plugin-security marca eval(), RegEx con riesgo de DoS y el acceso por variable (prototype pollution). Es barato de activar y frena vectores de inyección en el commit, no en producción.",
     codeSnippet:
 `import security from '[INPUT_1]';
 
@@ -118,7 +138,7 @@ export default [
     tags: ["coverage", "v8", "thresholds"],
     fileName: "vitest.config.ts",
     completed: false,
-    explanationText: "La cobertura de tests es como la inspección vehicular: no garantiza que el auto sea perfecto, pero sí que revisaste los puntos críticos.",
+    explanationText: "🌍 Ejemplo cotidiano: la cobertura es la inspección vehicular: no garantiza un auto perfecto, pero confirma que revisaste los puntos críticos.\n\nVitest usa el provider v8 y los thresholds hacen fallar el build si líneas, funciones o ramas bajan del mínimo. Un 80% de líneas con 0 ramas probadas es cobertura falsa: por eso se mide cada métrica por separado.",
     codeSnippet:
 `import { defineConfig } from 'vitest/config';
 
@@ -143,11 +163,11 @@ export default defineConfig({
   {
     id: 6, title: "TypeScript: tsconfig.json Estricto", stars: 3, category: "TYPESCRIPT",
     description: "Un tsconfig estricto activa todas las verificaciones de TypeScript. Es el estándar en proyectos senior.",
-    objective: "Configuración de TypeScript estricta",
+    objective: "configurar TypeScript estricto",
     tags: ["strict", "noUncheckedIndexedAccess", "exactOptionalPropertyTypes"],
     fileName: "tsconfig.json",
     completed: false,
-    explanationText: "strict: true en TypeScript es como el modo difícil de un juego: más exigente al principio, pero te hace mejor y previene bugs serios en producción.",
+    explanationText: "🌍 Ejemplo cotidiano: strict: true es el modo difícil de un juego: exige más al principio, pero te hace mejor y previene bugs serios.\n\nnoUncheckedIndexedAccess te obliga a tratar el undefined de un array indexado, y exactOptionalPropertyTypes evita confundir 'ausente' con 'undefined'. El coste se paga al escribir; el beneficio es que el compilador caza lo que el runtime callaría.",
     codeSnippet:
 `{
   "compilerOptions": {
@@ -171,11 +191,22 @@ export default defineConfig({
   {
     id: 7, title: "Code Review: Patrones a Rechazar", stars: 4, category: "CODE REVIEW",
     description: "En code reviews, ciertos patrones son señales de alerta. Saber identificarlos es clave para ser un reviewer efectivo.",
-    objective: "Anti-patrones a detectar en PRs",
+    objective: "detectar anti-patrones en PRs",
     tags: ["code review", "anti-patterns", "quality"],
     fileName: "review-checklist.md",
     completed: false,
-    explanationText: "Un buen code reviewer no solo encuentra bugs: enseña mejores alternativas. El objetivo es subir el nivel del equipo, no solo rechazar código.",
+    theory: `## Cómo revisar un PR
+El objetivo no es rechazar, es subir el nivel del equipo con alternativas concretas.
+
+### Señales de alerta que debes marcar
+- any: silencia el type checker; pide unknown + type guard.
+- Mutación directa del estado: rompe la reactividad; pide usar actions/setters.
+- Secretos hardcodeados: comprometen la app; pide variables de entorno.
+
+### Cómo comentar
+- Señala el problema, muestra la alternativa y explica el porqué.
+- Comenta el código, nunca a la persona. Aprobar rápido lo bueno acelera más que un bloqueo.`,
+    explanationText: "🌍 Ejemplo cotidiano: un buen reviewer no solo encuentra bugs: enseña mejores alternativas y sube el nivel del equipo.\n\nEl 'any' apaga el type checker, la mutación directa rompe la reactividad de Vue/Pinia y el secreto hardcodeado compromete la app: los tres se rechazan con una alternativa. Revisar es guiar, no bloquear.",
     codeSnippet:
 `// ❌ RECHAZAR: any desactiva el type checker
 function process(data: [INPUT_1]) { ... }
@@ -202,11 +233,11 @@ const API_KEY = process.env.[INPUT_4];`,
   {
     id: 8, title: "ESLint: Reglas de Accesibilidad Vue", stars: 3, category: "A11Y",
     description: "eslint-plugin-vuejs-accessibility detecta problemas de accesibilidad en plantillas Vue en tiempo de desarrollo.",
-    objective: "ESLint para a11y en Vue",
+    objective: "configurar ESLint para a11y en Vue",
     tags: ["vuejs-accessibility", "aria", "alt text"],
     fileName: "eslint.config.js",
     completed: false,
-    explanationText: "La accesibilidad es el requerimiento más ignorado y uno de los más importantes. Detectar problemas en lint time es mucho más barato que arreglarlos en producción.",
+    explanationText: "🌍 Ejemplo cotidiano: la accesibilidad es el requerimiento más ignorado y uno de los más importantes: arreglarla en lint cuesta casi nada.\n\neslint-plugin-vuejs-accessibility exige alt en imágenes, contenido en botones/anclas y eventos de teclado en los clics. Detectar el fallo al guardar es mucho más barato que una demanda o un cliente perdido.",
     codeSnippet:
 `import vueA11y from '[INPUT_1]';
 
@@ -233,7 +264,7 @@ export default [
     tags: ["commitlint", "husky", "commit-msg"],
     fileName: "commitlint.config.ts",
     completed: false,
-    explanationText: "commitlint es el policía de los mensajes de commit. Sin él, en 6 meses el historial de git tiene mensajes como 'fix', 'arreglo bug', 'cambios'. Con él: historial profesional.",
+    explanationText: "🌍 Ejemplo cotidiano: commitlint es el policía de los mensajes de commit: sin él, en 6 meses el historial es 'fix', 'cambios'.\n\nExtendiendo @commitlint/config-conventional, cada commit sigue el formato feat/fix/docs y alimenta el versionado automático (semantic-release). Un historial legible es lo que te salva al investigar cuándo se rompió algo.",
     codeSnippet:
 `// commitlint.config.ts
 export default {
@@ -256,11 +287,21 @@ export default {
   {
     id: 10, title: "Arquitectura: Principio de Responsabilidad Única", stars: 5, category: "ARCHITECTURE",
     description: "En Vue, cada archivo debe tener una sola responsabilidad. Componentes pequeños, composables para lógica, stores para estado.",
-    objective: "SRP aplicado a Vue.js",
+    objective: "aplicar SRP en Vue.js",
     tags: ["SRP", "separation of concerns", "architecture"],
     fileName: "architecture.ts",
     completed: false,
-    explanationText: "SRP en Vue: el componente dibuja (template), el composable piensa (lógica), el store recuerda (estado). Como en un restaurante: mesero, cocinero y caja tienen funciones distintas.",
+    theory: `## SRP en un componente Vue
+El Principio de Responsabilidad Única dice: un archivo, un motivo de cambio.
+
+### Cómo se reparte
+- Componente (.vue): template + lo mínimo para renderizar.
+- Composable (useXxx): lógica reutilizable y testeable.
+- Store (Pinia): estado global compartido entre pantallas.
+
+### Por qué importa
+Un script de 500 líneas con fetch, validación y estado es difícil de testear y de heredar. Separar por responsabilidad hace cada pieza reemplazable y testeable de forma aislada.`,
+    explanationText: "🌍 Ejemplo cotidiano: en un restaurante, el mesero no cocina ni cobra: cada uno tiene su función. En Vue pasa igual.\n\nEl componente dibuja (template), el composable piensa (lógica reutilizable) y el store recuerda (estado global). Mezclar los tres en un script de 500 líneas es un 'objeto Dios' que nadie quiere heredar ni testear.",
     codeSnippet:
 `// ❌ MAL: componente con todo mezclado (Dios objeto)
 // script de 500 líneas con fetch, validación, UI, estado global

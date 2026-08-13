@@ -7,7 +7,6 @@
 import type { Exercise } from "./types";
 import {
   isAnswerCorrect,
-  isChoiceCorrect,
   isMatchingCorrect,
   isOrderingCorrect,
   isTrueFalseCorrect,
@@ -30,10 +29,13 @@ export function evaluateFormat(
       if (!value) {
         return { complete: false, correct: false, incorrectKeys: [] };
       }
-      const correct = isAnswerCorrect(
-        exercise.prediction?.answer ?? "",
-        value,
-      );
+      const prediction = exercise.prediction;
+      // Cuando allowFreeText está activo, además de la opción exacta se
+      // aceptan las respuestas de texto libre alternativas (normalizadas).
+      const accepted = prediction?.allowFreeText
+        ? [prediction.answer, ...(prediction.acceptedFreeText ?? [])]
+        : [prediction?.answer ?? ""];
+      const correct = isAnswerCorrect(accepted, value);
       return {
         complete: true,
         correct,
@@ -65,10 +67,7 @@ export function evaluateFormat(
       if (!value) {
         return { complete: false, correct: false, incorrectKeys: [] };
       }
-      const correct = isChoiceCorrect(
-        exercise.snippetPick?.correct ?? -1,
-        value,
-      );
+      const correct = value === (exercise.snippetPick?.correct ?? "");
       return {
         complete: true,
         correct,
@@ -81,7 +80,7 @@ export function evaluateFormat(
       if (!value) {
         return { complete: false, correct: false, incorrectKeys: [] };
       }
-      const correct = isChoiceCorrect(exercise.bugHunt?.correct ?? -1, value);
+      const correct = value === (exercise.bugHunt?.correct ?? "");
       return {
         complete: true,
         correct,
