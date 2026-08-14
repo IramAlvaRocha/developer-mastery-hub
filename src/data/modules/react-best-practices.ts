@@ -6,6 +6,7 @@ export const REACT_BEST_PRACTICES: Exercise[] = [
   {
     id: 1, step: 1, stars: 2, category: "ESTRUCTURA",
     title: "Estructura feature-based",
+    hints: ["🌍 Agrupa por funcionalidad, no por tipo técnico: todo lo de 'facturación' vive en una carpeta, como un expediente por cliente en vez de un cajón mezclado.","Cada feature agrupa components, hooks, interfaces y api. Lo transversal (instancia de Axios, stores, tipos compartidos) vive en common/."],
     description: "React se organiza por feature dentro de modules/, con una carpeta common/ para lo compartido (api, stores, interfaces).",
     objective: "Ubicar cada pieza en su carpeta",
     tags: ["feature-based", "modules", "common"],
@@ -30,6 +31,7 @@ export const REACT_BEST_PRACTICES: Exercise[] = [
   {
     id: 2, step: 2, stars: 2, category: "CONFIGURACION",
     title: "Variables de entorno y alias @",
+    hints: ["🌍 El prefijo VITE_ es el candado: solo lo marcado llega al navegador; el resto queda fuera del bundle como un secreto bien guardado.","Vite lee import.meta.env.VITE_*. El alias '@' -> src se define en vite.config (bundler) y en tsconfig paths (TypeScript); ambos deben coincidir."],
     description: "Vite expone variables con prefijo VITE_ y permite un alias @ -> src. TypeScript necesita el mismo mapeo en tsconfig.",
     objective: "Configurar env y alias de imports",
     tags: ["Vite", "import.meta.env", "alias"],
@@ -55,6 +57,7 @@ const base = [INPUT_1].env.[INPUT_2];
   {
     id: 3, step: 3, stars: 2, category: "CONTRATO",
     title: "Interface ApiResponse (espejo del backend)",
+    hints: ["🌍 Es el 'puente tipado' entre back y front: si uno cambia sin el otro, el compilador te avisa antes de llegar a producción.","Refleja exactamente el envelope del backend: success: boolean, data: T | null, message: string | null, errors: string[] | null.","El type guard isApiSuccess estrecha el tipo: res.success && res.data !== null."],
     description: "El frontend tipa el mismo envelope que devuelve el backend. Cambiar uno sin el otro genera bugs silenciosos.",
     objective: "Reflejar el contrato del backend",
     tags: ["ApiResponse", "envelope", "contrato"],
@@ -77,6 +80,7 @@ export const isApiSuccess = <T>(res: ApiResponse<T>): res is ApiResponse<T> & { 
   {
     id: 4, step: 4, stars: 2, category: "TIPADO",
     title: "Traducir un DTO de C# a TypeScript",
+    hints: ["🌍 JSON no tiene Guid ni DateTime: tipa lo que REALMENTE llega por el cable, no lo que imaginas desde C#.","Guid -> string, DateTime -> string ISO 8601, decimal/int -> number, bool -> boolean.","En la interface: id: string (Guid), precio: number (decimal), creadoEn: string (DateTime)."],
     description: "En vez de pegar JSON, se toma el record de C# como contrato y se traduce a una interface. Guid y DateTime viajan como string.",
     objective: "Tipar el dato de dominio",
     tags: ["DTO", "interface", "Guid", "DateTime"],
@@ -97,6 +101,7 @@ export interface Producto {
   {
     id: 5, step: 5, stars: 3, category: "HTTP",
     title: "Instancia de Axios configurada",
+    hints: ["🌍 Nunca uses axios global: la instancia es el 'punto de partida' donde centralizas configuración y enganchas interceptores para toda la app.","axios.create({ baseURL: import.meta.env.VITE_API_BASE_URL, timeout, withCredentials: true }).","withCredentials: true es necesario para que el navegador envíe la cookie httpOnly del refresh token."],
     description: "Nunca se usa axios directamente: se crea una instancia con baseURL, timeout y withCredentials para enviar cookies httpOnly.",
     objective: "Crear la instancia base de Axios",
     tags: ["axios", "instance", "withCredentials"],
@@ -117,6 +122,7 @@ export const api: AxiosInstance = axios.[INPUT_1]({
   {
     id: 6, step: 6, stars: 3, category: "HTTP",
     title: "Interceptor de request (adjuntar token)",
+    hints: ["🌍 Es el 'empleado que sella el sobre antes de enviarlo': nadie tiene que acordarse de adjuntar el token en cada llamada.","api.interceptors.request.use((config) => {...}). Lee el token del TokenManager y asigna config.headers.Authorization.","El header es `Bearer ${token}` y siempre retorna config para que la petición continúe."],
     description: "Un interceptor de request agrega el header Authorization con el access token en cada peticion.",
     objective: "Inyectar el JWT en cada request",
     tags: ["interceptor", "Authorization", "Bearer"],
@@ -134,6 +140,7 @@ export const api: AxiosInstance = axios.[INPUT_1]({
   {
     id: 7, step: 7, stars: 5, category: "HTTP",
     title: "Interceptor de response (401 refresh / 429 retry)",
+    hints: ["🌍 Es el 'agente que gestiona las devoluciones': si el ticket expiró (401), lo renueva y reintenta; si te piden esperar (429), espera.","El flag _retry evita bucles infinitos de refresh. El 429 corresponde al rate limiter del backend: respeta el header retry-after.","Con 401 y !original._retry: marca _retry = true, refresca y return api(original). Con 429: espera retry-after*1000 ms y reintenta. Siempre acaba con Promise.reject(error)."],
     description: "El interceptor de response refresca el token ante un 401 y reintenta; ante un 429 espera el Retry-After.",
     objective: "Manejar expiracion y rate limit",
     tags: ["interceptor", "401", "refresh token", "429"],
@@ -163,6 +170,7 @@ export const api: AxiosInstance = axios.[INPUT_1]({
   {
     id: 8, step: 8, stars: 3, category: "SEGURIDAD",
     title: "TokenManager en memoria",
+    hints: ["🌍 localStorage es un cajón que cualquier script puede abrir (XSS); la memoria es el bolsillo interior que se vacía al recargar.","El access token vive en una variable de módulo (no localStorage). El refresh token vive en cookie httpOnly, inaccesible desde JS.","La variable es `let accessToken: string | null = null` y clear() la devuelve a null."],
     description: "El access token se guarda en memoria (no en localStorage) para mitigar XSS. El refresh token vive en una cookie httpOnly.",
     objective: "Almacenar el token de forma segura",
     tags: ["XSS", "in-memory", "token"],
@@ -182,6 +190,7 @@ export const TokenManager = {
   {
     id: 9, step: 9, stars: 4, category: "HTTP",
     title: "unwrap y ApiError",
+    hints: ["🌍 unwrap es el 'abridor de paquetes': los componentes reciben el contenido (T) limpio, sin lidiar con el embalaje del envelope.","Si !response.success lanza new ApiError(message, errors); si no, devuelve response.data as T.","throw new ApiError(response.message ?? 'Error desconocido', response.errors ?? []) y return response.data as T."],
     description: "unwrap desempaqueta el ApiResponse: si success es false lanza un ApiError tipado; si es true devuelve solo data.",
     objective: "Desempaquetar la respuesta",
     tags: ["unwrap", "ApiError", "desempaquetado"],
@@ -206,6 +215,7 @@ export function unwrap<T>(response: ApiResponse<T>): T {
   {
     id: 10, step: 10, stars: 4, category: "ABSTRACCIONES",
     title: "Clase base ApiService",
+    hints: ["🌍 ApiService es la 'caja de herramientas' de HTTP: get/post/put/delete ya aplican unwrap; los servicios concretos solo dicen qué endpoint y qué método de negocio.","La clase es abstract y los verbos protected: solo las subclases los usan. Cada verbo llama a unwrap<T>(data).","protected async get<T> hace `const { data } = await api.get(...)` y return unwrap<T>(data). El post usa api.post."],
     description: "ApiService encapsula la instancia de Axios y aplica unwrap en cada verbo (get/post/put/delete). Los servicios concretos heredan de ella.",
     objective: "Crear la abstraccion de servicio",
     tags: ["ApiService", "clase base", "protected"],
@@ -231,6 +241,7 @@ export function unwrap<T>(response: ApiResponse<T>): T {
   {
     id: 11, step: 11, stars: 3, category: "HTTP",
     title: "Servicio concreto (ProductosApi)",
+    hints: ["🌍 El servicio del feature es el 'guion de llamadas' de su dominio: todas las URLs y métodos tipados en un solo objeto.","class ProductosApi extends ApiService { constructor() { super('/productos') } } y exporta una instancia única.","Los métodos usan this.get<Producto>() / this.post<string>(dto) y se exporta con `export const productosApi = new ProductosApi()`."],
     description: "El servicio del feature extiende ApiService, fija su endpoint y expone metodos de negocio tipados.",
     objective: "Implementar el servicio del feature",
     tags: ["servicio", "extends", "endpoint"],
@@ -252,6 +263,7 @@ export const productosApi = new [INPUT_2]();`,
   {
     id: 12, step: 12, stars: 3, category: "TANSTACK QUERY",
     title: "Query keys factory",
+    hints: ["🌍 Las query keys son la 'dirección' de cada dato en caché: centralizarlas evita escribir direcciones mal y poder borrar la manzana entera.","La factory construye keys jerárquicas: all, lists(), detail(id). 'as const' fija tipos literales para comparación exacta.","all: ['productos'] as const, lists() => [...all, 'list'] as const, detail(id) => [...all, 'detail', id] as const."],
     description: "Las query keys se centralizan en un objeto factory para evitar strings duplicados y poder invalidar de forma jerarquica.",
     objective: "Definir keys consistentes",
     tags: ["query key", "factory", "cache"],
@@ -269,6 +281,7 @@ export const productosApi = new [INPUT_2]();`,
   {
     id: 13, step: 13, stars: 3, category: "TANSTACK QUERY",
     title: "useQuery: lectura con cache",
+    hints: ["🌍 useQuery es el 'mayordomo de datos': cachea, refresca y maneja carga/error por ti, sin useEffect + useState a mano.","useQuery({ queryKey: productoKeys.lists(), queryFn: () => productosApi.getAll() }).","staleTime: 1000 * 60 * 5 marca los datos frescos por 5 minutos: mientras dure, TanStack los sirve de cache sin volver a pedirlos."],
     description: "useQuery gestiona la lectura: cache, estados de carga/error y revalidacion. La queryFn llama al servicio.",
     objective: "Leer datos con cache automatico",
     tags: ["useQuery", "queryKey", "staleTime"],
@@ -288,6 +301,7 @@ export const productosApi = new [INPUT_2]();`,
   {
     id: 14, step: 14, stars: 4, category: "TANSTACK QUERY",
     title: "useMutation + invalidacion de cache",
+    hints: ["🌍 La mutación escribe y la invalidación 'marca la nevera vacía': la lista se vuelve a pedir sola y la UI refleja el cambio.","useMutation({ mutationFn, onSuccess }). En onSuccess invalidas la query afectada con invalidateQueries.","onSuccess: () => queryClient.invalidateQueries({ queryKey: productoKeys.all }) refresca listas y detalles de la jerarquía."],
     description: "useMutation maneja la escritura. En onSuccess se invalida la query afectada para que se refresque automaticamente.",
     objective: "Mutar e invalidar la cache",
     tags: ["useMutation", "invalidateQueries", "onSuccess"],
@@ -309,6 +323,7 @@ export const productosApi = new [INPUT_2]();`,
   {
     id: 15, step: 15, stars: 3, category: "TANSTACK QUERY",
     title: "QueryClientProvider en la raiz",
+    hints: ["🌍 El QueryClient es el 'cerebro' de la caché: se crea UNA vez fuera del componente y se provee en la raíz para toda la app.","new QueryClient({ defaultOptions: { queries: { retry: 1, refetchOnWindowFocus: false } } }) y envuélvelo con QueryClientProvider client={queryClient}.","Crearlo dentro del render haría un cliente nuevo en cada render y perderías toda la caché. Envuelve <App /> en main.tsx."],
     description: "El QueryClient se crea una vez y se provee en la raiz de la app. Define defaults globales como reintentos y refetch.",
     objective: "Proveer el cliente de queries",
     tags: ["QueryClient", "Provider", "defaultOptions"],
@@ -332,6 +347,7 @@ root.render(
   {
     id: 16, step: 16, stars: 3, category: "SEGURIDAD",
     title: "Permisos: constantes espejo del backend",
+    hints: ["🌍 'as const' convierte los permisos en un catálogo cerrado: un typo como 'Producto.Vista' deja de compilar antes de romper la autorización en silencio.","Los valores deben ser IDÉNTICOS a los del backend (Permisos.Productos.Vista). Deriva el union type con (typeof PERMISOS)[keyof typeof PERMISOS].","export const PERMISOS = {...} as const y export type Permiso = (typeof PERMISOS)[keyof typeof PERMISOS]."],
     description: "Los permisos del frontend se definen como const con 'as const' y deben coincidir letra por letra con los del backend.",
     objective: "Tipar permisos del cliente",
     tags: ["permisos", "as const", "union type"],
@@ -351,6 +367,7 @@ export type Permiso = [INPUT_2][keyof typeof PERMISOS];`,
   {
     id: 17, step: 17, stars: 3, category: "SEGURIDAD",
     title: "Helpers hasPermission / hasAnyPermission",
+    hints: ["🌍 Son el 'semáforo' de la UI: muestran u ocultan acciones según los permisos. Recuerda: la seguridad REAL siempre la impone el backend.","Funciones puras: hasPermission usa includes, hasAnyPermission usa some sobre el array de requeridos.","hasPermission: userPerms.includes(required). hasAnyPermission: required.some((p) => userPerms.includes(p))."],
     description: "Funciones puras que comprueban si el usuario posee un permiso. La UI las usa para mostrar/ocultar acciones.",
     objective: "Comprobar permisos del usuario",
     tags: ["hasPermission", "claims", "guard"],
@@ -368,6 +385,7 @@ export const hasAnyPermission = (userPerms: string[], required: Permiso[]): bool
   {
     id: 18, step: 18, stars: 4, category: "ESTADO",
     title: "AuthContext + hook useAuth",
+    hints: ["🌍 Context evita el 'prop drilling' (pasar props por 10 niveles). El throw en useAuth convierte un fallo silencioso en un error inmediato y claro.","createContext<AuthState | undefined>(undefined). useAuth lanza Error si ctx === undefined.","if (ctx === undefined) throw new Error('useAuth debe usarse dentro de <AuthProvider>') y luego return ctx."],
     description: "El estado de autenticacion (usuario, permisos) se expone via Context. Un hook useAuth valida que se use dentro del Provider.",
     objective: "Compartir el estado de auth",
     tags: ["Context", "useAuth", "Provider"],
@@ -389,6 +407,7 @@ export function useAuth(): AuthState {
   {
     id: 19, step: 19, stars: 4, category: "SEGURIDAD",
     title: "ProtectedRoute por permiso",
+    hints: ["🌍 Es el 'guardia de la puerta': si no estás autenticado o sin permiso, te redirige antes de renderizar la ruta.","Combina useAuth con hasPermission. Usa <Navigate replace /> para no romper el botón de atrás.","if (!isAuthenticated) <Navigate to='/login' replace />; if (permiso && !hasPermission(...)) <Navigate to='/403' replace />."],
     description: "Un componente envoltorio que redirige si el usuario no esta autenticado o no tiene el permiso requerido.",
     objective: "Proteger rutas en el cliente",
     tags: ["ProtectedRoute", "Navigate", "guard"],
@@ -410,6 +429,7 @@ export function useAuth(): AuthState {
   {
     id: 20, step: 20, stars: 4, category: "VALIDACIONES",
     title: "React Hook Form + Zod",
+    hints: ["🌍 El schema de Zod es la 'única fuente de verdad' del formulario: valida en runtime Y genera el tipo con z.infer, sin duplicar.","zodResolver(schema) conecta Zod al formulario. type FormData = z.infer<typeof schema>.","z.number().positive(0, 'Debe ser mayor a 0') para el precio y resolver: zodResolver(schema)."],
     description: "El formulario valida con un schema de Zod a traves de zodResolver. El tipo del form se infiere del schema.",
     objective: "Validar formularios con Zod",
     tags: ["react-hook-form", "zod", "zodResolver"],
@@ -432,6 +452,7 @@ const { register, handleSubmit, formState: { errors } } = useForm<FormData>({
   {
     id: 21, step: 21, stars: 3, category: "ESTADO",
     title: "Estado global con Zustand",
+    hints: ["🌍 Zustand es el estado global 'express': sin Provider ni boilerplate, en tres líneas. Ideal para UI (modales, tema), no para cachear la API.","useModalStore = create<ModalState>((set) => ({ ... })). set actualiza el estado de forma inmutable.","open: () => set({ isOpen: true }) y close: () => set({ isOpen: false })."],
     description: "Para estado global ligero (UI, modales) se usa Zustand: un store con estado y acciones, sin boilerplate ni Provider.",
     objective: "Crear un store global simple",
     tags: ["zustand", "create", "store"],
@@ -455,6 +476,7 @@ export const useModalStore = [INPUT_1]<ModalState>((set) => ({
   {
     id: 22, step: 22, stars: 4, category: "RENDIMIENTO",
     title: "React Compiler: reglas para que memoice",
+    hints: ["🌍 El React Compiler es el 'optimizador automático': memoiza por ti, pero solo si tu render es puro (sin mutar props ni setState en render).","No mutar props ni llamar setState durante el render. Si el render es puro, el compiler puede memoizar en tiempo de compilación.","En vez de items.sort() (muta la prop), usa [...items].sort(): derivas sin mutar y el compiler puede optimizar."],
     description: "El React Compiler memoiza automaticamente si el codigo respeta las Rules of React: componentes puros y sin mutaciones en render.",
     objective: "Escribir codigo compiler-friendly",
     tags: ["React Compiler", "puro", "rules of react"],

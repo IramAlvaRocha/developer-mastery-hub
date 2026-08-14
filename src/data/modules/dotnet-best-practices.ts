@@ -6,6 +6,7 @@ export const DOTNET_BEST_PRACTICES: Exercise[] = [
   {
     id: 1, step: 1, stars: 2, category: "ARQUITECTURA",
     title: "Screaming Architecture: las 4 capas",
+    hints: ["🌍 Al abrir la solucion, la estructura revela el dominio del negocio, no el framework: cada capa tiene un rol como en un restaurante (cocina, servicio, almacen).","Regla de oro: las dependencias SIEMPRE apuntan hacia adentro. Domain no depende de nadie; Infrastructure y Api dependen de Application/Domain."],
     description: "Los proyectos .NET se organizan por capas con dependencias hacia adentro: Domain no depende de nadie; Infrastructure y Api dependen de Application/Domain.",
     objective: "Identificar el rol de cada proyecto",
     tags: ["Clean Architecture", "capas", "DDD"],
@@ -23,6 +24,7 @@ export const DOTNET_BEST_PRACTICES: Exercise[] = [
   {
     id: 2, step: 2, stars: 3, category: "ABSTRACCIONES",
     title: "Clase base Entity con Domain Events",
+    hints: ["🌍 La clase base Entity es el 'formulario comun' de todas las entidades: identidad inmutable + buzón de eventos, escrito una sola vez.","El Id usa init para quedar inmutable tras la creacion. La coleccion _domainEvents es private y se expone como IReadOnlyList.","RaiseDomainEvent debe ser protected: solo la propia entidad (o sus derivadas) puede emitir eventos, nunca un controller ni un servicio externo."],
     description: "Toda entidad hereda de una clase base abstracta que gestiona el Id y la coleccion de eventos de dominio.",
     objective: "Construir la abstraccion Entity",
     tags: ["abstract", "Entity", "domain events"],
@@ -46,6 +48,7 @@ export const DOTNET_BEST_PRACTICES: Exercise[] = [
   {
     id: 3, step: 3, stars: 3, category: "MODIFICADORES",
     title: "Modificadores de acceso en una entidad",
+    hints: ["🌍 Minimo privilegio: cierra todo lo que no necesitas abrir. Como una puerta blindada: se abre solo cuando hace falta y solo donde hace falta.","El constructor sin parametros es private (solo EF lo usa para materializar filas). Las propiedades usan private set para proteger los invariantes.","La clase va sealed (no se hereda) y las propiedades mutables llevan get; private set; para que la mutacion solo ocurra via metodos de negocio validados."],
     description: "La entidad Producto es 'sealed', su constructor sin parametros es 'private' (para EF), y sus propiedades usan 'private set' para proteger los invariantes.",
     objective: "Aplicar el modificador mas restrictivo",
     tags: ["sealed", "private set", "encapsulamiento"],
@@ -73,6 +76,7 @@ export const DOTNET_BEST_PRACTICES: Exercise[] = [
   {
     id: 4, step: 4, stars: 4, category: "VALUE OBJECTS",
     title: "Value Objects: record, factory y enum rica",
+    hints: ["🌍 Un Value Object se compara por valor, no por identidad: dos 'Cafe' son el mismo cafe aunque sean objetos distintos.","Usa record para igualdad por valor e inmutabilidad gratis. Con validacion: constructor privado + factory estatico que valida y crea.","El factory se llama Create (public static RangoFechas Create(...)) y la enum rica expone instancias estaticas con propiedad get; init;."],
     description: "Los Value Objects son inmutables y se comparan por valor. Con validacion usan constructor privado + factory estatico.",
     objective: "Crear Value Objects inmutables",
     tags: ["record", "factory", "value object"],
@@ -109,6 +113,7 @@ public record EstadoEntidad
   {
     id: 5, step: 5, stars: 4, category: "RESULT PATTERN",
     title: "Result Pattern: errores sin excepciones",
+    hints: ["🌍 Result hace visible en la firma que algo puede fallar: como un semaforo en vez de un hoyo en la calle que solo descubres al caer.","Result<T> devuelve exito o Error como dato. IsFailure => !IsSuccess. Acceder a Value en un resultado fallido lanza excepcion: el tipo te obliga a comprobar IsSuccess.","El patron: IsFailure => !IsSuccess, y Value lanza InvalidOperationException si no hay valor en un resultado fallido."],
     description: "El patron Result modela exito/fallo de forma explicita, evitando excepciones para errores esperados (de negocio).",
     objective: "Implementar Result y Result<T>",
     tags: ["Result", "Error", "railway"],
@@ -138,6 +143,7 @@ public class Result<T> : Result
   {
     id: 6, step: 6, stars: 3, category: "RESULT PATTERN",
     title: "Error y errores por dominio",
+    hints: ["🌍 Centralizar errores elimina los strings magicos: un solo lugar define cada fallo de negocio con codigo estable para la maquina.","Error es un record con Codigo y Descripcion. Cada feature agrupa sus errores en una clase estatica (ProductoErrores).","Crea Error.NotFound estatico en el record Error, y en ProductoErrores define NoEncontrado con codigo 'Producto.NotFound'."],
     description: "Error es un record (comparacion por codigo). Cada feature define sus errores especificos en una clase estatica.",
     objective: "Definir errores tipados del dominio",
     tags: ["Error", "record", "dominio"],
@@ -163,6 +169,7 @@ public static class ProductoErrores
   {
     id: 7, step: 7, stars: 4, category: "CONTRATO HTTP",
     title: "ApiResponse y mapeo Result -> IActionResult",
+    hints: ["🌍 El envelope es el 'formato unico de paquete': el frontend abre todos los paquetes igual, haya exito o error.","ApiResponse<T> tiene { Success, Data, Message, Errors }. Ok(...) => new(true, ...) y Fail(error) construye el envelope de error.","El switch mapea Error.NotFound a 404, y el caso por defecto a StatusCode 500. OkObjectResult(ApiResponse<T>.Ok(value)) para exito."],
     description: "El Result es interno al dominio. Hacia el cliente se devuelve siempre un envelope ApiResponse { success, data, message, errors }.",
     objective: "Estandarizar la respuesta HTTP",
     tags: ["ApiResponse", "envelope", "IActionResult"],
@@ -196,6 +203,7 @@ public static IActionResult ToActionResult<T>(this Result<T> result)
   {
     id: 8, step: 8, stars: 3, category: "DOMAIN EVENTS",
     title: "Domain Events con MediatR",
+    hints: ["🌍 El evento de dominio es el 'aviso por altavoz': la entidad solo anuncia que paso algo; quien escucha decide que hacer.","IDomainEvent extiende INotification de MediatR para que el IPublisher lo despache a sus handlers.","El evento es sealed record y se emite dentro de la entidad con RaiseDomainEvent(new ProductoCreadoDomainEvent(id))."],
     description: "Los eventos de dominio son 'sealed record' que implementan IDomainEvent (que extiende INotification de MediatR).",
     objective: "Declarar y levantar eventos de dominio",
     tags: ["domain event", "sealed record", "MediatR"],
@@ -219,6 +227,7 @@ public static Producto Crear(string nombre, decimal precio, int stock)
   {
     id: 9, step: 9, stars: 3, category: "PERSISTENCIA",
     title: "Unit of Work + Repository",
+    hints: ["🌍 El repository es el 'encargado de almacen' y el Unit of Work el 'registro de caja': Add solo anota la intencion, SaveChanges lo confirma todo junto.","IUnitOfWork expone Task<int> SaveChangesAsync(...). IProductoRepository expone GetByIdAsync, GetAllAsync, Add y Remove.","Add no toca la base de datos: solo marca el cambio. El SaveChangesAsync del IUnitOfWork persiste todo de forma transaccional."],
     description: "El repositorio abstrae el acceso a datos; IUnitOfWork confirma los cambios en bloque. El DbContext implementa IUnitOfWork.",
     objective: "Definir las abstracciones de persistencia",
     tags: ["repository", "unit of work", "EF Core"],
@@ -243,6 +252,7 @@ public interface IProductoRepository
   {
     id: 10, step: 10, stars: 4, category: "CQRS",
     title: "Command + Handler (escritura)",
+    hints: ["🌍 El command es la 'orden de trabajo' y el handler el 'operario' que la ejecuta: separar datos del comportamiento.","El command es un record que implementa ICommand<Result<Guid>>. El handler crea la entidad, la agrega al repo y persiste.","El handler usa Producto.Crear(...) para fabricar la entidad y await _uow.SaveChangesAsync(ct) para persistir; devuelve Result.Success(producto.Id)."],
     description: "Un Command representa una intencion de cambio. Su Handler ejecuta el caso de uso: crea la entidad, la agrega al repositorio y persiste.",
     objective: "Implementar el flujo de escritura CQRS",
     tags: ["CQRS", "command", "MediatR", "handler"],
@@ -272,6 +282,7 @@ internal sealed class CrearProductoCommandHandler
   {
     id: 11, step: 11, stars: 3, category: "CQRS",
     title: "Query + Handler (lectura)",
+    hints: ["🌍 La query pide datos para mostrarlos; el DTO es la 'foto' segura de la entidad: solo lo necesario, sin logica interna.","La query implementa IQuery<Result<ProductoDto>> y el handler devuelve un DTO, no la entidad. Si no existe, Result.Failure(NoEncontrado).","Si producto es null, retorna Result.Failure<ProductoDto>(ProductoErrores.NoEncontrado); si no, Result.Success(new ProductoDto(...))."],
     description: "Una Query representa una lectura. Devuelve un DTO (no la entidad) envuelto en Result, y reporta NotFound de forma explicita.",
     objective: "Implementar el flujo de lectura CQRS",
     tags: ["CQRS", "query", "DTO"],
@@ -300,6 +311,7 @@ internal sealed class ObtenerProductoPorIdQueryHandler
   {
     id: 12, step: 12, stars: 4, category: "CQRS",
     title: "Interfaces de mensajeria (marker interface)",
+    hints: ["🌍 Una marker interface es una etiqueta sin metodos: como un sello de 'frágil' en una caja, no hace nada por si sola pero permite filtrar.","IBaseCommand es un marcador vacio. El constraint where TRequest : IBaseCommand limita los behaviors a SOLO comandos.","La interfaz de respuesta de ICommand se restringe con where TResponse : Result, y IBaseCommand queda como interfaz vacia publica."],
     description: "ICommand/IQuery tipan los requests de MediatR. IBaseCommand es un marcador que restringe los Behaviors para que solo apliquen a comandos.",
     objective: "Restringir behaviors solo a commands",
     tags: ["IRequest", "marker interface", "IBaseCommand"],
@@ -319,6 +331,7 @@ public interface [INPUT_2] { }`,
   {
     id: 13, step: 13, stars: 5, category: "PIPELINE",
     title: "ValidationBehavior (pipeline de MediatR)",
+    hints: ["🌍 El pipeline behavior es la capa de cebolla: cada request pasa por validacion antes de llegar al handler, sin que el handler lo recuerde.","ValidationBehavior implementa IPipelineBehavior<TRequest, TResponse> con where TRequest : IBaseCommand. Ejecuta los validators de FluentValidation antes del handler.","Si hay errores lanza ValidationException(errores); si no, await next() para continuar el pipeline."],
     description: "Un Behavior intercepta cada request en el pipeline. ValidationBehavior corre los validators de FluentValidation antes de llegar al handler.",
     objective: "Validar comandos automaticamente",
     tags: ["IPipelineBehavior", "FluentValidation", "pipeline"],
@@ -350,6 +363,7 @@ public interface [INPUT_2] { }`,
   {
     id: 14, step: 14, stars: 3, category: "VALIDACIONES",
     title: "FluentValidation: validar el comando",
+    hints: ["🌍 La validacion del backend es la fuente de verdad: el front solo mejora la UX, el servidor garantiza la validez.","El validator hereda de AbstractValidator<CrearProductoCommand> y usa RuleFor con reglas encadenables.","RuleFor(x => x.Nombre).NotEmpty().MaximumLength(200) y RuleFor(x => x.Precio).GreaterThan(0)."],
     description: "Cada comando tiene un validator que hereda de AbstractValidator. El pipeline lo ejecuta automaticamente.",
     objective: "Escribir reglas con FluentValidation",
     tags: ["FluentValidation", "AbstractValidator", "RuleFor"],
@@ -373,6 +387,7 @@ public interface [INPUT_2] { }`,
   {
     id: 15, step: 15, stars: 3, category: "VALIDACIONES",
     title: "Atributo de validacion personalizado",
+    hints: ["🌍 Un atributo reutilizable es un 'sello de calidad' que pegas sobre la propiedad y ASP.NET lo aplica solo.","Hereda de ValidationAttribute y sobreescribe IsValid devolviendo ValidationResult.Success o un mensaje de error.","Si la primera letra es minuscula (char.IsLower(str[0])) devuelve un ValidationResult con mensaje; si no, ValidationResult.Success."],
     description: "Para validaciones simples en DTOs se puede crear un atributo que herede de ValidationAttribute.",
     objective: "Crear un ValidationAttribute custom",
     tags: ["DataAnnotations", "ValidationAttribute", "custom"],
@@ -395,6 +410,7 @@ public interface [INPUT_2] { }`,
   {
     id: 16, step: 16, stars: 4, category: "MIDDLEWARE",
     title: "Exception Handling Middleware",
+    hints: ["🌍 Es la red de seguridad final: atrapa lo que el Result Pattern no cubre (fallos inesperados) sin filtrar stack traces al cliente.","Envuelve _next(context) en try/catch y transforma la excepcion en ProblemDetails (RFC 7807) con el status adecuado.","La respuesta se escribe con context.Response.WriteAsJsonAsync(problem) y el switch mapea ValidationException a 400 y el resto a 500."],
     description: "Un middleware global captura toda excepcion no manejada y la convierte a ProblemDetails (RFC 7807) con el status adecuado.",
     objective: "Centralizar el manejo de errores",
     tags: ["middleware", "ProblemDetails", "RFC 7807"],
@@ -429,6 +445,7 @@ private static ExceptionDetails GetExceptionDetails(Exception ex) => ex switch
   {
     id: 17, step: 17, stars: 4, category: "EF CORE",
     title: "EF Core: configuracion de la entidad",
+    hints: ["🌍 La Configuration es el 'contrato de mapeo' de la entidad: tabla, clave y reglas de persistencia fuera del dominio.","Implementa IEntityTypeConfiguration<Producto> con builder.ToTable, HasKey y las propiedades de la entidad.","Para concurrencia optimista: builder.Property<uint>(\"Version\").IsRowVersion(). HasKey(p => p.Id) define la clave primaria."],
     description: "Cada entidad tiene una Configuration (IEntityTypeConfiguration) que define tabla, clave, conversiones de Value Objects y concurrencia.",
     objective: "Configurar el mapeo de EF Core",
     tags: ["EF Core", "IEntityTypeConfiguration", "RowVersion"],
@@ -454,6 +471,7 @@ private static ExceptionDetails GetExceptionDetails(Exception ex) => ex switch
   {
     id: 18, step: 18, stars: 5, category: "EF CORE",
     title: "Global Query Filters (Soft Delete)",
+    hints: ["🌍 Es ponerle al ORM unos lentes permanentes que ocultan lo borrado: cada SELECT incluye el filtro sin que lo escribas.","HasQueryFilter(p => p.EstaActivo) agrega la condicion a TODAS las queries de la entidad. IgnoreQueryFilters() la desactiva puntualmente.","La interfaz ISoftDeletable expone bool EstaActivo { get; } y en OnModelCreating usas .HasQueryFilter(p => p.EstaActivo)."],
     description: "EF Core aplica filtros automaticos a TODAS las queries de una entidad. Es el mecanismo para soft delete y multi-tenancy.",
     objective: "Filtrar registros inactivos automaticamente",
     tags: ["query filter", "soft delete", "multi-tenant"],
@@ -479,6 +497,7 @@ var todos = await _context.Productos.[INPUT_3]().ToListAsync(ct);`,
   {
     id: 19, step: 19, stars: 4, category: "DEPENDENCY INJECTION",
     title: "Registro de DI por capa",
+    hints: ["🌍 Cada capa expone su AddXxx como un 'módulo enchufable': Program.cs solo encadena y queda declarativo.","El DbContext se registra y se expone como IUnitOfWork con AddScoped reusando la MISMA instancia (sp.GetRequiredService).","services.AddScoped<IUnitOfWork>(sp => sp.GetRequiredService<ApplicationDbContext>()) y AddScoped<IProductoRepository, ProductoRepository>()."],
     description: "Cada capa expone un metodo de extension (AddApplication, AddInfrastructure) para mantener Program.cs limpio y declarativo.",
     objective: "Registrar servicios por capa",
     tags: ["DI", "AddScoped", "IServiceCollection"],
@@ -506,6 +525,7 @@ builder.Services
   {
     id: 20, step: 20, stars: 4, category: "SEGURIDAD",
     title: "Autenticacion JWT estricta",
+    hints: ["🌍 TokenValidationParameters es la 'aduana' del token: revisa firma, expiracion, emisor y audiencia antes de dejarlo pasar.","ValidateLifetime = true rechaza tokens expirados. ValidAlgorithms fija los algoritmos aceptados (bloquea el ataque alg none).","Usa ValidAlgorithms = [SecurityAlgorithms.HmacSha256] y ClockSkew = TimeSpan.FromMinutes(1) para reducir la ventana tras la expiracion."],
     description: "Configuracion de JWT Bearer con validacion completa de issuer, audience, vida util, firma y algoritmo permitido.",
     objective: "Configurar JWT de forma segura",
     tags: ["JWT", "TokenValidationParameters", "auth"],
@@ -533,6 +553,7 @@ builder.Services
   {
     id: 21, step: 21, stars: 4, category: "SEGURIDAD",
     title: "Permisos granulares por Claims",
+    hints: ["🌍 Los permisos son finos: 'ver' no implica 'editar'. Los roles son el atajo grueso; los claims, el control de acceso por puerta.","Define los permisos como constantes (Permisos.Productos.Vista) y registra una policy por cada uno con AddPolicy.","En el bucle: options.AddPolicy(permiso, policy => policy.RequireAuthenticatedUser().RequireClaim(\"permiso\", permiso)) y protege con [Authorize(Policy = Permisos.Productos.Vista)]."],
     description: "Los permisos se definen como constantes estaticas y se registra una policy por cada uno, exigiendo el claim correspondiente.",
     objective: "Autorizar por permiso (claim)",
     tags: ["Authorization", "policy", "claims", "RBAC"],
@@ -568,6 +589,7 @@ public async Task<IActionResult> Obtener() { /* ... */ }`,
   {
     id: 22, step: 22, stars: 4, category: "SEGURIDAD",
     title: "Rate Limiting por IP",
+    hints: ["🌍 El rate limiter es el 'portero con lista': deja entrar a los normales y frena al que llama miles de veces por minuto.","GetFixedWindowLimiter particiona por IP: cada IP tiene su propio cupo. La policy de auth es mas estricta para frenar fuerza bruta.","RateLimitPartition.GetFixedWindowLimiter(partitionKey: IP, factory: FixedWindowRateLimiterOptions { PermitLimit = 10, Window = 1 min }) y app.UseRateLimiter() en la pipeline."],
     description: "El rate limiter de .NET 8 limita peticiones por ventana de tiempo. Se definen policies (general y mas estricta para auth).",
     objective: "Limitar peticiones por IP",
     tags: ["rate limiting", "FixedWindow", "429"],

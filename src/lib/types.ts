@@ -125,6 +125,9 @@ export interface Exercise {
   completed?: boolean;
   /** Indicacion concreta de la tarea (se muestra encima del codigo). Si falta, se genera una. */
   instruction?: string;
+  /** Pistas progresivas (de vaga a casi-respuesta). Se revelan una a una bajo demanda.
+   *  La pestaña "Solución" queda bloqueada hasta resolver. */
+  hints?: string[];
   /** Texto teorico opcional (tab "Teoria"). */
   theory?: string;
   /** Pistas progresivas opcionales, ordenadas de la mas general a la mas concreta. No revelan la respuesta literal. */

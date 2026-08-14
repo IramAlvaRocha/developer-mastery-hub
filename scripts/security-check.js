@@ -44,10 +44,22 @@ function checkFileForConsole(filePath, content) {
   const issues = [];
   const lines = content.split(/\r?\n/);
   let inBlockComment = false;
+  let inDataTemplate = false; // inside a multi-line template literal that belongs to exercise data
+  let pendingDataProp = false; // previous line was a data property assignment ending with ':'
 
   lines.forEach((line, idx) => {
     const lineNum = idx + 1;
     let trimmed = line.trim();
+
+    // --- Multi-line data template literals (codeSnippet, explanationText, etc.) ---
+    // Must run BEFORE comment checks: a `//` comment inside a template must not
+    // skip the backtick tracking that closes the template literal.
+    if (inDataTemplate) {
+      const backtickCount = (line.match(/`/g) || []).length;
+      if (backtickCount % 2 === 1) inDataTemplate = false; // template closes on this line
+      pendingDataProp = false;
+      return; // console.* inside exercise data is content, not code
+    }
 
     if (inBlockComment) {
       if (trimmed.includes('*/')) {
@@ -64,6 +76,22 @@ function checkFileForConsole(filePath, content) {
     }
 
     if (trimmed.startsWith('//') || trimmed.startsWith('*')) return;
+
+    const backtickCount = (line.match(/`/g) || []).length;
+    const opensTemplate = backtickCount % 2 === 1;
+    const isDataPropLine = isDataStringLine(line);
+
+    if (isDataPropLine && opensTemplate) {
+      inDataTemplate = true;
+      pendingDataProp = false;
+      return;
+    }
+    if (pendingDataProp && opensTemplate) {
+      inDataTemplate = true;
+      pendingDataProp = false;
+      return;
+    }
+    pendingDataProp = isDataPropLine && /:\s*$/.test(line) && backtickCount === 0;
 
     if (/\bdebugger\b/.test(trimmed) && !isDataStringLine(trimmed)) {
       issues.push({ line: lineNum, method: 'debugger', code: trimmed });
