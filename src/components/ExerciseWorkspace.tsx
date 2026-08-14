@@ -33,6 +33,7 @@ interface Props {
   onPrev: () => void;
   onNext: () => void;
   onComplete: (id: number) => void;
+  onAttempt: (id: number, correct: boolean, errorKeys: string[]) => void;
   onShare: () => void;
   onToast: (type: "success" | "error" | "info", message: string) => void;
 }
@@ -48,6 +49,7 @@ export default function ExerciseWorkspace({
   onPrev,
   onNext,
   onComplete,
+  onAttempt,
   onShare,
   onToast,
 }: Props) {
