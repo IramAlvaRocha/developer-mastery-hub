@@ -619,8 +619,8 @@ controlando desde qué países se puede ver un contenido.`,
     stars: 3,
     category: "ACCESO RESTRINGIDO",
     description:
-      "Para distribuir contenido privado de pago, la URL firmada da acceso a archivos individuales y la cookie firmada a muchos archivos reutilizables.",
-    objective: "Distinguir URL firmada, cookie firmada y pre-firmada de S3",
+      "Un usuario de pago debe ver 200 vídeos privados durante una semana. Elige el mecanismo de CloudFront correcto.",
+    objective: "Elegir entre URL firmada, cookie firmada y pre-firmada de S3",
     tags: ["signed URL", "signed cookies", "caducidad", "key group"],
     fileName: "signed-url",
     completed: false,
@@ -648,45 +648,50 @@ objetos del bucket. La firmada de CloudFront vale para **cualquier
 origen** (S3, EC2, ALB), filtra por IP/ruta/fecha y aprovecha la caché
 de CloudFront.`,
     explanationText:
-      "🌍 Ejemplo cotidiano: la URL firmada es la entrada nominal de un solo concierto (un archivo, una URL); la cookie firmada es el abono de temporada que te deja entrar a todas las funciones mientras sea válido.\n\nRegla rápida: archivos individuales → URL firmada; muchos archivos reutilizables → cookie firmada. Y no confundas servicios: la pre-firmada de S3 actúa como el usuario que la generó y solo vale para el bucket; la firmada de CloudFront vale para cualquier origen, filtra por IP/ruta/fecha y se aprovecha de la caché de la CDN.",
-    codeSnippet: "// Afirmaciones sobre URLs firmadas y cookies firmadas de CloudFront",
+      "🌍 Ejemplo cotidiano: la URL firmada es la entrada nominal de un solo concierto (un archivo, una URL); la cookie firmada es el abono de temporada que te deja entrar a todas las funciones mientras sea válido.\n\nRegla rápida: archivos individuales → URL firmada; muchos archivos reutilizables → cookie firmada. Para 200 vídeos, generar 200 URLs no escala: una cookie firmada con caducidad es la opción correcta. Y no confundas con la pre-firmada de S3, que solo sirve objetos del bucket y no aprovecha la caché de la CDN.",
+    codeSnippet: "// Elige el mecanismo correcto de acceso a contenido privado",
     inputs: {},
     completeCode:
       "URL firmada: 1 archivo = 1 URL | cookie firmada: múltiples archivos reutilizable | caducidad configurable | key groups recomendados",
-    format: "true-false",
-    trueFalse: {
+    format: "snippet-pick",
+    snippetPick: {
       prompt:
-        "Valida tus conocimientos sobre URLs firmadas y cookies firmadas.",
-      statements: [
+        "Un usuario de pago debe ver 200 vídeos privados durante una semana. ¿Qué mecanismo eliges?",
+      snippets: [
         {
           id: "a",
-          text: "Una URL firmada de CloudFront da acceso a un archivo individual: si tienes 100 archivos privados, necesitas 100 URLs firmadas.",
-          answer: true,
-          explanation:
-            "Correcto: la URL firmada se genera por archivo concreto.",
+          label: "Cookie firmada",
+          code: `// CORRECTO: una cookie firmada abre MÚLTIPLES archivos y se reutiliza
+Set-Cookie: CloudFront-Policy=...; CloudFront-Signature=...; ...`,
+          description:
+            "Con una sola cookie, el usuario ve los 200 vídeos mientras sea válida.",
         },
         {
           id: "b",
-          text: "Una cookie firmada da acceso a múltiples archivos y puede reutilizarse en varias peticiones.",
-          answer: true,
-          explanation:
-            "Correcto: la cookie viaja en las peticiones y abre todos los archivos permitidos.",
+          label: "URL firmada por archivo",
+          code: `// POCO PRÁCTICO: la URL firmada da acceso a UN archivo por URL
+// 200 vídeos = 200 URLs firmadas`,
+          description:
+            "Para un archivo suelto va bien; para 200, no escala.",
         },
         {
           id: "c",
-          text: "La validez de una URL firmada es fija e ilimitada: una vez emitida, nunca caduca.",
-          answer: false,
-          explanation:
-            "Falso: se configura la caducidad: minutos para contenido de pago (películas, música) o años para contenido privado a largo plazo; además se puede filtrar por IP y ruta.",
+          label: "Pre-firmada de S3",
+          code: `// INCORRECTO: la pre-firmada de S3 solo sirve objetos del bucket
+// y no aprovecha la caché de CloudFront`,
+          description:
+            "Actúa como el usuario que la firmó y no sirve para otros orígenes.",
         },
         {
           id: "d",
-          text: "Una URL pre-firmada de S3 permite acceder a contenido de cualquier origen (S3, EC2, ALB) aprovechando la caché de CloudFront.",
-          answer: false,
-          explanation:
-            "Falso: la pre-firmada de S3 solo sirve objetos del bucket, emite la petición como el firmante y tiene TTL limitado; la URL firmada de CloudFront vale para cualquier origen y usa la caché de la CDN.",
+          label: "Hacerlo público",
+          code: `// INCORRECTO: hacer el contenido público no lo protege
+// Cualquiera con la URL accede al contenido`,
+          description:
+            "Elimina la protección de contenido de pago que buscabas.",
         },
       ],
+      correct: "a",
     },
   },
 

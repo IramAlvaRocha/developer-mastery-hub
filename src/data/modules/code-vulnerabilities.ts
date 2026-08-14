@@ -28,12 +28,24 @@ const result = await db.query(query, values);`,
       snippet: `const sql = "SELECT * FROM users WHERE email = '" + req.body.email + "'";
 const result = await db.query(sql);`,
       options: [
-        "Inyección SQL (SQLi): el email del usuario se concatena en la sentencia y puede convertirse en código SQL.",
-        "Cross-Site Scripting (XSS): el email se inyecta en el DOM sin sanitizar.",
-        "Denegación de servicio (ReDoS): la consulta usa una regex catastrófica.",
-        "Path Traversal: la ruta del archivo se construye con ../",
+        {
+          id: "sqli",
+          text: "Inyección SQL (SQLi): el email del usuario se concatena en la sentencia y puede convertirse en código SQL.",
+        },
+        {
+          id: "xss",
+          text: "Cross-Site Scripting (XSS): el email se inyecta en el DOM sin sanitizar.",
+        },
+        {
+          id: "redos",
+          text: "Denegación de servicio (ReDoS): la consulta usa una regex catastrófica.",
+        },
+        {
+          id: "path-traversal",
+          text: "Path Traversal: la ruta del archivo se construye con ../",
+        },
       ],
-      correct: 0,
+      correct: "sqli",
     },
   },
   {
@@ -62,12 +74,24 @@ container.innerHTML = DOMPurify.sanitize(userComment);`,
       snippet: `const comment = req.body.comment;
 container.innerHTML = comment;`,
       options: [
-        "Cross-Site Scripting (XSS): innerHTML interpreta etiquetas y atributos del comentario, permitiendo ejecutar scripts.",
-        "SQL Injection: el comentario se guarda concatenado en una consulta.",
-        "Prototype Pollution: la clave __proto__ contamina Object.prototype.",
-        "Path Traversal: el comentario se usa como ruta de archivo.",
+        {
+          id: "xss",
+          text: "Cross-Site Scripting (XSS): innerHTML interpreta etiquetas y atributos del comentario, permitiendo ejecutar scripts.",
+        },
+        {
+          id: "sqli",
+          text: "SQL Injection: el comentario se guarda concatenado en una consulta.",
+        },
+        {
+          id: "prototype-pollution",
+          text: "Prototype Pollution: la clave __proto__ contamina Object.prototype.",
+        },
+        {
+          id: "path-traversal",
+          text: "Path Traversal: el comentario se usa como ruta de archivo.",
+        },
       ],
-      correct: 0,
+      correct: "xss",
     },
   },
   {
@@ -99,12 +123,24 @@ execFile('/usr/bin/convert', args, (error, stdout) => { ... });`,
 
 exec(\`convert \${userFilename} output.png\`);`,
       options: [
-        "OS Command Injection: exec() abre una shell y userFilename puede encadenar comandos con ';' o '|'.",
-        "Mass Assignment: userFilename inyecta propiedades no permitidas.",
-        "Deserialización insegura: el payload instancia objetos arbitrarios.",
-        "ReDoS: la ruta del archivo dispara backtracking exponencial.",
+        {
+          id: "command-injection",
+          text: "OS Command Injection: exec() abre una shell y userFilename puede encadenar comandos con ';' o '|'.",
+        },
+        {
+          id: "mass-assignment",
+          text: "Mass Assignment: userFilename inyecta propiedades no permitidas.",
+        },
+        {
+          id: "deserializacion",
+          text: "Deserialización insegura: el payload instancia objetos arbitrarios.",
+        },
+        {
+          id: "redos",
+          text: "ReDoS: la ruta del archivo dispara backtracking exponencial.",
+        },
       ],
-      correct: 0,
+      correct: "command-injection",
     },
   },
   {
@@ -186,7 +222,7 @@ if (!filePath.startsWith(PUBLIC_DIR)) { throw new Error('Acceso no autorizado');
 });`,
         },
       ],
-      correct: 1,
+      correct: "seguro",
     },
   },
   {
@@ -326,7 +362,7 @@ function validateEmail(email: string): boolean {
 }`,
         },
       ],
-      correct: 1,
+      correct: "validator",
     },
   },
   {

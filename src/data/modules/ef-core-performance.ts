@@ -10,7 +10,19 @@ export const EF_CORE_PERFORMANCE: Exercise[] = [
     objective: "Desactiva el rastreo de entidades para una consulta de solo lectura.",
     tags: ["AsNoTracking", "rendimiento", "solo lectura"],
     fileName: "ProductRepository.cs",
-    explanationText: "Imagina que contratas a un guardaespaldas para vigilar una foto impresa; no tiene sentido, la foto no va a cambiar. Al usar AsNoTracking, le decimos a EF Core que nos entregue los datos \"desconectados\", reduciendo el consumo de memoria y aumentando la velocidad drásticamente en consultas de solo lectura.",
+    theory: `## El coste del tracking
+EF Core rastrea cada entidad para detectar si la modificas y generar el UPDATE en SaveChanges. En una consulta de solo lectura, ese rastreo es puro desperdicio.
+
+### Qué hace AsNoTracking
+- Devuelve entidades 'desconectadas' del Change Tracker.
+- No hay comparación de cambios → menos CPU y menos RAM.
+
+### Cuándo usarlo
+Siempre que solo vayas a mostrar datos (listados, catálogos). Si vas a editar y guardar, déjalo con tracking.
+
+### Regla
+Combínalo con Select hacia DTO: al proyectar a un DTO, el tracking tampoco aporta nada.`,
+    explanationText: "🌍 Ejemplo cotidiano: contratar un guardaespaldas para vigilar una foto impresa no tiene sentido: la foto no va a cambiar.\n\nPor defecto EF Core 'vigila' cada entidad que recuperas para detectar cambios y hacer UPDATE. AsNoTracking entrega los datos desconectados: menos RAM y más velocidad en consultas de solo lectura, que son la mayoría de los listados.",
     codeSnippet: `
 public async Task<List<ProductDto>> GetCatalogAsync()
 {
@@ -50,7 +62,18 @@ public async Task<List<ProductDto>> GetCatalogAsync()
     objective: "Carga los libros relacionados en la misma consulta inicial usando Eager Loading.",
     tags: ["Include", "N+1", "eager loading"],
     fileName: "AuthorRepository.cs",
-    explanationText: "El problema N+1 es como ir al supermercado a comprar los ingredientes de una receta, pero viajando de tu casa al súper por cada ingrediente individual. Al usar Include, llevas una lista y traes todo en un solo viaje usando un JOIN de SQL.",
+    theory: `## El problema N+1
+Al iterar una colección y consultar la relación de cada elemento, generas 1 consulta inicial + N consultas extra.
+
+### Ejemplo
+100 autores → 1 consulta de autores + 100 de libros = 101 round-trips.
+
+### La solución
+\`Include(a => a.Books)\` genera un JOIN y trae autor + libros en una sola consulta.
+
+### Ojo con lo contrario
+Múltiples Include de colecciones (uno-a-muchos) pueden causar explosión cartesiana: ahí la solución es AsSplitQuery.`,
+    explanationText: "🌍 Ejemplo cotidiano: el N+1 es ir al súper una vez por cada ingrediente en vez de llevar la lista completa.\n\nSin Include, EF Core hace 1 consulta por autores y N más por sus libros: con 100 autores son 101 viajes a la BD. Include hace un JOIN y trae todo en una sola consulta; es la corrección que más rendimiento da en APIs.",
     codeSnippet: `
 public async Task<List<Author>> GetAuthorsWithBooksAsync()
 {
@@ -78,7 +101,19 @@ public async Task<List<Author>> GetAuthorsWithBooksAsync()
     objective: "Indica a EF Core que divida la consulta en múltiples llamadas SQL más pequeñas y eficientes.",
     tags: ["AsSplitQuery", "explosión cartesiana", "optimización"],
     fileName: "BlogService.cs",
-    explanationText: "Imagina pedir una pizza y que te manden un repartidor distinto por cada rebanada de pepperoni. La red se satura enviando la información base (la masa) una y otra vez. Usando AsSplitQuery(), EF Core lanza una consulta para el Blog y otra para los Posts, ensamblándolos en memoria de forma limpia.",
+    theory: `## Explosión cartesiana y split queries
+Un solo JOIN con dos colecciones uno-a-muchos multiplica las filas: 50 posts × 20 comentarios = 1000 filas repetidas del Blog.
+
+### La solución
+\`AsSplitQuery()\` separa la consulta: una para el Blog, otra para Posts, otra para Contributors.
+
+### Cuándo usarlo
+- Varios Include de colecciones a la vez.
+- Resultados grandes donde el JOIN duplica datos.
+
+### Ojo
+Puedes activarlo globalmente con \`UseSplitQueries()\`, pero cambia el comportamiento por defecto: decide por consulta.`,
+    explanationText: "🌍 Ejemplo cotidiano: pedir una pizza y que manden un repartidor por cada rebanada satura la calle: AsSplitQuery reparte mejor.\n\nCon varios Include de colecciones, el JOIN produce el producto cartesiano y duplica las filas del padre. AsSplitQuery lanza una consulta por colección y las ensambla en memoria, evitando la explosión de datos por la red.",
     codeSnippet: `
 public async Task<Blog> GetFullBlogDetailsAsync(int blogId)
 {
@@ -110,7 +145,7 @@ public async Task<Blog> GetFullBlogDetailsAsync(int blogId)
     objective: "Optimiza la validación de existencia para que se detenga al encontrar el primer registro coincidente.",
     tags: ["AnyAsync", "CountAsync", "eficiencia"],
     fileName: "UserService.cs",
-    explanationText: "Usar Count es como contar a todas las personas en un estadio para saber si hay al menos una con camiseta roja. Usar AnyAsync es como mirar al público y detenerte en cuanto ves la primera camiseta roja. Es muchísimo más rápido.",
+    explanationText: "🌍 Ejemplo cotidiano: para saber si hay alguien con camiseta roja, no cuentas a todo el estadio: te detienes en la primera.\n\nAnyAsync genera un EXISTS que se detiene al primer match; CountAsync() > 0 obliga a la BD a contar todos los registros. Validar existencia con Any es más rápido y expresa mejor la intención.",
     codeSnippet: `
 public async Task<bool> IsEmailTakenAsync(string email)
 {
@@ -136,7 +171,19 @@ public async Task<bool> IsEmailTakenAsync(string email)
     objective: "Utiliza la nueva característica de EF Core para actualizar múltiples registros directamente en la base de datos sin cargarlos a la memoria.",
     tags: ["ExecuteUpdateAsync", "bulk", "SetProperty"],
     fileName: "SubscriptionJob.cs",
-    explanationText: "Cargar registros para modificarlos es como pedir a 1,000 empleados que vengan a tu oficina uno por uno para decirles que cambien su uniforme. Usar ExecuteUpdateAsync es usar el altavoz para que todos lo cambien al mismo tiempo. ¡Cuidado! No dispara los interceptores del SaveChanges.",
+    theory: `## Actualizaciones masivas (bulk)
+Antes de EF Core 7, actualizar 1000 registros implicaba cargarlos en memoria, cambiar la propiedad y SaveChanges.
+
+### La solución moderna
+\`ExecuteUpdateAsync(s => s.SetProperty(x => x.IsActive, false))\` genera un solo UPDATE en SQL.
+
+### Qué pierdes
+- No pasa por el Change Tracker: interceptores y eventos de SaveChanges no se disparan.
+- No devuelve las entidades afectadas.
+
+### Cuándo usarlo
+Trabajos en lote, limpiezas, cambios masivos de estado. Para editar un registro individual, el flujo normal sigue siendo mejor.`,
+    explanationText: "🌍 Ejemplo cotidiano: no citas a 1000 empleados uno a uno: usas el altavoz para que todos cambien a la vez.\n\nExecuteUpdateAsync (EF Core 7+) traduce el LINQ a un UPDATE directo en SQL, sin cargar las filas en memoria. Ojo: al saltarse el Change Tracker no dispara interceptores ni eventos de SaveChanges; tenlo en cuenta con auditoría y soft delete.",
     codeSnippet: `
 public async Task DeactivateExpiredSubscriptionsAsync(DateTime today)
 {
@@ -168,7 +215,7 @@ public async Task DeactivateExpiredSubscriptionsAsync(DateTime today)
     objective: "Elimina registros antiguos ejecutando la instrucción DELETE directamente en el motor de base de datos.",
     tags: ["ExecuteDeleteAsync", "bulk delete", "limpieza"],
     fileName: "LogCleanupWorker.cs",
-    explanationText: "Usando ExecuteDeleteAsync, EF Core traduce tu consulta LINQ en una sentencia \"DELETE FROM Logs WHERE...\" y la ejecuta de inmediato. Es vital en trabajos de fondo o limpieza de datos grandes.",
+    explanationText: "🌍 Ejemplo cotidiano: vaciar un cajón entero de papeles viejos es más rápido que sacar hoja por hoja.\n\nExecuteDeleteAsync traduce el LINQ a un DELETE directo en la BD, sin traer las filas a memoria ni saturar el Change Tracker. Es la herramienta para limpiar logs y datos antiguos en jobs de fondo.",
     codeSnippet: `
 public async Task CleanupOldLogsAsync(DateTime threshold)
 {
@@ -196,7 +243,7 @@ public async Task CleanupOldLogsAsync(DateTime threshold)
     objective: "Usa una proyección para seleccionar únicamente los campos necesarios y mapearlos a un DTO.",
     tags: ["Select", "proyección", "DTO"],
     fileName: "UserQueryService.cs",
-    explanationText: "Seleccionar solo lo necesario usando Select genera un comando SQL que pide campos específicos (SELECT Name, Email FROM...). Esto ahorra ancho de banda entre tu API y PostgreSQL/SQL Server.",
+    explanationText: "🌍 Ejemplo cotidiano: no envías el camión entero para entregar un sobre: proyectar con Select envía solo los campos que pediste.\n\nSelect hacia un DTO genera un SQL con columnas específicas, evitando el SELECT * que arrastra fotos en Base64 o columnas que nadie usa. Menos datos entre BD y API = menos latencia y menos memoria.",
     codeSnippet: `
 public async Task<List<UserSummaryDto>> GetUsersSummaryAsync()
 {
@@ -234,7 +281,7 @@ public async Task<List<UserSummaryDto>> GetUsersSummaryAsync()
     objective: "Implementa paginación en el motor de SQL utilizando los métodos LINQ para saltar y tomar registros.",
     tags: ["Skip", "Take", "paginación"],
     fileName: "ArticleRepository.cs",
-    explanationText: "Los métodos Skip (para saltar los registros de las páginas anteriores) y Take (para limitar los que se envían) se traducen eficientemente a comandos OFFSET y FETCH NEXT en SQL Server.",
+    explanationText: "🌍 Ejemplo cotidiano: sirves el menú por páginas, no lanzas el libro entero sobre la mesa.\n\nSkip y Take se traducen a OFFSET/FETCH NEXT en SQL, así la BD solo devuelve la página pedida. Traer todo con ToList() y cortar en memoria funciona hasta que la tabla crece: entonces se vuelve un cuello de botella.",
     codeSnippet: `
 public async Task<List<Article>> GetArticlesPageAsync(int pageNumber, int pageSize)
 {

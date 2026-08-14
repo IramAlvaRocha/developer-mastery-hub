@@ -1,6 +1,26 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { getSupabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth/AuthContext";
+import {
+  LAST_KEY,
+  PREFIX,
+  attemptsKey,
+  clampAttempts,
+  isDueForReview,
+  isRlsBlocked,
+  isSafeModuleKey,
+  lastKey,
+  mergeAttemptMaps,
+  mergeRows,
+  moduleKey,
+  recordAttemptValue,
+  sanitizeAttempts,
+  sanitizeErrorKeys,
+  type AttemptRecord,
+  type AttemptsMap,
+  type ProgressMap,
+  type ProgressRow,
+} from "./progressCore";
 
 // ──────────────────────────────────────────────────────────────────────────
 // Progreso persistente (Fase 5 — nube).
@@ -17,21 +37,11 @@ import { useAuth } from "@/lib/auth/AuthContext";
 // SSR-safe: nada de window/localStorage durante el render.
 // ──────────────────────────────────────────────────────────────────────────
 
-const PREFIX = "mastery_hub_";
-const LAST_KEY = "mastery_hub_last";
-
-type ProgressMap = Record<string, number[]>;
-
 /** Último ejercicio abierto (para "Continuar donde lo dejaste"). */
 export interface LastVisited {
   key: string;
   index: number;
   at: number;
-}
-
-interface ProgressRow {
-  module_key: string;
-  exercise_ref: number;
 }
 
 interface UserStateRow {
@@ -40,14 +50,36 @@ interface UserStateRow {
   updated_at: string | null;
 }
 
-/** Clave de un módulo: scoped por uid; sin uid, fallback a la clave legacy. */
-function moduleKey(moduleKey: string, uid: string | null): string {
-  return uid ? `${PREFIX}${uid}_${moduleKey}` : PREFIX + moduleKey;
+/** Fila de `progress` con la señal rica de intentos (columnas nuevas). */
+interface AttemptCloudRow {
+  module_key: string;
+  exercise_ref: number;
+  attempts: number | null;
+  last_correct: boolean | null;
+  last_error_keys: string[] | null;
+  last_attempt_at: string | null;
 }
 
-/** Clave de "último visitado": scoped por uid; sin uid, fallback legacy. */
-function lastKey(uid: string | null): string {
-  return uid ? `${LAST_KEY}_${uid}` : LAST_KEY;
+/** Reconstruye el `AttemptsMap` a partir de las filas de `progress` de la nube. */
+function attemptsFromRows(rows: AttemptCloudRow[]): AttemptsMap {
+  const map: AttemptsMap = Object.create(null);
+  for (const row of rows) {
+    if (!isSafeModuleKey(row.module_key)) continue;
+    const at = Date.parse(row.last_attempt_at ?? "");
+    if (!Number.isFinite(at)) continue;
+    const rec: AttemptRecord = {
+      attempts:
+        typeof row.attempts === "number" ? clampAttempts(row.attempts) : 1,
+      lastCorrect: row.last_correct === true,
+      lastErrorKeys: sanitizeErrorKeys(row.last_error_keys),
+      lastAttemptAt: at,
+    };
+    map[row.module_key] = {
+      ...(map[row.module_key] ?? {}),
+      [row.exercise_ref]: rec,
+    };
+  }
+  return map;
 }
 
 function readAll(keys: string[], uid: string | null): ProgressMap {
@@ -90,6 +122,24 @@ function writeLast(uid: string | null, value: LastVisited) {
   }
 }
 
+function readAttempts(uid: string | null): AttemptsMap {
+  if (typeof localStorage === "undefined") return {};
+  try {
+    const raw = localStorage.getItem(attemptsKey(uid));
+    return raw ? sanitizeAttempts(JSON.parse(raw)) : {};
+  } catch {
+    return {};
+  }
+}
+
+function writeAttempts(uid: string | null, value: AttemptsMap) {
+  try {
+    localStorage.setItem(attemptsKey(uid), JSON.stringify(value));
+  } catch {
+    /* almacenamiento no disponible */
+  }
+}
+
 function removeLocal(key: string) {
   if (typeof localStorage === "undefined") return;
   try {
@@ -126,37 +176,16 @@ function migrateLegacyToScoped(
   return { local: legacyAll, localLast: legacyLast };
 }
 
-/** Unión (aditiva) de lo local con las filas de `progress` de la nube. */
-function mergeRows(local: ProgressMap, rows: ProgressRow[]): ProgressMap {
-  const merged: ProgressMap = { ...local };
-  for (const row of rows) {
-    const list = merged[row.module_key] ?? [];
-    if (!list.includes(row.exercise_ref)) {
-      merged[row.module_key] = [...list, row.exercise_ref];
-    }
-  }
-  return merged;
-}
-
-/**
- * Distingue el bloqueo por RLS (sin suscripción) del resto de errores.
- * PostgREST devuelve código 42501 para violaciones de row-level security.
- */
-function isRlsBlocked(err: unknown): boolean {
-  const e = err as { code?: string; message?: string } | null;
-  if (!e) return false;
-  if (typeof e.code === "string" && e.code === "42501") return true;
-  return typeof e.message === "string" && /row-level security/i.test(e.message);
-}
-
 export function useProgress(moduleKeys: string[]) {
   const { user } = useAuth();
   const [progress, setProgress] = useState<ProgressMap>({});
+  const [attempts, setAttempts] = useState<AttemptsMap>({});
   const [lastVisited, setLastVisitedState] = useState<LastVisited | null>(null);
   const [unsyncedModules, setUnsyncedModules] = useState<string[]>([]);
   const [lastPersistError, setLastPersistError] = useState<string | null>(null);
 
   const progressRef = useRef<ProgressMap>({});
+  const attemptsRef = useRef<AttemptsMap>({});
   const userIdRef = useRef<string | null>(null);
   const unsyncedRef = useRef<string[]>([]);
 
@@ -265,6 +294,42 @@ export function useProgress(moduleKeys: string[]) {
     [addUnsynced, syncModule],
   );
 
+  // Escritura del intento en la nube (upsert de la señal rica). NO envía
+  // `completed_at`: se conserva la "primera vez completado" que fijó
+  // `persistToCloud`. Mismo manejo de RLS que la escritura de completado.
+  const persistAttemptToCloud = useCallback(
+    async (moduleKey: string, exerciseId: number, rec: AttemptRecord) => {
+      const supabase = getSupabase();
+      const uid = userIdRef.current;
+      if (!supabase || !uid) return;
+      const { error } = await supabase
+        .from("progress")
+        .upsert(
+          {
+            user_id: uid,
+            module_key: moduleKey,
+            exercise_ref: exerciseId,
+            attempts: rec.attempts,
+            last_correct: rec.lastCorrect,
+            last_error_keys: rec.lastErrorKeys,
+            last_attempt_at: new Date(rec.lastAttemptAt).toISOString(),
+          },
+          { onConflict: "user_id,module_key,exercise_ref" },
+        );
+      if (!error) {
+        if (unsyncedRef.current.includes(moduleKey)) {
+          void syncModule(moduleKey);
+        }
+        return;
+      }
+      if (isRlsBlocked(error)) {
+        addUnsynced(moduleKey);
+        setLastPersistError("Suscríbete para guardar tu progreso");
+      }
+    },
+    [addUnsynced, syncModule],
+  );
+
   // Carga inicial: lo local al instante (UI) y, con sesión, merge + migración.
   // Fase 8 (M3): el progreso local se lee con scope por uid; si no existe
   // todavía y hay claves legacy (pre-scope), se migran una sola vez.
@@ -295,6 +360,9 @@ export function useProgress(moduleKeys: string[]) {
 
     progressRef.current = local;
     setProgress(local);
+    const localAttempts = readAttempts(uid);
+    attemptsRef.current = localAttempts;
+    setAttempts(localAttempts);
     setLastVisitedState(localLast);
 
     const supabase = getSupabase();
@@ -319,12 +387,19 @@ export function useProgress(moduleKeys: string[]) {
                 .in("module_key", moduleKeys)
             : { data: [] };
         if (!active) return;
-        const merged = mergeRows(local, (rows ?? []) as ProgressRow[]);
+        const cloudRows = (rows ?? []) as AttemptCloudRow[];
+        const merged = mergeRows(local, cloudRows as ProgressRow[]);
         progressRef.current = merged;
         setProgress(merged);
         for (const [key, ids] of Object.entries(merged)) {
           if (ids.length > 0) writeModule(uid, key, ids);
         }
+        // Merge de la señal rica: la nube suma intentos, el más reciente gana.
+        const cloudAttempts = attemptsFromRows(cloudRows);
+        const mergedAttempts = mergeAttemptMaps(localAttempts, cloudAttempts);
+        attemptsRef.current = mergedAttempts;
+        setAttempts(mergedAttempts);
+        writeAttempts(uid, mergedAttempts);
       } catch {
         /* sin red: se queda con lo local */
       }
@@ -387,18 +462,92 @@ export function useProgress(moduleKeys: string[]) {
     [progress],
   );
 
-  const markComplete = useCallback(
-    (moduleKey: string, exerciseId: number) => {
+  // Marca completo LOCALMENTE (estado + localStorage). Devuelve true si era
+  // nuevo. Reutilizado por `markComplete` y `recordAttempt` sin escritura cloud.
+  const applyMarkComplete = useCallback(
+    (moduleKey: string, exerciseId: number): boolean => {
       const current = progressRef.current[moduleKey] ?? [];
-      if (current.includes(exerciseId)) return;
+      if (current.includes(exerciseId)) return false;
       const next = [...current, exerciseId];
       const nextMap = { ...progressRef.current, [moduleKey]: next };
       progressRef.current = nextMap;
       writeModule(userIdRef.current, moduleKey, next);
       setProgress(nextMap);
+      return true;
+    },
+    [],
+  );
+
+  const markComplete = useCallback(
+    (moduleKey: string, exerciseId: number) => {
+      if (!applyMarkComplete(moduleKey, exerciseId)) return;
       void persistToCloud(moduleKey, exerciseId);
     },
-    [persistToCloud],
+    [applyMarkComplete, persistToCloud],
+  );
+
+  // Registra un intento (correcto o fallido) y lo sincroniza. Si es correcto,
+  // además marca completado reutilizando la lógica de `markComplete` (local)
+  // SIN duplicar la escritura cloud: la señal rica viaja en un único upsert.
+  const recordAttempt = useCallback(
+    (
+      moduleKey: string,
+      exerciseId: number,
+      correct: boolean,
+      errorKeys: string[],
+    ) => {
+      const prev = attemptsRef.current[moduleKey]?.[exerciseId];
+      const rec = recordAttemptValue(prev, correct, errorKeys, Date.now());
+      const moduleRecs = {
+        ...(attemptsRef.current[moduleKey] ?? {}),
+        [exerciseId]: rec,
+      };
+      const next = { ...attemptsRef.current, [moduleKey]: moduleRecs };
+      attemptsRef.current = next;
+      writeAttempts(userIdRef.current, next);
+      setAttempts(next);
+
+      const wasCompleted =
+        progressRef.current[moduleKey]?.includes(exerciseId) === true;
+      if (correct) applyMarkComplete(moduleKey, exerciseId);
+
+      // Solo se persiste a la nube si el ejercicio está (o acaba de quedar)
+      // completado: evita crear filas `progress` para intentos fallidos de
+      // ejercicios aún no completados (la presencia de la fila == completado).
+      if (correct || wasCompleted) {
+        void persistAttemptToCloud(moduleKey, exerciseId, rec);
+      }
+    },
+    [applyMarkComplete, persistAttemptToCloud],
+  );
+
+  // Ejercicios completados cuyo repaso está vencido (SRS-ready).
+  const getDue = useCallback(
+    (
+      moduleKey: string,
+      exercises: { id: number }[],
+      nowMs?: number,
+      days?: number,
+    ): number[] => {
+      const now = nowMs ?? Date.now();
+      const intervalMs = (days ?? 3) * 24 * 60 * 60 * 1000;
+      const completed = progress[moduleKey] ?? [];
+      const due: number[] = [];
+      for (const ex of exercises) {
+        if (
+          isDueForReview(
+            attempts[moduleKey]?.[ex.id],
+            completed.includes(ex.id),
+            now,
+            intervalMs,
+          )
+        ) {
+          due.push(ex.id);
+        }
+      }
+      return due;
+    },
+    [progress, attempts],
   );
 
   const getPercent = useCallback(
@@ -418,12 +567,13 @@ export function useProgress(moduleKeys: string[]) {
         version: 1,
         exportedAt: new Date().toISOString(),
         progress,
+        attempts,
         lastVisited,
       },
       null,
       2,
     );
-  }, [progress, lastVisited]);
+  }, [progress, attempts, lastVisited]);
 
   /**
    * Importa un backup. Fusiona (union) los ids completados por modulo para no
@@ -442,6 +592,7 @@ export function useProgress(moduleKeys: string[]) {
 
       const merged: ProgressMap = { ...progressRef.current };
       for (const [key, value] of Object.entries(incoming as ProgressMap)) {
+        if (!isSafeModuleKey(key)) continue;
         if (!Array.isArray(value)) continue;
         const ids = value.filter(
           (n): n is number => typeof n === "number" && Number.isFinite(n),
@@ -456,6 +607,19 @@ export function useProgress(moduleKeys: string[]) {
       progressRef.current = merged;
       setProgress(merged);
 
+      // Fusiona intentos (si el backup los trae) igual que el progreso: unión,
+      // el más reciente gana. Si el campo falta (backups antiguos), se ignora.
+      const incomingAttempts = (parsed as { attempts?: unknown })?.attempts;
+      if (incomingAttempts && typeof incomingAttempts === "object") {
+        const nextAttempts = mergeAttemptMaps(
+          attemptsRef.current,
+          sanitizeAttempts(incomingAttempts),
+        );
+        attemptsRef.current = nextAttempts;
+        setAttempts(nextAttempts);
+        writeAttempts(userIdRef.current, nextAttempts);
+      }
+
       const last = (parsed as { lastVisited?: LastVisited }).lastVisited;
       if (last && typeof last.key === "string" && typeof last.index === "number") {
         setLastVisitedState(last);
@@ -468,8 +632,11 @@ export function useProgress(moduleKeys: string[]) {
 
   return {
     progress,
+    attempts,
     isCompleted,
     markComplete,
+    recordAttempt,
+    getDue,
     getPercent,
     lastVisited,
     setLastVisited,

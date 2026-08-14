@@ -302,7 +302,7 @@ La idea del instructor: no dar más permisos de los que el usuario necesita.`,
           description: "Niega la operación que necesitas: haría fallar la app."
         }
       ],
-      correct: 0
+      correct: "a"
     }
   },
 
@@ -312,8 +312,8 @@ La idea del instructor: no dar más permisos de los que el usuario necesita.`,
     stars: 2,
     category: "SEGURIDAD",
     description:
-      "Si solo proteges tu cuenta con contraseña, un robo de credenciales lo tumba todo. MFA añade un segundo factor: el dispositivo.",
-    objective: "Entender MFA y la política de contraseñas",
+      "Elige la política de contraseñas y MFA más segura para proteger la cuenta.",
+    objective: "Elegir la configuración segura de MFA y contraseñas",
     tags: ["MFA", "seguridad", "dispositivo", "contraseñas"],
     fileName: "mfa",
     completed: false,
@@ -337,40 +337,58 @@ Dispositivos MFA:
   • U2F Security Key: YubiKey (una clave para varios usuarios, root incluida).
   • Hardware key fob: Gemalto, o SurePassID para GovCloud.`,
     explanationText:
-      "🌍 Ejemplo cotidiano: la contraseña es la cerradura de tu puerta; MFA es el perro guardián del jardín. Que alguien copie la llave ya no basta: el perro (dispositivo) también tiene que reconocerte.\n\nEl instructor lo resalta: con MFA, aunque un hacker robe la contraseña, no puede entrar sin el código del dispositivo. Actívalo en la root y en todos los usuarios IAM; es lo que más reduce el riesgo de una cuenta comprometida.",
-    codeSnippet: "// Afirmaciones sobre MFA y la política de contraseñas",
+      "🌍 Ejemplo cotidiano: la contraseña es la cerradura de tu puerta; MFA es el perro guardián del jardín. Que alguien copie la llave ya no basta: el perro (dispositivo) también tiene que reconocerte.\n\nLa configuración segura combina contraseñas fuertes (longitud, símbolos, sin reutilización) con MFA activado en la root Y en todos los usuarios IAM. MFA solo en la root, o contraseñas reutilizables, deja la puerta a medias: es lo que más reduce el riesgo de una cuenta comprometida.",
+    codeSnippet: "// Elige la configuración más segura de MFA y contraseñas",
     inputs: {},
-    completeCode: "MFA = contraseña + código de dispositivo | proteger root y usuarios | política de contraseñas fuerte",
-    format: "true-false",
-    trueFalse: {
-      prompt: "Valida qué sabes sobre MFA y las políticas de contraseñas.",
-      statements: [
+    completeCode:
+      "MFA = contraseña + código de dispositivo | proteger root y usuarios | política de contraseñas fuerte",
+    format: "snippet-pick",
+    snippetPick: {
+      prompt:
+        "¿Cuál es la configuración más segura de política de contraseñas y MFA?",
+      snippets: [
         {
           id: "a",
-          text: "Si la contraseña de un usuario es robada pero tiene MFA activado, la cuenta sigue protegida.",
-          answer: true,
-          explanation: "Es el principal beneficio de MFA: el atacante tendría la contraseña, pero no el dispositivo que genera el código."
+          label: "Fuerte + MFA en todo",
+          code: `# Política fuerte + MFA en root y usuarios
+minimum_password_length = 10
+require_uppercase = true
+require_numbers   = true
+require_symbols   = true
+allow_password_reuse = false
+# MFA: activado en la cuenta root Y en cada usuario IAM`,
+          description:
+            "Contraseña robusta + doble factor en todas las cuentas.",
         },
         {
           id: "b",
-          text: "MFA solo puede configurarse en la cuenta root, nunca en los usuarios IAM.",
-          answer: false,
-          explanation: "MFA se configura tanto en la cuenta root como en cada usuario IAM. Es una buena práctica reforzarlo en todas las cuentas."
+          label: "Solo MFA en root",
+          code: `# MFA solo en la cuenta root; usuarios IAM sin doble factor
+minimum_password_length = 6`,
+          description:
+            "Los usuarios IAM quedan expuestos a un robo de credenciales.",
         },
         {
           id: "c",
-          text: "Con MFA, el acceso requiere contraseña + un código de un dispositivo de seguridad.",
-          answer: true,
-          explanation: "Son dos factores: algo que sabes (contraseña) y algo que tienes (el dispositivo que genera el token)."
+          label: "Reutilización permitida",
+          code: `minimum_password_length = 12
+require_symbols = true
+allow_password_reuse = true   # ← permite repetir contraseñas`,
+          description:
+            "Permitir reutilizar contraseñas debilita la rotación.",
         },
         {
           id: "d",
-          text: "Una política de contraseñas solo fija la longitud mínima; no puede evitar reutilizar contraseñas.",
-          answer: false,
-          explanation: "La política de contraseñas puede exigir longitud, tipos de caracteres, rotación e impedir la reutilización."
-        }
-      ]
-    }
+          label: "Contraseñas cortas",
+          code: `minimum_password_length = 6
+require_uppercase = false
+# sin MFA`,
+          description:
+            "Contraseñas cortas y sin MFA: fácil de comprometer.",
+        },
+      ],
+      correct: "a",
+    },
   },
 
   {
@@ -539,8 +557,8 @@ de California como una donde no opera). No es un servicio global.`,
     stars: 2,
     category: "ROLES",
     description:
-      "No solo las personas tienen roles. Una instancia EC2, una función Lambda o CloudFormation pueden actuar con un rol IAM en tu nombre.",
-    objective: "Entender los roles de servicio y los Instance Profiles",
+      "La instancia EC2 lleva claves de acceso permanentes en user-data en lugar de usar un rol. Encuentra el fallo.",
+    objective: "Detectar claves permanentes en lugar de un rol de servicio",
     tags: ["roles", "EC2", "Instance Profile", "servicios"],
     fileName: "iam-roles",
     completed: false,
@@ -562,40 +580,40 @@ Roles más comunes:
 En EC2, el rol se entrega a la instancia mediante un **Instance Profile**:
 un contenedor que asocia el rol a la instancia.`,
     explanationText:
-      "🌍 Ejemplo cotidiano: es darle a tu fontanero una tarjeta de visitante que solo abre la puerta del edificio (y no las viviendas). El servicio usa esa tarjeta para trabajar por ti, con permisos limitados.\n\nLos roles de servicio son la forma segura de que una instancia o función acceda a otros servicios SIN claves de acceso permanentes dentro de la máquina. Las credenciales temporales del rol se entregan automáticamente a través del Instance Profile.",
-    codeSnippet: "// Afirmaciones sobre roles de IAM para servicios",
+      "🌍 Ejemplo cotidiano: es darle a tu fontanero una tarjeta de visitante que solo abre la puerta del edificio (y no las viviendas). El servicio usa esa tarjeta para trabajar por ti, con permisos limitados.\n\nLa forma segura de que una instancia acceda a otros servicios es un rol IAM con Instance Profile: las credenciales temporales se entregan automáticamente. Embeber claves de acceso permanentes en user-data (o en el código) es un misconfig grave: cualquiera que lea el user-data se lleva unas claves que no caducan.",
+    codeSnippet: "// Encuentra el fallo de seguridad en la configuración de la instancia EC2",
     inputs: {},
-    completeCode: "Roles = permisos para servicios | EC2 (Instance Profile), Lambda, CloudFormation",
-    format: "true-false",
-    trueFalse: {
-      prompt: "Valida tu comprensión de los roles de servicio.",
-      statements: [
+    completeCode:
+      "Rol IAM + Instance Profile (credenciales temporales) en vez de claves permanentes",
+    format: "bug-hunt",
+    bugHunt: {
+      prompt:
+        "¿Qué vulnerabilidad introduce este user-data de la instancia EC2?",
+      snippet: `# user-data de una instancia EC2
+#!/bin/bash
+export AWS_ACCESS_KEY_ID=AKIAIOSFODNN7EXAMPLE
+export AWS_SECRET_ACCESS_KEY=wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY
+aws s3 cp /tmp/report.txt s3://mi-bucket/reports/`,
+      options: [
         {
-          id: "a",
-          text: "Un rol de IAM solo puede asignarse a personas, nunca a servicios.",
-          answer: false,
-          explanation: "Los roles se asignan tanto a usuarios como a servicios. El instructor lo muestra con instancias EC2 que actúan en tu nombre."
+          id: "hardcoded-keys",
+          text: "Claves de acceso permanentes embebidas en user-data: debería usarse un rol IAM con Instance Profile, que entrega credenciales temporales.",
         },
         {
-          id: "b",
-          text: "Una instancia EC2 puede usar un rol para interactuar con otros servicios de AWS en tu nombre.",
-          answer: true,
-          explanation: "Es el ejemplo central del instructor: la instancia EC2 recibe permisos vía rol y realiza acciones por ti."
+          id: "command-injection",
+          text: "El comando aws s3 cp permite inyección de comandos a través de /tmp/report.txt.",
         },
         {
-          id: "c",
-          text: "Lambda y CloudFormation son servicios que pueden usar roles de IAM.",
-          answer: true,
-          explanation: "Son los roles de servicio más comunes: roles de instancia EC2, de funciones Lambda y de CloudFormation."
+          id: "path-traversal",
+          text: "La ruta /tmp/report.txt usa ../ para escapar del filesystem.",
         },
         {
-          id: "d",
-          text: "El Instance Profile es el contenedor que entrega el rol a la instancia EC2.",
-          answer: true,
-          explanation: "Asocias el rol a un Instance Profile y ese profile se lo asignas a la instancia. Así EC2 obtiene las credenciales del rol."
-        }
-      ]
-    }
+          id: "xss",
+          text: "El bucket mi-bucket no sanitiza el nombre del archivo, causando XSS.",
+        },
+      ],
+      correct: "hardcoded-keys",
+    },
   },
 
   {
@@ -712,7 +730,7 @@ AWS_SECRET_ACCESS_KEY=wJalrXUtnFEMI/K7MDENG...
           description: "Credenciales temporales automáticas: sin secretos en la máquina."
         }
       ],
-      correct: 2
+      correct: "c"
     }
   },
 

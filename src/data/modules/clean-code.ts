@@ -6,27 +6,55 @@ export const CLEAN_CODE_EXERCISES: Exercise[] = [
     title: "¿Qué es la Deuda Técnica y el Tiempo es Dinero?",
     stars: 1,
     category: "DEUDA",
-    description: "La deuda técnica es la falta de calidad en el código que repercute en costos futuros. Entenderla a tiempo separa a un programador normal de uno que sabe lo que hace.",
-    objective: "Definir deuda técnica y sus costos",
+    description: "La deuda técnica es la falta de calidad en el código que repercute en costos futuros. Elige el fragmento que la acumula.",
+    objective: "Reconocer deuda técnica en el código",
     tags: ["deuda técnica", "tiempo", "costo"],
     fileName: "deuda-tecnica.ts",
     completed: false,
     theory:
       "La **deuda técnica** es la falta de calidad en el código que escribimos, y suele repercutir en **costos futuros**. Esos costos son tiempo que invertimos en:\n\n- Mantenimientos.\n- Refactorizar el código.\n- Comprender código propio o ajeno.\n- Transferir el conocimiento a otras personas.\n\nDe ahí el dicho *\"el tiempo es dinero\"*: cada hora perdida por mal código es dinero. Caer en deuda técnica es normal e inevitable; lo que diferencia al buen programador es **estar consciente de ella y preocuparse por pagarla**.",
     explanationText:
-      "🌍 Ejemplo cotidiano: es como una tarjeta de crédito. Al principio pagas poco (código rápido), pero si no la pagas, los intereses crecen y terminas debiendo más tiempo del que ahorraste.\n\nEl Clean Code se escribe **para que otra persona, o tú mismo en el futuro, lo entienda**. La computadora es el tercero que menos importa: el objetivo es que el código se lea como un libro bien escrito.",
-    codeSnippet: "// Afirmaciones sobre la deuda técnica y sus costos",
+      "🌍 Ejemplo cotidiano: es como una tarjeta de crédito. Al principio pagas poco (código rápido), pero si no la pagas, los intereses crecen y terminas debiendo más tiempo del que ahorraste.\n\nEl fragmento con deuda mezcla nombres crípticos (proc, d, t), números mágicos (1.21) y lógica duplicada: cada hora invertida en entenderlo es dinero. El Clean Code se escribe **para que otra persona, o tú mismo en el futuro, lo entienda** sin esfuerzo.",
+    codeSnippet: "// Elige el fragmento que acumula deuda técnica",
     inputs: {},
     completeCode: "La deuda técnica es falta de calidad que genera costos futuros: mantenimiento, refactorización, comprensión y transferencia.",
-    format: "true-false",
-    trueFalse: {
-      prompt: "Valida tu comprensión de qué es la deuda técnica y por qué cuesta dinero.",
-      statements: [
-        { id: "a", text: "La deuda técnica es la falta de calidad en el código que suele repercutir en costos futuros.", answer: true, explanation: "Es la definición del instructor: falta de calidad que se traduce en tiempo (y por tanto dinero) para mantener, refactorizar, comprender y transferir." },
-        { id: "b", text: "La deuda técnica solo cuesta dinero si el cliente la nota; el tiempo de los desarrolladores no importa.", answer: false, explanation: "'El tiempo es dinero': el mantenimiento, la refactorización y la comprensión del código consumen horas pagadas, las note o no el cliente." },
-        { id: "c", text: "El dicho 'el tiempo es dinero' aplica porque la refactorización y el mantenimiento consumen horas de trabajo.", answer: true, explanation: "Los 4 costos (mantenimiento, refactorización, comprensión y transferencia) son tiempo invertido, y el tiempo del equipo cuesta dinero." },
-        { id: "d", text: "La deuda técnica se paga refactorizando el código sin alterar su comportamiento.", answer: true, explanation: "La palabra clave es refactorización: mejorar el código para que sea más entendible y tolerante a cambios, sin cambiar qué hace." },
+    format: "snippet-pick",
+    snippetPick: {
+      prompt: "¿Cuál de estos fragmentos acumula deuda técnica (más costará mantener)?",
+      snippets: [
+        {
+          id: "a",
+          label: "Legible y corto",
+          code: `function calcularTotal(items: Item[]): number {
+  return items.reduce((total, item) => total + item.precio, 0);
+}`,
+          description: "Nombres claros y una sola pasada: se entiende sin esfuerzo.",
+        },
+        {
+          id: "b",
+          label: "Con deuda técnica",
+          code: `function proc(d) {
+  let t = 0;
+  for (let i = 0; i < d.length; i++) { t = t + d[i].p * 1.21; }
+  let t2 = 0;
+  for (let i = 0; i < d.length; i++) { t2 = t2 + d[i].p; }
+  return t - t2;
+}`,
+          description: "Nombres crípticos (proc, d, t), número mágico (1.21) y lógica duplicada.",
+        },
+        {
+          id: "c",
+          label: "Legible y específico",
+          code: `function formatearMoneda(monto: number): string {
+  return new Intl.NumberFormat("es-ES", {
+    style: "currency",
+    currency: "EUR"
+  }).format(monto);
+}`,
+          description: "El nombre dice exactamente qué hace y delega el detalle en la API.",
+        },
       ],
+      correct: "b",
     },
   },
   {
@@ -84,6 +112,11 @@ export const CLEAN_CODE_EXERCISES: Exercise[] = [
 // Tiempo en la [INPUT_4] del conocimiento a otras personas`,
     inputs: { INPUT_1: "mantenimiento", INPUT_2: "refactorización", INPUT_3: "comprensión", INPUT_4: "transferencia" },
     completeCode: "Los 4 costos: mantenimiento, refactorización, comprensión y transferencia del conocimiento.",
+    hints: [
+      "Los 4 costos son tiempo invertido: arreglar, mejorar, entender y compartir.",
+      "El primero es lo que haces para que el software siga funcionando; el segundo es mejorar sin cambiar el comportamiento.",
+      "Los dos últimos son entender código (propio o ajeno) y pasar ese conocimiento a otras personas.",
+    ],
     format: "context-dropdown",
     contextDropdown: {
       prompt: "Elige la palabra que corresponde a cada costo de la deuda técnica.",
@@ -138,7 +171,7 @@ function calculateTax(amount: number): number {
 }`,
         },
       ],
-      correct: 1,
+      correct: "refactor",
     },
   },
   {
@@ -163,6 +196,11 @@ const [INPUT_2] = 0.15;               // antes: tx
 const [INPUT_3] = new Date(1996, 0);  // antes: ddmmyyyy`,
     inputs: { INPUT_1: "numberOfUnits", INPUT_2: "tax", INPUT_3: "birthDate" },
     completeCode: "const numberOfUnits = 53;\nconst tax = 0.15;\nconst birthDate = new Date(1996, 0);",
+    hints: [
+      "Los nombres deben decir qué contienen: una cantidad, un porcentaje y una fecha.",
+      "Para un número de unidades, une la palabra de «cantidad» con lo que cuentas.",
+      "El impuesto en inglés es una palabra corta de tres letras; la fecha de nacimiento une «nacimiento» y «fecha».",
+    ],
     format: "context-dropdown",
     contextDropdown: {
       prompt: "El mejor nombre es expresivo y pronuncia sin ambigüedad.",
@@ -212,7 +250,7 @@ const [INPUT_3] = new Date(1996, 0);  // antes: ddmmyyyy`,
 }`,
         },
       ],
-      correct: 1,
+      correct: "limpio",
     },
   },
   {
@@ -244,12 +282,24 @@ const f = fs.filter(f => f.f);
 const d = 23;
 const dir = '/src';`,
       options: [
-        "Nombres crípticos e ilegibles: fs, f, d y dir no dicen qué contienen ni qué representan sin leer comentarios.",
-        "Hay una inyección SQL en el filtrado del arreglo.",
-        "La variable f tiene un error de tipado: TypeScript no permite filtrar booleans así.",
-        "El arreglo fs debería ser un objeto inmutable para evitar mutaciones.",
+        {
+          id: "nombres-cripticos",
+          text: "Nombres crípticos e ilegibles: fs, f, d y dir no dicen qué contienen ni qué representan sin leer comentarios.",
+        },
+        {
+          id: "sql-injection",
+          text: "Hay una inyección SQL en el filtrado del arreglo.",
+        },
+        {
+          id: "error-tipado",
+          text: "La variable f tiene un error de tipado: TypeScript no permite filtrar booleans así.",
+        },
+        {
+          id: "objeto-inmutable",
+          text: "El arreglo fs debería ser un objeto inmutable para evitar mutaciones.",
+        },
       ],
-      correct: 0,
+      correct: "nombres-cripticos",
     },
   },
   {
@@ -300,6 +350,11 @@ const [INPUT_3] = false;  // antes: notEmpty
 const [INPUT_4] = true;   // antes: active`,
     inputs: { INPUT_1: "isOpen", INPUT_2: "canWrite", INPUT_3: "isEmpty", INPUT_4: "isActive" },
     completeCode: "const isOpen = true;\nconst canWrite = true;\nconst isEmpty = false; // inversión de notEmpty = true\nconst isActive = true;",
+    hints: [
+      "Los booleanos leen mejor con un prefijo de pregunta o capacidad, y en positivo.",
+      "Puerta abierta usa el prefijo «is»; permiso de escritura usa «can».",
+      "La negación «notEmpty» debe invertirse a una pregunta positiva con «is».",
+    ],
     format: "context-dropdown",
     contextDropdown: {
       prompt: "Usa is/has/can y mantén el significado en positivo.",
@@ -377,7 +432,7 @@ const [INPUT_2] = 10; // total de carros en el inventario`,
           code: `class InvoiceService { ... }`,
         },
       ],
-      correct: 2,
+      correct: "especifica",
     },
   },
   {
@@ -385,27 +440,56 @@ const [INPUT_2] = 10; // total de carros en el inventario`,
     title: "Clases: Sustantivo, UpperCamelCase y Cortas",
     stars: 2,
     category: "CLASES",
-    description: "Valida las reglas para nombrar clases: sustantivos, nombres específicos, UpperCamelCase y evitar nombres kilométricos.",
-    objective: "Reforzar las reglas de nombres de clases",
+    description: "Elige el nombre de clase correcto: sustantivo, específico, UpperCamelCase y corto.",
+    objective: "Elegir un buen nombre de clase",
     tags: ["clases", "sustantivo", "reglas"],
     fileName: "reglas-clases.ts",
     completed: false,
     theory:
       "Detrás del nombre de las clases está el principio de responsabilidad única: **una Clase debe tener una responsabilidad específica y bien clara**. Si pones nombres genéricos, la Clase 'termina heredando demasiado trabajo de manera involuntaria'.\n\nLo mismo que con las funciones: cada elemento debe hacer una tarea y hacerla bien, y los métodos de una Clase deben estar **estrechamente relacionados con el nombre** de la misma. Un buen nombre es la primera barrera contra el objeto Dios.",
     explanationText:
-      "🌍 Ejemplo cotidiano: es como nombrar una carpeta en tu computadora. 'Cosas' no sirve; 'Facturas-2026' dice exactamente qué contiene. Un nombre claro evita abrir la carpeta para adivinar.\n\nSi algo no tiene sentido, se puede remover o refactorizar en el peor de los casos: esa regla se aplica a los nombres de las clases también.",
-    codeSnippet: "// Afirmaciones sobre el nombre de las clases",
+      "🌍 Ejemplo cotidiano: es como nombrar una carpeta en tu computadora. 'Cosas' no sirve; 'Facturas-2026' dice exactamente qué contiene. Un nombre claro evita abrir la carpeta para adivinar.\n\nEl buen nombre de clase es un sustantivo, específico, en UpperCamelCase y corto (InvoiceService). Los genéricos (Data), los kilométricos y los verbos (DoStuff) son anti-patrones que mezclan responsabilidades y dificultan el mantenimiento.",
+    codeSnippet: "// Elige el nombre de clase correcto",
     inputs: {},
     completeCode: "Sustantivo + UpperCamelCase + específico + corto = buen nombre de clase.",
-    format: "true-false",
-    trueFalse: {
-      prompt: "Valida las reglas para nombrar clases según el instructor.",
-      statements: [
-        { id: "a", text: "Los nombres de las clases deben ser sustantivos o frases de sustantivo.", answer: true, explanation: "InvoiceService, ShippingCalculator: el nombre dice qué es la clase, no cómo se implementa." },
-        { id: "b", text: "Un nombre genérico como Data hace que la clase reciba demasiadas responsabilidades.", answer: true, explanation: "Los nombres genéricos invitan a asignar más trabajo del debido: difíciles de mantener y actualizar." },
-        { id: "c", text: "Cuanto más largo y detallado sea el nombre de una clase, mejor y más específica es.", answer: false, explanation: "Más palabras no significa mejor: SpecialViewingCaseMonsterManagerEvents... es ilegible y mezcla responsabilidades." },
-        { id: "d", text: "Las clases deben nombrarse con UpperCamelCase: cada palabra con la primera letra en mayúscula.", answer: true, explanation: "Es la convención para clases e interfaces, mientras que las variables usan lowerCamelCase." },
+    format: "snippet-pick",
+    snippetPick: {
+      prompt: "¿Cuál es el nombre de clase correcto según las reglas del instructor?",
+      snippets: [
+        {
+          id: "a",
+          label: "Sustantivo + UpperCamelCase",
+          code: `class InvoiceService {
+  generarFactura(cliente: Cliente): Factura { ... }
+}`,
+          description: "Sustantivo, específico y UpperCamelCase: dice qué es.",
+        },
+        {
+          id: "b",
+          label: "Nombre kilométrico",
+          code: `class SpecialViewingCaseMonsterManagerEvents {
+  ...
+}`,
+          description: "Demasiadas palabras: ilegible y mezcla responsabilidades.",
+        },
+        {
+          id: "c",
+          label: "Genérico y en minúscula",
+          code: `class data {
+  ...
+}`,
+          description: "Genérico (invita a acumular responsabilidades) y sin UpperCamelCase.",
+        },
+        {
+          id: "d",
+          label: "Verbo en lugar de sustantivo",
+          code: `class DoStuff {
+  ...
+}`,
+          description: "Un verbo describe una acción, no una clase: no dice qué es.",
+        },
       ],
+      correct: "a",
     },
   },
   {
@@ -443,12 +527,24 @@ const [INPUT_2] = 10; // total de carros en el inventario`,
   return true;
 }`,
       options: [
-        "La función no hace lo que su nombre indica: sendEmail verifica usuarios, contraseñas y crea registros, pero nunca envía un correo.",
-        "La función envía el correo pero olvida adjuntar el asunto del mensaje.",
-        "sendEmail debería retornar el correo como string en lugar de un booleano.",
-        "El problema es que usa nombres en otro idioma en las funciones internas.",
+        {
+          id: "nombre-no-coincide",
+          text: "La función no hace lo que su nombre indica: sendEmail verifica usuarios, contraseñas y crea registros, pero nunca envía un correo.",
+        },
+        {
+          id: "falta-asunto",
+          text: "La función envía el correo pero olvida adjuntar el asunto del mensaje.",
+        },
+        {
+          id: "retorno-string",
+          text: "sendEmail debería retornar el correo como string en lugar de un booleano.",
+        },
+        {
+          id: "idioma",
+          text: "El problema es que usa nombres en otro idioma en las funciones internas.",
+        },
       ],
-      correct: 0,
+      correct: "nombre-no-coincide",
     },
   },
   {
@@ -469,6 +565,11 @@ const [INPUT_2] = 10; // total de carros en el inventario`,
     codeSnippet: "// Ordena los pasos de la refactorización a options object",
     inputs: {},
     completeCode: "1) interface SendEmailOptions 2) firma con options 3) desestructurar 4) llamar con objeto",
+    hints: [
+      "Empieza por declarar la forma del objeto con un tipo o interfaz.",
+      "Después cambia la firma para recibir un único parámetro.",
+      "Luego extrae las propiedades dentro de la función y, por último, actualiza la llamada.",
+    ],
     format: "ordering",
     ordering: {
       prompt: "Ordena los pasos para convertir 5 parámetros posicionales en un objeto de opciones.",
@@ -503,6 +604,11 @@ const [INPUT_2] = 10; // total de carros en el inventario`,
 getPayAmount(false, false, true);`,
     inputs: {},
     completeCode: "getPayAmount(false, false, true) -> 3000",
+    hints: [
+      "Sigue el flujo de los returns tempranos: si no está muerto ni separado, mira el retiro.",
+      "La llamada pasa «false» para muerto y separado, y «true» para retirado.",
+      "Con retirado = true, el ternario devuelve el valor de la rama verdadera.",
+    ],
     format: "prediction",
     prediction: {
       prompt: "La refactorización no cambia el comportamiento. ¿Qué retorna la llamada?",
@@ -591,7 +697,7 @@ toString(): string {
 }`,
         },
       ],
-      correct: 1,
+      correct: "centralizada",
     },
   },
   {
@@ -657,7 +763,7 @@ class UserSettings {
 }`,
         },
       ],
-      correct: 1,
+      correct: "composicion",
     },
   },
   {
@@ -756,12 +862,24 @@ if (name === 'John Doe') {
   startSession();
 }`,
       options: [
-        "El comentario es inútil: repite la condición. El if ya es autoexplicativo; hace falta un mejor nombre, no un comentario.",
-        "startSession() no existe y rompe el programa.",
-        "El comentario debería estar escrito en inglés.",
-        "La variable name debería ser const o let según el linter.",
+        {
+          id: "comentario-inutil",
+          text: "El comentario es inútil: repite la condición. El if ya es autoexplicativo; hace falta un mejor nombre, no un comentario.",
+        },
+        {
+          id: "startSession",
+          text: "startSession() no existe y rompe el programa.",
+        },
+        {
+          id: "comentario-ingles",
+          text: "El comentario debería estar escrito en inglés.",
+        },
+        {
+          id: "const-let",
+          text: "La variable name debería ser const o let según el linter.",
+        },
       ],
-      correct: 0,
+      correct: "comentario-inutil",
     },
   },
   {
@@ -803,7 +921,7 @@ function updateUser(id: number, data: UserData) { /* ... */ }
 function deleteUser(id: number) { /* ... */ }`,
         },
       ],
-      correct: 1,
+      correct: "uniforme",
     },
   },
 ];

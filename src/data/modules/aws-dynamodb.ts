@@ -579,12 +579,24 @@ const params = {
 };
 await dynamodb.scan(params).promise();`,
       options: [
-        "El código escanea TODA la tabla y luego filtra por userId: como ya conocemos la clave de partición, una Query por userId sería mucho más eficiente y consumiría menos RCU.",
-        "No hay bug: el Scan es la operación más rápida cuando ya se sabe qué usuario se busca.",
-        "El bug es que FilterExpression no existe en la API de DynamoDB: esa expresión solo se usa en consultas SQL.",
-        "El bug es que falta el atributo de ordenación en la petición para que el Scan funcione.",
+        {
+          id: "scan-ineficiente",
+          text: "El código escanea TODA la tabla y luego filtra por userId: como ya conocemos la clave de partición, una Query por userId sería mucho más eficiente y consumiría menos RCU.",
+        },
+        {
+          id: "sin-bug",
+          text: "No hay bug: el Scan es la operación más rápida cuando ya se sabe qué usuario se busca.",
+        },
+        {
+          id: "filter-expression",
+          text: "El bug es que FilterExpression no existe en la API de DynamoDB: esa expresión solo se usa en consultas SQL.",
+        },
+        {
+          id: "falta-sort-key",
+          text: "El bug es que falta el atributo de ordenación en la petición para que el Scan funcione.",
+        },
       ],
-      correct: 0,
+      correct: "scan-ineficiente",
     },
   },
 

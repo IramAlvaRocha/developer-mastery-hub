@@ -8,7 +8,7 @@ export const GCP_EXERCISES: Exercise[] = [
     tags: ["@google-cloud/functions-framework", "http", "gen2"],
     fileName: "index.ts",
     completed: false,
-    explanationText: "Cloud Functions es como contratar a un chef freelance: solo pagas cuando cocina (cuando hay requests). No necesitas tener un cocinero de planta (servidor 24/7).",
+    explanationText: "🌍 Ejemplo cotidiano: Cloud Functions es contratar un chef freelance: pagas solo cuando cocina (cuando hay requests), sin cocinero de planta 24/7.\n\nGen 2 corre sobre Cloud Run y el functions-framework expone un handler http('name', fn). Solo pagas por invocación y escala a cero entre llamadas: ideal para tareas puntuales que no justifican un servidor.",
     codeSnippet:
 `import { [INPUT_1] } from '@google-cloud/functions-framework';
 import type { Request, Response } from 'express';
@@ -38,7 +38,7 @@ import type { Request, Response } from 'express';
     tags: ["cloudEvent", "Pub/Sub", "async"],
     fileName: "pubsub-handler.ts",
     completed: false,
-    explanationText: "Pub/Sub es como un buzón de correo empresarial: alguien deposita un mensaje (publica) y otro lo recoge cuando puede (suscriptor). Desacopla servicios.",
+    explanationText: "🌍 Ejemplo cotidiano: Pub/Sub es un buzón corporativo: alguien publica y el suscriptor recoge cuando puede.\n\nUn trigger cloudEvent('name', fn) dispara la función cuando llega un mensaje al topic; los datos viajan en Base64 y se decodifican. Desacopla al productor del consumidor: ninguno necesita que el otro esté vivo.",
     codeSnippet:
 `import { [INPUT_1] } from '@google-cloud/functions-framework';
 import type { CloudEvent } from '@google-cloud/functions-framework';
@@ -64,7 +64,7 @@ import type { CloudEvent } from '@google-cloud/functions-framework';
     tags: ["Dockerfile", "Cloud Run", "multi-stage"],
     fileName: "Dockerfile",
     completed: false,
-    explanationText: "Cloud Run es como un restaurante que solo abre cuando hay clientes (scale to zero) y puede abrir 1000 sucursales en segundos si hay cola (autoscaling).",
+    explanationText: "🌍 Ejemplo cotidiano: Cloud Run es un restaurante que abre solo con clientes (scale to zero) y monta 1000 sucursales en segundos si hay cola.\n\nEl multi-stage build deja una imagen final pequeña con solo dist/ y node_modules de producción, usuario no-root y EXPOSE 8080. Cloud Run inyecta PORT automáticamente y escala contenedores según tráfico.",
     codeSnippet:
 `# Multi-stage build: imagen final más pequeña y segura
 FROM node:20-[INPUT_1] AS builder
@@ -94,7 +94,20 @@ CMD ["node", "dist/server.js"]`,
     tags: ["IAM", "service account", "least privilege"],
     fileName: "deploy.sh",
     completed: false,
-    explanationText: "Mínimo privilegio es como una tarjeta de empleado: el empleado de limpieza puede entrar al baño, no a la sala de servidores. Cada servicio solo accede a lo que necesita.",
+    theory: `## Mínimo privilegio en IAM
+Cada servicio debe tener solo los permisos que necesita, nada más.
+
+### El error típico
+Usar la service account por defecto, que arrastra permisos amplios: si se compromete, el atacante tiene mucho más.
+
+### El patrón
+1. Crea una SA dedicada por servicio.
+2. Asigna el rol mínimo (datastore.user, no editor/owner).
+3. Adjunta la SA al servicio (gcloud run deploy --service-account).
+
+### Por qué importa
+Limita el radio de daño de una credencial filtrada. Un rol editor en manos de un atacante es una puerta abierta al proyecto entero.`,
+    explanationText: "🌍 Ejemplo cotidiano: la tarjeta del empleado de limpieza abre el baño, no la sala de servidores.\n\nCrear una service account dedicada y asignarle solo roles/datastore.user (nunca editor/owner) limita el daño si se filtra la credencial. El principio de mínimo privilegio es la primera línea de defensa en la nube.",
     codeSnippet:
 `# 1. Crear service account dedicada (NO usar default)
 gcloud iam service-accounts create [INPUT_1]-sa \\
@@ -119,7 +132,7 @@ gcloud run deploy my-api \\
     tags: ["Cloud Logging", "structured", "severity"],
     fileName: "utils/logger.ts",
     completed: false,
-    explanationText: "Logs en texto plano son como buscar una palabra en un libro sin índice. Logs JSON estructurados son ese libro CON índice, filtros y búsqueda.",
+    explanationText: "🌍 Ejemplo cotidiano: el log en texto plano es un libro sin índice; el JSON estructurado es ese libro con índice y búsqueda.\n\nEscribir a stdout con JSON.stringify({ severity, message, ... }) y stack_trace hace que Cloud Logging lo capture e indexe automáticamente. Con severity y campos tipados, filtrar 'todos los ERROR del usuario X' es una query, no un grep a ciegas.",
     codeSnippet:
 `// En Cloud Run/Functions: escribir a stdout con formato JSON
 // Cloud Logging lo captura automáticamente
@@ -151,7 +164,17 @@ export const logger = {
     tags: ["Secret Manager", "secretVersion", "security"],
     fileName: "utils/secrets.ts",
     completed: false,
-    explanationText: "Secret Manager es como una caja fuerte bancaria para tus contraseñas y API keys. Solo el servicio autorizado puede abrirla, y queda un registro de quién accedió.",
+    theory: `## Secretos con Secret Manager
+Los secretos nunca van en el código fuente, el Dockerfile ni las variables de entorno versionadas.
+
+### El patrón
+- Guarda el valor en Secret Manager.
+- Léelo en runtime con accessSecretVersion y decodifica el payload.
+- En Cloud Run, móntalo con --set-secrets=ENV=secret:latest.
+
+### Por qué importa
+Un secreto en git queda en el historial para siempre. Secret Manager lo mantiene fuera del repo, rota versión a versión y audita el acceso.`,
+    explanationText: "🌍 Ejemplo cotidiano: Secret Manager es la caja fuerte bancaria de tus API keys: solo el servicio autorizado abre y queda registro.\n\naccessSecretVersion({ name: '.../versions/latest' }) devuelve el payload en Base64. Centralizar secretos evita hardcodearlos en código o Dockerfile, y audita quién y cuándo accedió.",
     codeSnippet:
 `import { SecretManagerServiceClient } from '@google-cloud/[INPUT_1]';
 
@@ -179,7 +202,7 @@ export async function getSecret(secretName: string): Promise<string> {
     tags: ["@opentelemetry", "Counter", "Histogram"],
     fileName: "utils/metrics.ts",
     completed: false,
-    explanationText: "Las métricas son como el cuadro de instrumentos de un auto: velocímetro (latencia), nivel de combustible (memoria), temperatura (CPU). Sin ellos, manejas a ciegas.",
+    explanationText: "🌍 Ejemplo cotidiano: las métricas son el tablero del auto: velocímetro (latencia), combustible (memoria), temperatura (CPU). Sin ellas, manejas a ciegas.\n\nOpenTelemetry con CloudMonitoringMetricExporter exporta contadores (createCounter) e histogramas (createHistogram) a Cloud Monitoring. Sobre esas métricas creas alertas de latencia o 5xx en vez de enterarte por el usuario.",
     codeSnippet:
 `import { MeterProvider } from '@opentelemetry/[INPUT_1]';
 import { CloudMonitoringMetricExporter } from '@google-cloud/opentelemetry-cloud-monitoring-exporter';
@@ -209,7 +232,7 @@ export const latencyHistogram = meter.createHistogram('[INPUT_4]_seconds', {
     tags: ["--set-secrets", "Secret Manager", "env"],
     fileName: "deploy-cloudrun.sh",
     completed: false,
-    explanationText: "Mala práctica muy común: poner secrets como variables de entorno hardcodeadas en el código o en el Dockerfile. La correcta: montarlos desde Secret Manager en deploy.",
+    explanationText: "🌍 Ejemplo cotidiano: no dejas la llave bajo el felpudo (hardcoded); la montas desde la caja fuerte al desplegar.\n\n--set-secrets=DB_PASSWORD=db-password:latest inyecta el secreto como variable de entorno solo en runtime; las variables normales van con --set-env-vars. Así el secreto nunca toca el repo ni la imagen.",
     codeSnippet:
 `# Montar secretos desde Secret Manager como env vars
 gcloud run deploy my-api \\
@@ -233,7 +256,7 @@ gcloud run deploy my-api \\
     tags: ["App Check", "IAM", "token verification"],
     fileName: "middleware/verifyAppCheck.ts",
     completed: false,
-    explanationText: "Arquitectura de seguridad en capas es como un edificio seguro: portero (App Check), tarjeta de acceso por piso (IAM), cámara en cada sala (Logging).",
+    explanationText: "🌍 Ejemplo cotidiano: la seguridad en capas es un edificio con portero (App Check), tarjeta por piso (IAM) y cámaras (Logging).\n\nApp Check verifica que la petición venga de tu app legítima (verifyToken del header X-Firebase-AppCheck), e IAM autoriza al servidor. Ninguna capa sola basta; juntas cubren cliente y servidor.",
     codeSnippet:
 `import { getAppCheck } from 'firebase-admin/[INPUT_1]';
 
@@ -261,7 +284,7 @@ export async function verifyAppCheckToken(req: Request, res: Response, next: Nex
     tags: ["Cloud Tasks", "queue", "retry"],
     fileName: "services/taskService.ts",
     completed: false,
-    explanationText: "Cloud Tasks es como dejar una nota de trabajo para después: 'procesa este PDF en 5 minutos'. Si falla, GCP lo reintenta automáticamente hasta N veces.",
+    explanationText: "🌍 Ejemplo cotidiano: Cloud Tasks es dejar una nota 'procesa esto en 5 min'; si falla, se reintenta solo.\n\nEncolas un httpRequest con body en Base64 y scheduleTime; el worker lo recibe vía POST. Diferir trabajo pesado (emails, PDFs) evita bloquear la request y garantiza reintentos ante fallos.",
     codeSnippet:
 `import { CloudTasksClient } from '@google-cloud/[INPUT_1]';
 
@@ -295,7 +318,17 @@ export async function enqueueEmailTask(userId: string, template: string) {
     tags: ["VPC", "private networking", "Firestore"],
     fileName: "networking.sh",
     completed: false,
-    explanationText: "VPC Connector es como un túnel privado entre tus servicios. El tráfico nunca sale a internet público, igual que la intranet de una empresa.",
+    theory: `## Red privada con VPC Connector
+Por defecto el tráfico entre servicios sale a internet público. Un conector VPC lo mantiene dentro de tu red privada.
+
+### El patrón
+1. Crea el connector sobre una subred.
+2. Despliega Cloud Run con --vpc-connector y --vpc-egress=private-ranges-only.
+3. Abre el firewall solo para la service account del servicio.
+
+### Por qué importa
+Firestore/BD en modo privado es inalcanzable desde internet: la superficie de ataque se reduce a tu red. Es el equivalente a la intranet de una empresa, pero en la nube.`,
+    explanationText: "🌍 Ejemplo cotidiano: el VPC Connector es un túnel privado entre tus servicios: el tráfico nunca sale a internet público.\n\nConecta Cloud Run a Firestore privado vía --vpc-connector y --vpc-egress=private-ranges-only, más una regla de firewall de ingreso por service account. Así la BD no es alcanzable desde fuera, solo desde tu red.",
     codeSnippet:
 `# Crear VPC Connector
 gcloud compute networks vpc-access connectors create [INPUT_1]-connector \\
@@ -323,7 +356,7 @@ gcloud compute firewall-rules create allow-cloudrun-firestore \\
     tags: ["cloudbuild.yaml", "Cloud Build", "CD"],
     fileName: "cloudbuild.yaml",
     completed: false,
-    explanationText: "Cloud Build es como una línea de ensamblaje automatizada: cada push a main construye, prueba y despliega tu app sin intervención manual.",
+    explanationText: "🌍 Ejemplo cotidiano: Cloud Build es la línea de ensamblaje: cada push a main construye, prueba y despliega sin intervención.\n\nEl cloudbuild.yaml encadena pasos (npm ci → test → docker build → push → gcloud run deploy). Automatizar el deploy elimina el 'en mi máquina funciona' y hace cada release reproducible.",
     codeSnippet:
 `# cloudbuild.yaml
 steps:

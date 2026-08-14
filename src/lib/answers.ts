@@ -51,13 +51,6 @@ export function isOrderingCorrect(
   return order.every((id, i) => id === correctOrder[i]);
 }
 
-/** True si `value` (índice como string) coincide con el índice correcto. */
-export function isChoiceCorrect(correct: number, value: string): boolean {
-  const n = Number.parseInt(value, 10);
-  if (!Number.isFinite(n)) return false;
-  return n === correct;
-}
-
 /** True si `value` ("true" | "false") coincide con la respuesta esperada. */
 export function isTrueFalseCorrect(expected: boolean, value: string): boolean {
   if (value !== "true" && value !== "false") return false;

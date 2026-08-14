@@ -8,7 +8,7 @@ export const GIT_ADVANCED_EXERCISES: Exercise[] = [
     tags: ["git flow", "branches", "strategy"],
     fileName: "terminal",
     completed: false,
-    explanationText: "Git Flow es como el sistema de control de tráfico aéreo: cada avión (rama) tiene una ruta definida. Sin eso, chocarían (conflictos en producción).",
+    explanationText: "🌍 Ejemplo cotidiano: Git Flow es el control de tráfico aéreo: cada avión (rama) tiene ruta definida, sin choques en producción.\n\nDefine ramas con propósito: main (estable), develop (integración), feature/*, release/* y hotfix/*. Tener rutas claras evita mezclar cambios a medio hacer con código listo para producción.",
     codeSnippet: "# Ordena el flujo: init → feature → finish → release",
     inputs: {},
     completeCode: "git flow init | feature start/finish | release start/finish",
@@ -31,7 +31,20 @@ export const GIT_ADVANCED_EXERCISES: Exercise[] = [
     tags: ["trunk based", "feature flag", "main"],
     fileName: "featureFlags.ts",
     completed: false,
-    explanationText: "Feature flags son como los interruptores de luz en una casa en construcción: la instalación está hecha pero el interruptor está apagado hasta que todo esté listo.",
+    theory: `## Trunk Based + feature flags
+En Trunk Based todos committean directo a main; el código incompleto se oculta tras un flag, no tras una rama larga.
+
+### Por qué importa
+- Ramas largas = merges dolorosos con conflictos enormes.
+- Main siempre desplegable: el flag es el interruptor, no la rama.
+
+### Cómo se hace
+- process.env para flags simples.
+- Firebase Remote Config (o similar) para cambiar el flag en runtime sin redeploy.
+
+### Regla
+Los flags acumulados son deuda técnica: bórralos cuando la feature quede estable.`,
+    explanationText: "🌍 Ejemplo cotidiano: el interruptor de una casa en construcción ya está instalado, pero apagado hasta que todo esté listo.\n\nUn feature flag (process.env.FEATURE_X === 'true' o Firebase Remote Config) activa/desactiva código en producción sin redeploy. Es lo que permite committear directo a main con funcionalidad incompleta, oculta tras el flag.",
     codeSnippet:
 `// featureFlags.ts
 export const FLAGS = {
@@ -58,7 +71,7 @@ const flag = remoteConfig.[INPUT_4]('new_dashboard').asBoolean();`,
     tags: ["pull request", "review", "CODEOWNERS"],
     fileName: ".github/PULL_REQUEST_TEMPLATE.md",
     completed: false,
-    explanationText: "Un PR grande es como un examen de 200 preguntas vs uno de 20: el reviewer se cansa, baja la calidad de revisión y se aprueban bugs.",
+    explanationText: "🌍 Ejemplo cotidiano: un PR de 200 preguntas cansa al revisor; uno de 20 se revisa bien.\n\nUn PR pequeño, enfocado y con plantilla (qué hace, tipo de cambio, checklist) se revisa rápido y a fondo. CODEOWNERS asigna revisores automáticos por ruta, y los checklists evitan que se cuelen console.log o secretos.",
     codeSnippet:
 `## ¿Qué hace este PR?
 <!-- Descripción breve del cambio -->
@@ -88,7 +101,7 @@ src/security/ @security-team`,
     tags: ["squash", "merge", "history"],
     fileName: "terminal",
     completed: false,
-    explanationText: "Squash merge es como preparar un resumen ejecutivo: en vez de 47 minutas de reuniones, tienes UN documento con las decisiones finales.",
+    explanationText: "🌍 Ejemplo cotidiano: el squash es el resumen ejecutivo: en vez de 47 minutas, un documento con las decisiones finales.\n\n--squash combina todos los commits del PR en uno; el rebase + merge --ff-only deja la historia lineal sin merge commits. Un main limpio te deja leer git log sin ruido al investigar.",
     codeSnippet:
 `# Squash: combina todos los commits en uno
 git merge --[INPUT_1] feature/user-auth
@@ -112,7 +125,7 @@ git log --[INPUT_4] --graph --all`,
     tags: ["husky", "lint-staged", "pre-commit"],
     fileName: "package.json",
     completed: false,
-    explanationText: "Husky es como el corrector ortográfico de Word, pero para código: te avisa ANTES de enviar si hay errores, no después de que el cliente los vea.",
+    explanationText: "🌍 Ejemplo cotidiano: Husky es el corrector ortográfico del código: avisa ANTES de enviar, no después de que el cliente lo vea.\n\nCon husky install + lint-staged, cada commit dispara eslint --fix y prettier sobre los archivos tocados, y pre-push corre los tests. La calidad se garantiza en local, no en el CI ni en producción.",
     codeSnippet:
 `// package.json
 {
@@ -140,7 +153,20 @@ git log --[INPUT_4] --graph --all`,
     tags: ["semantic-release", "semver", "changelog"],
     fileName: ".releaserc.json",
     completed: false,
-    explanationText: "Semantic versioning es el contrato con tus usuarios: MAJOR.MINOR.PATCH. 1.0.0 → 1.1.0 (feat) → 1.1.1 (fix) → 2.0.0 (breaking change).",
+    theory: `## Versionado automático con semantic-release
+El número de versión comunica compatibilidad: MAJOR.MINOR.PATCH.
+
+### Qué dispara cada bump
+- fix: → PATCH (1.0.1)
+- feat: → MINOR (1.1.0)
+- feat! / BREAKING → MAJOR (2.0.0)
+
+### Cómo funciona
+semantic-release analiza los commits desde el último tag, decide la versión, genera changelog y publica. El equipo solo escribe commits convencionales.
+
+### Por qué importa
+Elimina el error humano de olvidar versionar y mantiene changelog + releases siempre al día.`,
+    explanationText: "🌍 Ejemplo cotidiano: el semver es el contrato con tus usuarios: MAJOR.MINOR.PATCH, y cada número promete algo.\n\nsemantic-release lee los conventional commits y versiona solo: feat→MINOR, fix→PATCH, feat!→MAJOR, generando changelog y release en GitHub. El versionado deja de depender de que alguien recuerde subir el número.",
     codeSnippet:
 `// .releaserc.json
 {
@@ -171,7 +197,7 @@ git log --[INPUT_4] --graph --all`,
     tags: ["stash", "WIP", "context switching"],
     fileName: "terminal",
     completed: false,
-    explanationText: "git stash es como el cajón de 'pendientes' de tu escritorio: apartas lo que estás haciendo, atiendes lo urgente y luego retomas.",
+    explanationText: "🌍 Ejemplo cotidiano: stash es el cajón de 'pendientes': apartas lo que haces, atiendes lo urgente y retomas.\n\nstash push -m guarda cambios sin commitear, list los muestra y pop/apply los recuperan. Es el atajo para cambiar de rama sin ensuciar la historia con commits a medias.",
     codeSnippet: "# Ordena el flujo del stash: guardar → listar → recuperar",
     inputs: {},
     completeCode: "stash push -m | stash list | stash pop | stash apply stash@{n}",
@@ -194,7 +220,7 @@ git log --[INPUT_4] --graph --all`,
     tags: ["cherry-pick", "hotfix", "backport"],
     fileName: "terminal",
     completed: false,
-    explanationText: "Cherry-pick es como copiar una receta específica de un libro de cocina sin llevarte el libro completo. Útil para portar hotfixes a main y a versiones anteriores.",
+    explanationText: "🌍 Ejemplo cotidiano: copiar una receta concreta del libro sin llevarte el libro entero.\n\ncherry-pick <hash> aplica un commit concreto a otra rama; --continue sigue tras un conflicto y --no-commit lo deja en staging. Es la vía para portar un hotfix a main y a la versión anterior a la vez.",
     codeSnippet: "# Ordena el flujo para portar el commit abc1234 a main",
     inputs: {},
     completeCode: "cherry-pick <hash> | range abc..def | --continue | --no-commit",
@@ -217,7 +243,20 @@ git log --[INPUT_4] --graph --all`,
     tags: ["GitHub Actions", "Cloud Run", "staging", "production"],
     fileName: ".github/workflows/deploy.yml",
     completed: false,
-    explanationText: "CI/CD bien configurado es la diferencia entre desplegar con miedo (manual, lento, propenso a errores) y desplegar con confianza (automático, testeado, reproducible).",
+    theory: `## CI/CD: desplegar con confianza
+El pipeline automático reemplaza el deploy manual, lento y propenso a errores.
+
+### Estructura típica
+1. job test: checkout → npm ci → build → test.
+2. deploy-staging: solo en pull_request (needs: test).
+3. deploy-prod: solo en push a main.
+
+### La clave de seguridad
+Autenticar con google-github-actions/auth y un JSON de service account guardado como secreto (GCP_SA_KEY), nunca en el repo.
+
+### Por qué importa
+Cada merge queda probado y reproducible; si algo rompe, lo ves en el PR, no en producción.`,
+    explanationText: "🌍 Ejemplo cotidiano: el CI/CD bien montado es la diferencia entre desplegar con miedo y desplegar con confianza.\n\nEl workflow encadena test → deploy-staging en PR → deploy-prod en push a main, autenticando con google-github-actions/auth y un secreto de SA. Cada merge sale probado y reproducible, no 'en mi máquina funciona'.",
     codeSnippet:
 `name: Deploy
 on:
@@ -255,7 +294,7 @@ jobs:
     tags: ["monorepo", "workspaces", "shared packages"],
     fileName: "package.json",
     completed: false,
-    explanationText: "Un monorepo es como un edificio de departamentos: un solo terreno (repo), múltiples apartamentos (paquetes) que comparten infraestructura (node_modules, CI/CD).",
+    explanationText: "🌍 Ejemplo cotidiano: el monorepo es un edificio de departamentos: un terreno (repo), varios apartamentos (paquetes) que comparten infraestructura.\n\nworkspaces: ['packages/*', 'apps/*'] hace que npm instale y resuelva dependencias compartidas sin duplicar node_modules. Instalar por workspace (--workspace=apps/web) y ejecutar en todos (--workspaces) coordina el monorepo entero.",
     codeSnippet:
 `// package.json (raíz del monorepo)
 {

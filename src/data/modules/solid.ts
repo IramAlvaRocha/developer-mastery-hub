@@ -138,7 +138,7 @@ const b = Configuracion.getInstancia();
 }`,
         },
       ],
-      correct: 1,
+      correct: "limpio",
     },
   },
   {
@@ -176,12 +176,24 @@ const s = t
 const m = Date.now();
 const p = (n: number) => (n << 2) | 3;`,
       options: [
-        "Optimización prematura (aritmética de bits ilegible) y nombres indescriptivos (t, s, m, p).",
-        "Untestability: esta función es imposible de probar sin una conexión real.",
-        "Duplication: el mismo cálculo se repite en tres métodos distintos.",
-        "Tight Coupling: la función depende de varias librerías externas.",
+        {
+          id: "prematura-nombres",
+          text: "Optimización prematura (aritmética de bits ilegible) y nombres indescriptivos (t, s, m, p).",
+        },
+        {
+          id: "untestability",
+          text: "Untestability: esta función es imposible de probar sin una conexión real.",
+        },
+        {
+          id: "duplication",
+          text: "Duplication: el mismo cálculo se repite en tres métodos distintos.",
+        },
+        {
+          id: "tight-coupling",
+          text: "Tight Coupling: la función depende de varias librerías externas.",
+        },
       ],
-      correct: 0,
+      correct: "prematura-nombres",
     },
   },
   {
@@ -288,12 +300,24 @@ const p = (n: number) => (n << 2) | 3;`,
   print() { window.print(); }
 }`,
       options: [
-        "Violación de SRP: mezcla cálculo de negocio, persistencia, notificaciones y presentación en una sola clase.",
-        "El total se calcula mal porque no aplica los descuentos por volumen.",
-        "Falta un constructor que inicialice el arreglo de items.",
-        "Violación de OCP: no se puede agregar un método sin modificar la clase.",
+        {
+          id: "srp",
+          text: "Violación de SRP: mezcla cálculo de negocio, persistencia, notificaciones y presentación en una sola clase.",
+        },
+        {
+          id: "total-mal",
+          text: "El total se calcula mal porque no aplica los descuentos por volumen.",
+        },
+        {
+          id: "falta-constructor",
+          text: "Falta un constructor que inicialice el arreglo de items.",
+        },
+        {
+          id: "ocp",
+          text: "Violación de OCP: no se puede agregar un método sin modificar la clase.",
+        },
       ],
-      correct: 0,
+      correct: "srp",
     },
   },
   {
@@ -398,7 +422,7 @@ class Square implements Shape {
 }`,
         },
       ],
-      correct: 1,
+      correct: "extension",
     },
   },
   {
@@ -460,7 +484,7 @@ export class TodoService {
 }`,
         },
       ],
-      correct: 1,
+      correct: "abstract",
     },
   },
   {
@@ -496,12 +520,24 @@ export class TodoService {
   return 0;
 }`,
       options: [
-        "No está abierta a extensión: añadir un tipo de cliente nuevo obliga a modificar la función existente.",
-        "Está abierta a modificación: cualquier persona puede editar el archivo.",
-        "El porcentaje del descuento debería ser 0.5 en lugar de 0.05.",
-        "Falta un else al final del encadenamiento de ifs.",
+        {
+          id: "no-extensible",
+          text: "No está abierta a extensión: añadir un tipo de cliente nuevo obliga a modificar la función existente.",
+        },
+        {
+          id: "abierta-modificacion",
+          text: "Está abierta a modificación: cualquier persona puede editar el archivo.",
+        },
+        {
+          id: "porcentaje",
+          text: "El porcentaje del descuento debería ser 0.5 en lugar de 0.05.",
+        },
+        {
+          id: "falta-else",
+          text: "Falta un else al final del encadenamiento de ifs.",
+        },
       ],
-      correct: 0,
+      correct: "no-extensible",
     },
   },
   {
@@ -616,7 +652,7 @@ class Aguila extends Ave implements Volador {
 }`,
         },
       ],
-      correct: 1,
+      correct: "cumple",
     },
   },
   {
@@ -693,12 +729,24 @@ class Programador implements Trabajador {
   cocinar() { throw new Error('No cocino'); }
 }`,
       options: [
-        "Interfaz gorda: Programador se ve forzado a implementar métodos que no le corresponden y debe lanzar errores.",
-        "Los métodos no tienen parámetros y eso rompe el tipado de la interfaz.",
-        "La clase Programador debería ser una interfaz en lugar de una clase.",
-        "No hay violación de ISP: implementar métodos extra es una práctica normal.",
+        {
+          id: "interfaz-gorda",
+          text: "Interfaz gorda: Programador se ve forzado a implementar métodos que no le corresponden y debe lanzar errores.",
+        },
+        {
+          id: "sin-parametros",
+          text: "Los métodos no tienen parámetros y eso rompe el tipado de la interfaz.",
+        },
+        {
+          id: "clase-interfaz",
+          text: "La clase Programador debería ser una interfaz en lugar de una clase.",
+        },
+        {
+          id: "no-violacion",
+          text: "No hay violación de ISP: implementar métodos extra es una práctica normal.",
+        },
       ],
-      correct: 0,
+      correct: "interfaz-gorda",
     },
   },
   {
@@ -752,7 +800,7 @@ class DiseniadorUX implements Diseniador {
 }`,
         },
       ],
-      correct: 1,
+      correct: "segregada",
     },
   },
   {
@@ -835,7 +883,7 @@ class FakeUserRepository implements UserRepository {
 }`,
         },
       ],
-      correct: 1,
+      correct: "inyectado",
     },
   },
   {
@@ -843,29 +891,47 @@ class FakeUserRepository implements UserRepository {
     title: "Code Smells: Duplicidad Real vs Accidental y Complejidad",
     stars: 2,
     category: "SMELLS",
-    description: "Más allá del acrónimo: untestability, complejidad accidental vs esencial, la métrica del WTF por minuto y los dos tipos de duplicidad.",
-    objective: "Distinguir duplicidad real/accidental y complejidad esencial/accidental",
+    description: "Elige el fragmento con duplicidad real: código idéntico que obliga a actualizar todas las copias.",
+    objective: "Distinguir duplicidad real de duplicidad accidental",
     tags: ["duplicidad", "complejidad", "untestability"],
     fileName: "smells-extra.ts",
     completed: false,
-    instruction: "Valida tu comprensión de los code smells adicionales.",
+    instruction: "Lee los fragmentos y elige el que muestra duplicidad real.",
     theory:
       "El curso amplía los smells con matices importantes:\n\n- **Untestability**: el código difícil de probar suele ser producto del **alto acoplamiento** y de dependencias que no se inyectan (o que viven en el contexto global, como el Singleton). Hay que tener **las pruebas en mente desde la creación del código**.\n- **Optimización prematura**: retrasar la toma de decisiones mantiene abiertas las opciones. Distingue entre **complejidad esencial** (inherente al problema) y **complejidad accidental** (la que añadimos al implementar una solución más compleja de la necesaria: 'no voy a implementar Redux solo para sumar dos números').\n- **Nombres poco descriptivos**: el balance entre demasiado específico (nombres larguísimos) y demasiado genérico (Clases que asumen demasiadas tareas).\n- **Duplicidad**: la **real** (código idéntico que cumple la misma función; un cambio obliga a actualizar todas las copias, con riesgo de error humano y pruebas duplicadas) vs la **accidental** (luce similar pero cumple tareas distintas; un cambio solo afecta a un lugar).\n\nY la métrica informal de calidad: el **'WTF por minuto'** — cuántas veces quien lee el código dice '¿qué diablos es esto?'.",
     explanationText:
-      "🌍 Ejemplo cotidiano: la duplicidad real es tener dos recibos de luz idénticos en dos cajones: pagas uno, corriges el monto en uno y el otro queda desactualizado. La accidental es que dos recibos parezcan iguales pero uno sea de luz y otro de agua: no los juntes a la fuerza.\n\nY la complejidad accidental es instalar una alarma de aeropuerto para proteger una bicicleta: la solución es más compleja que el problema. El curso pide encontrar el balance entre la complejidad esencial y la accidental.",
-    codeSnippet: "// Afirmaciones sobre code smells adicionales",
+      "🌍 Ejemplo cotidiano: la duplicidad real es tener dos recibos de luz idénticos en dos cajones: pagas uno, corriges el monto en uno y el otro queda desactualizado. La accidental es que dos recibos parezcan iguales pero uno sea de luz y otro de agua: no los juntes a la fuerza.\n\nLa duplicidad real hay que evitarla a toda costa: copias idénticas que cumplen la misma función y obligan a actualizar todas cuando cambia la regla. La accidental (parecidas pero tareas distintas) no siempre conviene centralizarla.",
+    codeSnippet: "// Elige el fragmento con duplicidad real",
     inputs: {},
     completeCode: "Duplicidad real = copias idénticas a actualizar todas | accidental = similar pero tareas distintas | esencial = inherente al problema | accidental = añadida por la solución",
-    format: "true-false",
-    trueFalse: {
-      prompt: "Valida tu comprensión de la duplicidad y la complejidad según el curso.",
-      statements: [
-        { id: "a", text: "La duplicidad real es código idéntico que cumple la misma función: un cambio obliga a actualizar todas las copias en los mismos puntos.", answer: true, explanation: "Es la duplicidad que hay que evitar a toda costa: incrementa el error humano y las pruebas duplicadas innecesarias." },
-        { id: "b", text: "En la duplicidad accidental el código luce similar pero cumple tareas distintas: un cambio en uno de los módulos solo afecta a ese lugar.", answer: true, explanation: "Si cambias uno y los demás quedan intactos, quizá se pueda centralizar con parámetros, pero no siempre conviene." },
-        { id: "c", text: "La complejidad esencial es la que añadimos nosotros; la accidental es la inherente al problema.", answer: false, explanation: "Al revés: la esencial es inherente al problema (siempre estará ahí); la accidental es la que añadimos con soluciones más complejas de lo necesario." },
-        { id: "d", text: "El 'WTF por minuto' es una métrica informal: cuántas veces quien lee el código dice '¿qué diablos es esto?'.", answer: true, explanation: "Un buen código tiene pocos '¿qué diablos es esto?' por minuto; uno malo, muchos. Es un chiste del oficio para hablar de nombres y legibilidad." },
-        { id: "e", text: "El código difícil de probar (untestability) suele venir de dependencias no inyectadas o que viven en el contexto global.", answer: true, explanation: "Si la dependencia está escondida (new dentro del método o un Singleton global), probarlo aislado es muy difícil." },
+    format: "snippet-pick",
+    snippetPick: {
+      prompt: "¿Cuál de estos fragmentos tiene duplicidad REAL (código idéntico que obliga a actualizar todas las copias)?",
+      snippets: [
+        {
+          id: "a",
+          label: "Duplicidad real",
+          code: `function calcularEnvioEstandar(km: number): number { return km * 2.5; }
+function calcularEnvioExpress(km: number): number   { return km * 2.5; }`,
+          description: "Dos funciones idénticas: cambiar la tarifa obliga a editar ambas.",
+        },
+        {
+          id: "b",
+          label: "Duplicidad accidental",
+          code: `function calcularDescuentoCliente(t: number): number { return t * 0.10; }
+function calcularComisionVendedor(t: number): number { return t * 0.15; }`,
+          description: "Parecidas, pero son reglas de negocio distintas: no deben unirse a la fuerza.",
+        },
+        {
+          id: "c",
+          label: "Sin duplicidad",
+          code: `function calcularEnvio(km: number, tarifa: number): number {
+  return km * tarifa;
+}`,
+          description: "Una sola función parametrizada cubre todos los casos.",
+        },
       ],
+      correct: "a",
     },
   },
   {

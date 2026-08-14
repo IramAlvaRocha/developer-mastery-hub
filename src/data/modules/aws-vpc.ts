@@ -384,8 +384,8 @@ Los flow logs se pueden almacenar en **S3** o en **CloudWatch Logs**.`,
     stars: 3,
     category: "SEGURIDAD",
     description:
-      "El security group es stateful y a nivel de instancia; el NACL es stateless, con allow y deny, y a nivel de subred.",
-    objective: "Dominar la tabla comparativa entre security groups y NACL",
+      "El NACL tiene las reglas mal ordenadas: la 'deny all' se evalúa antes que el permiso de HTTP. Encuentra el fallo.",
+    objective: "Detectar un NACL con prioridad de reglas incorrecta",
     tags: ["security group", "NACL", "stateful", "stateless"],
     fileName: "nacl-vs-sg",
     completed: false,
@@ -415,52 +415,53 @@ El instructor recalca que esta diferencia cae mucho en los exámenes.
     automáticamente, porque ya se validó en la salida.
   • Evalúa **todas las reglas** antes de decidir (sin prioridad).`,
     explanationText:
-      "🌍 Ejemplo cotidiano: el NACL es el control de accesos del parking de la manzana (subred): decide quién entra y sale por lista explícita. El SG es el portero de cada piso (instancia): solo tiene una lista de invitados (permisos) y recuerda quién ya entró para dejarlo salir sin volver a pedirle el carnet.\n\nEl SG 'recuerda' las conexiones que él mismo autorizó (stateful), por eso el retorno fluye solo. El NACL no recuerda nada (stateless): si permites la entrada por el puerto 80 pero no permites la salida del tráfico de respuesta, la petición llega pero la respuesta nunca sale.",
-    codeSnippet: "// Afirmaciones sobre security groups y NACLs",
+      "🌍 Ejemplo cotidiano: un portero que revisa una lista donde la primera línea dice 'prohibido TODO el mundo' y la segunda 'permitido el repartidor'. Como mira la lista en orden, el repartidor nunca pasa.\n\nEn un NACL, el número de regla marca la prioridad: la regla 100 (deny all) se evalúa antes que la 200 (allow HTTP), así que todo el tráfico se bloquea. A diferencia del security group, que evalúa todas sus reglas sin prioridad, el NACL respeta el orden de los números.",
+    codeSnippet: "// Encuentra el fallo en la prioridad de las reglas del NACL",
     inputs: {},
     completeCode:
-      "SG: stateful, instancia, solo allow, evalúa todas | NACL: stateless, subred, allow+deny, orden/prioridad",
-    format: "true-false",
-    trueFalse: {
-      prompt: "Valida la tabla comparativa entre security groups y NACLs.",
-      statements: [
+      "NACL: regla 100 deny all antes que 200 allow HTTP | menor número = mayor prioridad",
+    format: "bug-hunt",
+    bugHunt: {
+      prompt:
+        "¿Qué bug de configuración rompe este NACL de la subred pública?",
+      snippet: `resource "aws_network_acl_rule" "deny_all" {
+  rule_number = 100     # menor número = mayor prioridad
+  egress      = false
+  protocol    = "-1"
+  from_port   = 0
+  to_port     = 0
+  cidr_block  = "0.0.0.0/0"
+  rule_action = "deny"
+}
+
+resource "aws_network_acl_rule" "allow_http" {
+  rule_number = 200
+  egress      = false
+  protocol    = "tcp"
+  from_port   = 80
+  to_port     = 80
+  cidr_block  = "0.0.0.0/0"
+  rule_action = "allow"
+}`,
+      options: [
         {
-          id: "a",
-          text: "Un security group es stateful: el tráfico de retorno se permite de forma automática porque ya se validó en la salida.",
-          answer: true,
-          explanation: "El SG recuerda la conexión y deja volver la respuesta sin revalidarla.",
+          id: "rule-priority",
+          text: "El NACL evalúa las reglas por número de prioridad: la regla 'deny all' (100) bloquea todo antes de que el 'allow HTTP' (200) llegue a aplicarse.",
         },
         {
-          id: "b",
-          text: "Un NACL es stateless: se controlan por separado la entrada y la salida, incluido el tráfico de retorno.",
-          answer: true,
-          explanation: "El NACL no recuerda nada: cada dirección se evalúa con sus propias reglas.",
+          id: "stateful",
+          text: "El NACL es stateful, así que no necesita regla de salida; el problema es que falta asociar un security group.",
         },
         {
-          id: "c",
-          text: "Los security groups se adjuntan a nivel de subred y afectan a todas las instancias de esa subred.",
-          answer: false,
-          explanation: "Los SG se adjuntan a nivel de instancia/ENI. El que actúa a nivel de subred es el NACL.",
+          id: "allow-deny",
+          text: "Los NACL no admiten reglas 'deny': por eso la configuración con rule_action = 'deny' no es válida.",
         },
         {
-          id: "d",
-          text: "Un NACL puede tener reglas de permiso y de denegación, mientras que un security group solo reglas de permiso.",
-          answer: true,
-          explanation: "En un SG no puedes denegar explícitamente: lo que no permites, queda denegado por defecto.",
-        },
-        {
-          id: "e",
-          text: "En un NACL las reglas se evalúan todas antes de decidir; en un security group importa el orden y la prioridad.",
-          answer: false,
-          explanation: "Es al revés: el SG evalúa todas sus reglas y el NACL sigue un orden de prioridad.",
-        },
-        {
-          id: "f",
-          text: "Las reglas de un NACL solo incluyen direcciones IP; un security group también puede referenciar otros security groups.",
-          answer: true,
-          explanation: "El SG permite reglas con IPs o con otros SG; el NACL solo trabaja con direcciones IP.",
+          id: "ephemeral",
+          text: "Faltan los puertos efímeros de salida: la respuesta del servidor se bloquea al intentar volver al cliente.",
         },
       ],
+      correct: "rule-priority",
     },
   },
 
@@ -514,12 +515,24 @@ retorno se permite solo.`,
 // OUTBOUND:
 //   *     Deny    ALL          ALL`,
       options: [
-        "El NACL es stateless: falta una regla de salida que permita el tráfico de retorno, por eso la respuesta nunca llega al cliente.",
-        "El NACL debería estar aplicado a la subred privada, no a la pública.",
-        "El error es del security group: no permite el puerto 80 de entrada.",
-        "No hay bug: permitir solo la entrada y denegar toda la salida es la configuración correcta.",
+        {
+          id: "nacl-stateless",
+          text: "El NACL es stateless: falta una regla de salida que permita el tráfico de retorno, por eso la respuesta nunca llega al cliente.",
+        },
+        {
+          id: "subred-privada",
+          text: "El NACL debería estar aplicado a la subred privada, no a la pública.",
+        },
+        {
+          id: "sg-80",
+          text: "El error es del security group: no permite el puerto 80 de entrada.",
+        },
+        {
+          id: "sin-bug",
+          text: "No hay bug: permitir solo la entrada y denegar toda la salida es la configuración correcta.",
+        },
       ],
-      correct: 0,
+      correct: "nacl-stateless",
     },
   },
 
@@ -565,12 +578,24 @@ HTTP   TCP 80    Allow  0.0.0.0/0   // ✅ correcta`,
 SSH    TCP 22    Deny   0.0.0.0/0
 HTTP   TCP 80    Allow  0.0.0.0/0`,
       options: [
-        "Los security groups solo contienen reglas de permiso: no puedes denegar explícitamente; lo que no permites queda denegado por defecto.",
-        "El puerto 22 debería permitirse con Allow para bloquear el acceso.",
-        "Los security groups sí soportan reglas de denegación como los NACL.",
-        "No hay bug: una regla Deny es la forma correcta de bloquear SSH en un SG.",
+        {
+          id: "sg-solo-allow",
+          text: "Los security groups solo contienen reglas de permiso: no puedes denegar explícitamente; lo que no permites queda denegado por defecto.",
+        },
+        {
+          id: "allow-22",
+          text: "El puerto 22 debería permitirse con Allow para bloquear el acceso.",
+        },
+        {
+          id: "sg-denial",
+          text: "Los security groups sí soportan reglas de denegación como los NACL.",
+        },
+        {
+          id: "deny-correcto",
+          text: "No hay bug: una regla Deny es la forma correcta de bloquear SSH en un SG.",
+        },
       ],
-      correct: 0,
+      correct: "sg-solo-allow",
     },
   },
 
@@ -666,8 +691,8 @@ instalarla físicamente.`,
     stars: 3,
     category: "ARQUITECTURA",
     description:
-      "El ALB en subred pública, las EC2 del Auto Scaling Group en subred privada y RDS/ElastiCache en la subred de datos: la arquitectura típica.",
-    objective: "Comprender dónde vive cada capa de una arquitectura de tres niveles",
+      "Route 53, el ALB, las EC2 del Auto Scaling Group y la base de datos: ordena el flujo de una petición a través de la arquitectura de tres niveles.",
+    objective: "Ordenar el flujo de una petición web→app→datos",
     tags: ["tres niveles", "ALB", "ASG", "RDS", "LAMP"],
     fileName: "three-tier",
     completed: false,
@@ -697,52 +722,34 @@ Relacionado con el examen, el **LAMP stack**:
 En WordPress, además, **EFS** comparte imágenes entre varias instancias
 a la vez.`,
     explanationText:
-      "🌍 Ejemplo cotidiano: un restaurante: el ALB es el maître en la entrada (público) que reparte mesas; los cocineros (EC2) están en la cocina privada a la que nadie entra; la despensa y la nevera (RDS/ElastiCache) están al fondo.\n\nEl aislamiento es la clave: si los usuarios solo hablan con el ALB, las instancias pueden escalar sin exponerse y los datos quedan doblemente protegidos. Este patrón web→app→DB es el más preguntado de arquitectura: aprende qué capa vive en qué subred.",
-    codeSnippet: "// Afirmaciones sobre la arquitectura de tres niveles",
+      "🌍 Ejemplo cotidiano: en un restaurante, el cliente primero habla con el maître (Route 53 + ALB) en la entrada, el maître reparte el pedido a los cocineros (EC2) en la cocina privada, y estos sacan ingredientes de la despensa (RDS/ElastiCache) al fondo.\n\nEl flujo siempre va de público a privado: DNS → balanceador → aplicación → datos. Ningún usuario debe saltarse el balanceador para hablar directo con las instancias o con la base de datos; ese aislamiento en capas es lo que hace segura y escalable la arquitectura.",
+    codeSnippet: "// Ordena el flujo de una petición en la arquitectura de tres niveles",
     inputs: {},
     completeCode:
-      "ALB: subred pública | EC2 (ASG): subred privada | RDS/ElastiCache: subred de datos | Route 53 = DNS",
-    format: "true-false",
-    trueFalse: {
-      prompt: "Valida cómo se organiza una arquitectura de tres niveles en la VPC.",
-      statements: [
+      "Route 53 → ALB (pública) → EC2 ASG (privada) → RDS/ElastiCache (datos)",
+    format: "ordering",
+    ordering: {
+      prompt:
+        "Ordena el recorrido de una petición a través de la arquitectura de tres niveles.",
+      steps: [
         {
-          id: "a",
-          text: "El Elastic Load Balancer recibe peticiones de Internet y por eso se coloca en una subred pública.",
-          answer: true,
-          explanation: "El balanceador es el punto de entrada público de la arquitectura.",
+          id: "route53",
+          label: "Route 53 resuelve el dominio y envía al usuario hacia el balanceador.",
         },
         {
-          id: "b",
-          text: "Las instancias EC2 de la capa de aplicación son accesibles directamente desde Internet.",
-          answer: false,
-          explanation: "Viven en subred privada: solo el ALB puede acceder a ellas.",
+          id: "alb",
+          label: "El ALB (subred pública) recibe la petición y la reparte entre instancias.",
         },
         {
-          id: "c",
-          text: "La capa de datos (RDS y ElastiCache) vive en su propia subred, separada de las instancias EC2.",
-          answer: true,
-          explanation: "Es la subred de datos: un nivel más de aislamiento para la información.",
+          id: "ec2",
+          label: "Las instancias EC2 del Auto Scaling Group (subred privada) procesan la lógica de aplicación.",
         },
         {
-          id: "d",
-          text: "Route 53 se puede usar como servicio DNS para que los usuarios lleguen al Elastic Load Balancer.",
-          answer: true,
-          explanation: "Route 53 resuelve el dominio hacia el balanceador de carga.",
-        },
-        {
-          id: "e",
-          text: "En el stack LAMP, la 'M' (MySQL) se ejecuta como base de datos dentro de las instancias EC2 de aplicación.",
-          answer: false,
-          explanation: "En la arquitectura del curso la 'M' de MySQL vive en RDS, dentro de la subred de datos.",
-        },
-        {
-          id: "f",
-          text: "La VPC por defecto ya incluye montada una arquitectura de tres niveles.",
-          answer: false,
-          explanation: "La VPC por defecto solo tiene subredes públicas: la arquitectura de tres niveles hay que construirla.",
+          id: "rds",
+          label: "La capa de datos (RDS/ElastiCache, subred de datos) sirve y guarda la información.",
         },
       ],
+      correctOrder: ["route53", "alb", "ec2", "rds"],
     },
   },
 

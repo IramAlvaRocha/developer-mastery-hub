@@ -57,6 +57,7 @@ interface ExerciseRow {
   simulation: unknown;
   format: ExerciseFormat | null;
   format_payload: unknown;
+  hints: unknown;
   position: number;
 }
 
@@ -126,6 +127,25 @@ function deserializeFormat(exercise: Exercise, row: ExerciseRow): Exercise {
   return exercise;
 }
 
+/** Normaliza la columna `hints` (jsonb o text[]) a un array de strings limpio. */
+function normalizeHints(raw: unknown): string[] | undefined {
+  if (!raw) return undefined;
+  let list: unknown = raw;
+  // Defensa: si PostgREST entregara el jsonb como string crudo, se parsea.
+  if (typeof raw === "string") {
+    try {
+      list = JSON.parse(raw);
+    } catch {
+      return undefined;
+    }
+  }
+  if (!Array.isArray(list)) return undefined;
+  const cleaned = list.filter(
+    (h): h is string => typeof h === "string" && h.trim().length > 0,
+  );
+  return cleaned.length > 0 ? cleaned : undefined;
+}
+
 function exerciseFromRow(row: ExerciseRow): Exercise {
   const exercise: Exercise = {
     id: row.exercise_ref,
@@ -138,6 +158,7 @@ function exerciseFromRow(row: ExerciseRow): Exercise {
     fileName: row.file_name,
     instruction: row.instruction ?? undefined,
     theory: row.theory ?? undefined,
+    hints: normalizeHints(row.hints),
     explanationText: row.explanation_text,
     codeSnippet: row.code_snippet,
     inputs: (row.inputs ?? {}) as Record<string, ExpectedAnswer>,

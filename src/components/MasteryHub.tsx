@@ -48,6 +48,7 @@ export default function MasteryHub() {
   const {
     isCompleted,
     markComplete,
+    recordAttempt,
     getPercent,
     lastVisited,
     setLastVisited,

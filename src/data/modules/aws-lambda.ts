@@ -374,8 +374,8 @@ CloudWatch: los registros recogen todo lo que la función emite.`,
     stars: 3,
     category: "INVOCACIONES",
     description:
-      "Si una invocación asíncrona falla, Lambda reintenta hasta 2 veces y, si sigue fallando, el evento viaja a la DLQ (SQS o SNS).",
-    objective: "Entender los reintentos, la idempotencia y la DLQ asíncrona",
+      "Si una invocación asíncrona falla, Lambda reintenta y, si sigue fallando, el evento viaja a la DLQ. Ordena ese ciclo.",
+    objective: "Ordenar el ciclo reintentos → DLQ de la invocación asíncrona",
     tags: ["reintentos", "DLQ", "idempotencia", "asíncrona"],
     fileName: "dlq",
     completed: false,
@@ -399,40 +399,34 @@ Si aun así falla, se usa una **cola de mensajes fallidos** (DLQ):
 resultado: procesas miles de archivos y, si algo falla, la DLQ lo
 conserva para recuperarlo sin perder datos.`,
     explanationText:
-      "🌍 Ejemplo cotidiano: un mensajero que intenta entregar un paquete hasta 3 veces (con esperas de 1 y 2 minutos) y, si nadie lo recibe, lo deja en la oficina de objetos perdidos (DLQ) para recuperarlo después.\n\nEn asíncrono, Lambda reintenta hasta 2 veces más (3 intentos en total) y la función debe ser idempotente: repetir no debe cambiar el resultado. Si sigue fallando, el evento va a una cola SQS o un tema SNS (DLQ), y el rol necesita permisos IAM para poder escribirlo allí.",
-    codeSnippet: "// Afirmaciones sobre reintentos y DLQ de las invocaciones asíncronas",
+      "🌍 Ejemplo cotidiano: un mensajero que intenta entregar un paquete hasta 3 veces (con esperas de 1 y 2 minutos) y, si nadie lo recibe, lo deja en la oficina de objetos perdidos (DLQ) para recuperarlo después.\n\nEl ciclo asíncrono siempre va: invocar → fallar → reintentar (hasta 2 reintentos más) → DLQ. Como la función se ejecuta varias veces, debe ser idempotente: repetir no debe cambiar el resultado. Y el rol de ejecución necesita permisos IAM para escribir el evento en la cola SQS o el tema SNS.",
+    codeSnippet: "// Ordena el ciclo de reintentos y DLQ de una invocación asíncrona",
     inputs: {},
     completeCode: "3 intentos (1+2 reintentos) | idempotencia obligatoria | DLQ = SQS o SNS | permisos IAM necesarios",
-    format: "true-false",
-    trueFalse: {
-      prompt: "Valida qué sabes de los reintentos y la DLQ de las invocaciones asíncronas.",
-      statements: [
+    format: "ordering",
+    ordering: {
+      prompt:
+        "Ordena el ciclo de vida de una invocación asíncrona que falla.",
+      steps: [
         {
-          id: "a",
-          text: "En las invocaciones asíncronas, si la función falla, Lambda la reintenta hasta 2 veces más (3 intentos en total).",
-          answer: true,
-          explanation: "El instructor lo explica con esperas entre intentos (por ejemplo, 1 minuto y luego 2 minutos)."
+          id: "invoke",
+          label: "Se invoca la función Lambda de forma asíncrona (sin esperar respuesta).",
         },
         {
-          id: "b",
-          text: "El procesamiento asíncrono debe ser idempotente: con los reintentos, el resultado debe ser el mismo.",
-          answer: true,
-          explanation: "Si no es idempotente, verás logs duplicados y efectos repetidos en cada reintento."
+          id: "fail",
+          label: "La función falla y devuelve un error.",
         },
         {
-          id: "c",
-          text: "La DLQ de las invocaciones asíncronas puede ser una cola SQS o un tema SNS.",
-          answer: true,
-          explanation: "La cola de mensajes fallidos se define con SQS o SNS para conservar los eventos que no se pudieron procesar."
+          id: "retry",
+          label: "Lambda reintenta automáticamente (hasta 2 reintentos, 3 intentos en total).",
         },
         {
-          id: "d",
-          text: "En una invocación asíncrona, el invocador se queda esperando la respuesta de la función.",
-          answer: false,
-          explanation: "Al contrario: la asíncrona existe para NO esperar la respuesta. El invocador sigue con sus tareas."
-        }
-      ]
-    }
+          id: "dlq",
+          label: "Si sigue fallando, el evento se envía a la DLQ (cola SQS o tema SNS).",
+        },
+      ],
+      correctOrder: ["invoke", "fail", "retry", "dlq"],
+    },
   },
 
   {
@@ -659,8 +653,8 @@ Nota importante del instructor:
     stars: 3,
     category: "PERMISOS",
     description:
-      "El rol IAM de ejecución da permisos a la función; las políticas basadas en recursos permiten que otros servicios y cuentas la invoquen.",
-    objective: "Distinguir el rol de ejecución de las políticas basadas en recursos",
+      "La función Lambda lleva claves de acceso de AWS embebidas en el código. Encuentra el fallo de seguridad.",
+    objective: "Detectar claves de acceso embebidas en una función Lambda",
     tags: ["rol de ejecución", "política de recursos", "IAM", "S3"],
     fileName: "lambda-policy",
     completed: false,
@@ -686,40 +680,44 @@ Cada función Lambda tiene **dos capas de permisos**:
   • Cuando un servicio como **S3** llama a una función Lambda, la
     política basada en recursos le da acceso directo a la ejecución.`,
     explanationText:
-      "🌍 Ejemplo cotidiano: tu tarjeta de empleado (rol de ejecución) te da acceso a las salas de tu empresa; el guardia de la puerta (política basada en recursos) decide qué visitantes externos pueden entrar a tu oficina.\n\nEl rol de ejecución otorga permisos a la función para actuar sobre otros servicios (CloudWatch Logs, DynamoDB, SQS...). La política basada en recursos permite que otras cuentas o servicios (como S3 o un ELB) invoquen tu función. Buenas práctica del instructor: un rol de ejecución distinto por función.",
-    codeSnippet: "// Afirmaciones sobre los permisos de las funciones Lambda",
+      "🌍 Ejemplo cotidiano: dejar la llave maestra del edificio pegada en un post-it dentro de cada despacho. Cualquiera que entre a un despacho se lleva la llave de todo.\n\nLa función Lambda no debe llevar claves de acceso embebidas: su rol de ejecución inyecta credenciales temporales automáticamente. Embeber claves permanentes en el código (o en variables de entorno sin cifrar) es un misconfig grave: si el código se filtra, el atacante usa esas claves fuera de la función. La buena práctica del instructor es un rol de ejecución distinto por función.",
+    codeSnippet: "// Encuentra el fallo de seguridad en esta función Lambda",
     inputs: {},
-    completeCode: "Rol de ejecución = permisos de la función (logs, SQS, DynamoDB...) | Política de recursos = quién puede invocarla (S3, ELB, otras cuentas)",
-    format: "true-false",
-    trueFalse: {
-      prompt: "Valida tu comprensión de los permisos de Lambda.",
-      statements: [
+    completeCode:
+      "Rol de ejecución (credenciales temporales automáticas) en vez de claves embebidas | política de recursos = quién puede invocarla",
+    format: "bug-hunt",
+    bugHunt: {
+      prompt:
+        "¿Qué vulnerabilidad introduce esta función Lambda?",
+      snippet: `// Función Lambda que escribe en DynamoDB
+export const handler = async (event) => {
+  const AWS = require("aws-sdk");
+  const dynamo = new AWS.DynamoDB.DocumentClient({
+    accessKeyId: "AKIAIOSFODNN7EXAMPLE",
+    secretAccessKey: "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
+  });
+  await dynamo.put({ TableName: "Pedidos", Item: event }).promise();
+};`,
+      options: [
         {
-          id: "a",
-          text: "El rol de ejecución de Lambda concede a la función permisos para acceder a otros servicios (CloudWatch Logs, DynamoDB, SQS...).",
-          answer: true,
-          explanation: "Es la capa de identidad: la función actúa sobre otros servicios usando su rol de ejecución."
+          id: "hardcoded-keys",
+          text: "Claves de acceso de AWS embebidas en el código: la función debería usar su rol de ejecución, que inyecta credenciales temporales automáticamente.",
         },
         {
-          id: "b",
-          text: "Se recomienda crear un rol de ejecución distinto por función, en lugar de compartir el mismo rol.",
-          answer: true,
-          explanation: "Es la práctica que recomienda el instructor: mínimo privilegio y aislamiento por función."
+          id: "resource-policy",
+          text: "Falta la política basada en recursos que permita a DynamoDB invocar la función.",
         },
         {
-          id: "c",
-          text: "Las políticas basadas en recursos sirven para que otras cuentas y servicios de AWS puedan invocar tu función Lambda.",
-          answer: true,
-          explanation: "Son el equivalente a la política de bucket de S3 pero para Lambda: controlan quién puede invocar el recurso."
+          id: "xss",
+          text: "El evento se inyecta sin sanitizar en DynamoDB, causando XSS almacenado.",
         },
         {
-          id: "d",
-          text: "Para que un servicio como S3 invoque tu función, basta con el rol de ejecución; la política basada en recursos no hace falta.",
-          answer: false,
-          explanation: "Cuando S3 llama a Lambda, es la política basada en recursos la que da acceso directo a la ejecución."
-        }
-      ]
-    }
+          id: "sqli",
+          text: "El TableName se concatena sin parametrizar, permitiendo inyección.",
+        },
+      ],
+      correct: "hardcoded-keys",
+    },
   },
 
   {
@@ -1228,7 +1226,7 @@ Subir solo el handler sin dependencias: Lambda las descarga de npm al vuelo.`,
           description: "Las librerías nativas deben compilarse en Amazon Linux."
         }
       ],
-      correct: 0
+      correct: "a"
     }
   },
 
@@ -1537,7 +1535,7 @@ Exponer la URL de la función con AuthType NONE para datos sensibles en producci
           description: "Anti-patrón: acceso público sin autenticación para datos sensibles."
         }
       ],
-      correct: 0
+      correct: "a"
     }
   },
 ];
