@@ -27,7 +27,13 @@ export default function MasteryHub() {
     lastOpenedAt,
     touchLastOpened,
   } = useEnrollments();
-  const { modules, loading } = useModules(enrolledKeys);
+  const {
+    modules,
+    loading,
+    loadModuleDetail,
+    detailLoadedKeys,
+    detailError,
+  } = useModules(enrolledKeys);
   const moduleKeys = useMemo(
     () =>
       modules
@@ -152,6 +158,19 @@ export default function MasteryHub() {
   }, [filteredExercises.length]);
 
   const inModule = currentSubject !== "menu" && !!currentModule;
+
+  // Carga bajo demanda del detalle completo del módulo activo (Fase 2).
+  // El catálogo ligero solo trae metadatos; el workspace necesita teoría,
+  // código y formato, así que se fetchea al entrar al módulo.
+  const detailReady = detailLoadedKeys.includes(currentSubject);
+
+  useEffect(() => {
+    if (currentSubject === "menu" || !currentModule) return;
+    if (currentModule.exercises.length === 0) return;
+    if (!detailLoadedKeys.includes(currentSubject)) {
+      void loadModuleDetail(currentSubject);
+    }
+  }, [currentSubject, currentModule, detailLoadedKeys, loadModuleDetail]);
 
   useEffect(() => {
     if (currentSubject !== "menu" && currentModule) {
@@ -366,7 +385,18 @@ export default function MasteryHub() {
               inert={isMobileMenuOpen ? true : undefined}
               className="flex min-w-0 flex-1 flex-col"
             >
-              {filteredExercises.length > 0 ? (
+              {filteredExercises.length === 0 ? (
+                <ExerciseFilterEmpty />
+              ) : !detailReady ? (
+                detailError && detailError.key === currentSubject ? (
+                  <ModuleDetailError
+                    message={detailError.message}
+                    onRetry={() => void loadModuleDetail(currentSubject)}
+                  />
+                ) : (
+                  <WorkspaceSkeleton />
+                )
+              ) : (
                 <ExerciseWorkspace
                   key={`${currentModule.key}-${activeExercise.id}`}
                   exercise={activeExercise}
@@ -382,11 +412,12 @@ export default function MasteryHub() {
                   onPrev={goPrev}
                   onNext={goNext}
                   onComplete={(id) => markComplete(currentModule.key, id)}
+                  onAttempt={(id, correct, errorKeys) =>
+                    recordAttempt(currentModule.key, id, correct, errorKeys)
+                  }
                   onShare={shareCurrent}
                   onToast={showToast}
                 />
-              ) : (
-                <ExerciseFilterEmpty />
               )}
             </div>
 
@@ -458,6 +489,82 @@ function ExerciseFilterEmpty() {
         <a href="/aprender" className="btn-filled-soft mt-6 !min-h-11">
           Volver a mis cursos
         </a>
+      </div>
+    </div>
+  );
+}
+
+/** Skeleton del workspace mientras llega el detalle completo del módulo. */
+function WorkspaceSkeleton() {
+  return (
+    <main
+      className="flex min-h-0 flex-1 flex-col overflow-y-auto"
+      aria-busy="true"
+      aria-label="Cargando ejercicio"
+    >
+      <div className="mx-auto flex w-full max-w-5xl flex-1 flex-col px-4 py-4 md:px-6 md:py-6">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="shimmer-loading h-6 w-56 max-w-full rounded-full" />
+          <div className="shimmer-loading h-9 w-28 rounded-full" />
+        </div>
+        <div className="mt-4 flex flex-wrap gap-2">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="shimmer-loading h-9 w-24 rounded-full" />
+          ))}
+        </div>
+        <div className="mt-4 flex-1 rounded-[28px] border border-line bg-surface p-4 sm:p-6">
+          <div className="shimmer-loading h-4 w-44 rounded-full" />
+          <div className="mt-4 space-y-2.5">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div
+                key={i}
+                className="shimmer-loading h-4 rounded-full"
+                style={{ width: `${100 - i * 9}%` }}
+              />
+            ))}
+          </div>
+          <div className="mt-6 rounded-2xl bg-elevated p-4">
+            <div className="shimmer-loading h-3 w-24 rounded-full" />
+            <div className="mt-3 space-y-2">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <div
+                  key={i}
+                  className="shimmer-loading h-3 rounded-full"
+                  style={{ width: `${92 - i * 7}%` }}
+                />
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  );
+}
+
+/** Error de carga del detalle de un módulo, con reintento. */
+function ModuleDetailError({
+  message,
+  onRetry,
+}: {
+  message: string;
+  onRetry: () => void;
+}) {
+  return (
+    <div className="flex min-h-0 flex-1 flex-col overflow-y-auto overflow-x-hidden px-4 py-4 md:px-6 md:py-6">
+      <div className="mx-auto flex min-h-full w-full max-w-5xl flex-col items-center justify-center rounded-[28px] border border-line bg-surface p-8 text-center sm:p-12">
+        <span className="text-3xl" aria-hidden>
+          ⚠️
+        </span>
+        <p className="section-eyebrow mt-4 text-cream">{"{ Error de carga }"}</p>
+        <h1 className="mt-2 text-xl font-semibold tracking-tight text-cream sm:text-2xl">
+          No se pudo cargar este módulo
+        </h1>
+        <p className="mt-2 max-w-md text-[15px] leading-relaxed text-muted">
+          {message}
+        </p>
+        <button onClick={onRetry} className="btn-filled-soft mt-6 !min-h-11">
+          Reintentar
+        </button>
       </div>
     </div>
   );

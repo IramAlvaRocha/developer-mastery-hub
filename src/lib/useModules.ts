@@ -18,10 +18,35 @@ import type { ExpectedAnswer } from "@/lib/answers";
 
 const CACHE_PREFIX = "dmh-modules-cache-v2-";
 
+/**
+ * Columnas ligeras del catálogo: suficientes para el dashboard, la sidebar y
+ * el progreso. El detalle pesado (theory, code_snippet, format_payload, ...)
+ * se carga bajo demanda por módulo en `loadModuleDetail`.
+ */
+const LIGHT_EXERCISE_COLUMNS = [
+  "module_key",
+  "exercise_ref",
+  "title",
+  "stars",
+  "category",
+  "step",
+  "description",
+  "objective",
+  "tags",
+  "file_name",
+  "instruction",
+  "position",
+].join(",");
+
 interface CachedModules {
   savedAt: number;
   modules: Module[];
   groups?: string[];
+}
+
+interface CachedDetail {
+  savedAt: number;
+  exercises: Exercise[];
 }
 
 interface ModuleRow {
@@ -34,6 +59,21 @@ interface ModuleRow {
   course_key: string | null;
   description: string;
   topics: string[] | null;
+  position: number;
+}
+
+interface LightExerciseRow {
+  module_key: string;
+  exercise_ref: number;
+  title: string;
+  stars: number;
+  category: string;
+  step: number | null;
+  description: string;
+  objective: string;
+  tags: string[] | null;
+  file_name: string;
+  instruction: string | null;
   position: number;
 }
 
@@ -61,6 +101,11 @@ interface ExerciseRow {
   position: number;
 }
 
+interface DetailError {
+  key: string;
+  message: string;
+}
+
 function deriveGroups(modules: Module[]): string[] {
   return Array.from(new Set(modules.map((m) => m.group || "Otros")));
 }
@@ -68,6 +113,15 @@ function deriveGroups(modules: Module[]): string[] {
 function cacheKey(uid: string | null, enrolledCourseKeys: string[]): string {
   const scope = [...enrolledCourseKeys].sort().join(",") || "none";
   return `${CACHE_PREFIX}${uid ?? "demo"}-${scope}`;
+}
+
+function detailCacheKey(
+  uid: string | null,
+  enrolledCourseKeys: string[],
+  moduleKey: string,
+): string {
+  const scope = [...enrolledCourseKeys].sort().join(",") || "none";
+  return `${CACHE_PREFIX}${uid ?? "demo"}-${scope}-detail-${moduleKey}`;
 }
 
 function readCache(key: string): CachedModules | null {
@@ -89,6 +143,31 @@ function writeCache(key: string, modules: Module[], groups: string[]) {
     localStorage.setItem(
       key,
       JSON.stringify({ savedAt: Date.now(), modules, groups }),
+    );
+  } catch {
+    /* almacenamiento no disponible */
+  }
+}
+
+function readDetailCache(key: string): Exercise[] | null {
+  if (typeof localStorage === "undefined") return null;
+  try {
+    const raw = localStorage.getItem(key);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as CachedDetail;
+    if (!parsed || !Array.isArray(parsed.exercises)) return null;
+    return parsed.exercises;
+  } catch {
+    return null;
+  }
+}
+
+function writeDetailCache(key: string, exercises: Exercise[]) {
+  if (typeof localStorage === "undefined") return;
+  try {
+    localStorage.setItem(
+      key,
+      JSON.stringify({ savedAt: Date.now(), exercises }),
     );
   } catch {
     /* almacenamiento no disponible */
@@ -170,6 +249,31 @@ function exerciseFromRow(row: ExerciseRow): Exercise {
   return deserializeFormat(exercise, row);
 }
 
+/** Construye un ejercicio SOLO con metadatos ligeros (sin teoría/código/formato). */
+function lightExerciseFromRow(row: LightExerciseRow): Exercise {
+  const exercise: Exercise = {
+    id: row.exercise_ref,
+    title: row.title,
+    stars: row.stars,
+    category: row.category,
+    description: row.description,
+    objective: row.objective,
+    tags: row.tags ?? [],
+    fileName: row.file_name,
+    instruction: row.instruction ?? undefined,
+    theory: undefined,
+    hints: undefined,
+    explanationText: "",
+    codeSnippet: "",
+    inputs: {},
+    completeCode: "",
+    simulation: undefined,
+    format: undefined,
+  };
+  if (row.step != null) exercise.step = row.step;
+  return exercise;
+}
+
 function moduleFromRow(
   row: ModuleRow,
   exercisesByModule: Map<string, Exercise[]>,
@@ -199,11 +303,32 @@ export function useModules(enrolledCourseKeys: string[] = []) {
   const [groups, setGroups] = useState<string[]>([]);
   const [loading, setLoading] = useState<boolean>(() => isSupabaseConfigured);
   const [error, setError] = useState<string | null>(null);
+  const [detailLoadedKeys, setDetailLoadedKeys] = useState<string[]>([]);
+  const [detailError, setDetailError] = useState<DetailError | null>(null);
 
   const modulesRef = useRef(modules);
   useEffect(() => {
     modulesRef.current = modules;
   }, [modules]);
+
+  const detailLoadedRef = useRef<Set<string>>(new Set());
+  const inflightRef = useRef<Map<string, Promise<void>>>(new Map());
+
+  /** Reemplaza los ejercicios de un módulo con su detalle completo (por key). */
+  const mergeDetail = useCallback((key: string, exercises: Exercise[]) => {
+    setModules((prev) => {
+      const idx = prev.findIndex((m) => m.key === key);
+      if (idx < 0) return prev;
+      const next = [...prev];
+      next[idx] = { ...prev[idx], exercises };
+      return next;
+    });
+  }, []);
+
+  const markDetailLoaded = useCallback((key: string) => {
+    detailLoadedRef.current.add(key);
+    setDetailLoadedKeys((prev) => (prev.includes(key) ? prev : [...prev, key]));
+  }, []);
 
   const load = useCallback(async () => {
     if (!supabaseReady) return;
@@ -230,16 +355,16 @@ export function useModules(enrolledCourseKeys: string[] = []) {
       if (keys.length > 0) {
         const { data: exerciseRows, error: exerciseErr } = await supabase
           .from("exercises")
-          .select("*")
+          .select(LIGHT_EXERCISE_COLUMNS)
           .in("module_key", keys)
           .eq("is_published", true)
           .order("module_key")
           .order("position");
 
         if (exerciseErr) throw new Error(exerciseErr.message);
-        for (const row of (exerciseRows ?? []) as ExerciseRow[]) {
+        for (const row of (exerciseRows ?? []) as LightExerciseRow[]) {
           const list = exercisesByModule.get(row.module_key) ?? [];
-          list.push(exerciseFromRow(row));
+          list.push(lightExerciseFromRow(row));
           exercisesByModule.set(row.module_key, list);
         }
       }
@@ -249,6 +374,10 @@ export function useModules(enrolledCourseKeys: string[] = []) {
       setModules(next);
       setGroups(nextGroups);
       writeCache(storageKey, next, nextGroups);
+      // El catálogo ligero no trae detalle: invalida el detalle en memoria.
+      detailLoadedRef.current.clear();
+      setDetailLoadedKeys([]);
+      setDetailError(null);
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       setError(message);
@@ -268,6 +397,60 @@ export function useModules(enrolledCourseKeys: string[] = []) {
     }
   }, [supabaseReady, enrolledScope, storageKey]);
 
+  /**
+   * Carga bajo demanda el detalle COMPLETO de un módulo (`select("*")` por
+   * `module_key`) y hace merge sobre el estado. Deduplica peticiones en vuelo
+   * y cachea el detalle por módulo para no re-fetchear en cada visita.
+   */
+  const loadModuleDetail = useCallback(
+    async (key: string): Promise<void> => {
+      // Demo mode: los datos locales ya traen el detalle completo.
+      if (!isSupabaseConfigured) {
+        markDetailLoaded(key);
+        return;
+      }
+      if (!supabaseReady) return;
+      if (detailLoadedRef.current.has(key)) return;
+      const inflight = inflightRef.current.get(key);
+      if (inflight) return inflight;
+
+      const promise = (async () => {
+        const supabase = getSupabase();
+        if (!supabase) return;
+        const detailKey = detailCacheKey(uid, enrolledCourseKeys, key);
+        setDetailError(null);
+        try {
+          const { data: rows, error } = await supabase
+            .from("exercises")
+            .select("*")
+            .eq("module_key", key)
+            .eq("is_published", true)
+            .order("position");
+
+          if (error) throw new Error(error.message);
+          const exercises = ((rows ?? []) as ExerciseRow[]).map(exerciseFromRow);
+          mergeDetail(key, exercises);
+          writeDetailCache(detailKey, exercises);
+          markDetailLoaded(key);
+        } catch (err) {
+          const message = err instanceof Error ? err.message : String(err);
+          const cached = readDetailCache(detailKey);
+          if (cached) {
+            mergeDetail(key, cached);
+            markDetailLoaded(key);
+          } else {
+            setDetailError({ key, message });
+          }
+        } finally {
+          inflightRef.current.delete(key);
+        }
+      })();
+      inflightRef.current.set(key, promise);
+      return promise;
+    },
+    [supabaseReady, uid, enrolledScope, mergeDetail, markDetailLoaded],
+  );
+
   useEffect(() => {
     if (!supabaseReady) {
       let active = true;
@@ -278,6 +461,9 @@ export function useModules(enrolledCourseKeys: string[] = []) {
           setGroups(MODULE_GROUPS);
           setLoading(false);
           setError(null);
+          // Demo: el detalle ya viene completo en los datos locales.
+          detailLoadedRef.current = new Set(ALL_MODULES.map((m) => m.key));
+          setDetailLoadedKeys(ALL_MODULES.map((m) => m.key));
         });
       } else {
         setModules([]);
@@ -302,5 +488,14 @@ export function useModules(enrolledCourseKeys: string[] = []) {
     void load();
   }, [supabaseReady, load, storageKey]);
 
-  return { modules, groups, loading, error, reload: load };
+  return {
+    modules,
+    groups,
+    loading,
+    error,
+    reload: load,
+    loadModuleDetail,
+    detailLoadedKeys,
+    detailError,
+  };
 }

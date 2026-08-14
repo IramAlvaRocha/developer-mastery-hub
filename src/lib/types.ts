@@ -130,8 +130,6 @@ export interface Exercise {
   hints?: string[];
   /** Texto teorico opcional (tab "Teoria"). */
   theory?: string;
-  /** Pistas progresivas opcionales, ordenadas de la mas general a la mas concreta. No revelan la respuesta literal. */
-  hints?: string[];
   explanationText: string;
   /** Codigo con placeholders [INPUT_1], [INPUT_2]... que se renderizan como inputs inline. */
   codeSnippet: string;
