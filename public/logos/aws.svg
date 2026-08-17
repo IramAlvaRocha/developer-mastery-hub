@@ -1,8 +1,1 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 64" role="img" aria-labelledby="title">
-  <title id="title">AWS</title>
-  <g fill="none" fill-rule="evenodd">
-    <text x="8" y="38" fill="#fffce1" font-family="Arial, Helvetica, sans-serif" font-size="31" font-weight="700" letter-spacing="-2">aws</text>
-    <path d="M19 47c17 9 39 10 58 1" stroke="#ff9900" stroke-width="5" stroke-linecap="round"/>
-    <path d="m69 45 10 2-5 8" stroke="#ff9900" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
-  </g>
-</svg>
+<svg xmlns="http://www.w3.org/2000/svg" aria-labelledby="title" viewBox="0 0 96 64"><title id="title">AWS</title><g fill="none" fill-rule="evenodd"><text x="8" y="38" fill="#fffce1" font-family="Arial, Helvetica, sans-serif" font-size="31" font-weight="700" letter-spacing="-2">aws</text><path stroke="#f90" stroke-linecap="round" stroke-width="5" d="M19 47c17 9 39 10 58 1"/><path stroke="#f90" stroke-linecap="round" stroke-linejoin="round" stroke-width="4" d="m69 45 10 2-5 8"/></g></svg>
