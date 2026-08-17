@@ -1,0 +1,22 @@
+# Gateway de pruebas: expone GoTrue bajo /auth/v1 y PostgREST bajo /rest/v1
+# (compatible con supabase-js) en http://localhost:8000.
+:8000 {
+	handle_path /rest/v1/* {
+		reverse_proxy rest:3000
+	}
+
+	handle_path /auth/v1/* {
+		reverse_proxy auth:9999
+	}
+
+	header {
+		Access-Control-Allow-Origin *
+		Access-Control-Allow-Headers *
+		Access-Control-Allow-Methods *
+		Access-Control-Expose-Headers Content-Range
+	}
+
+	handle {
+		respond "Not Found" 404
+	}
+}

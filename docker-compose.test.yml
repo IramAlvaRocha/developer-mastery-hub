@@ -1,0 +1,145 @@
+# ============================================================================
+# Developer Mastery Hub — Entorno de pruebas local
+#
+# Uso:
+#   docker compose -f docker-compose.test.yml up -d   # levantar
+#   docker compose -f docker-compose.test.yml down    # destruir (borra la data)
+#
+# Sin persistencia: la data vive en tmpfs (RAM) y se pierde en cada `down`.
+#
+# Servicios:
+#   db            → Postgres (DBeaver: localhost:54322, postgres/postgres)
+#   auth          → GoTrue (login email/contraseña) en /auth/v1
+#   rest          → PostgREST (REST + RLS) en /rest/v1
+#   gateway       → Caddy en http://localhost:8000 (une auth + rest bajo un origen)
+#   schema-loader → aplica supabase/schema.sql una vez GoTrue haya migrado
+#                   el esquema auth (es idempotente y corre en cada `up`)
+#
+# Orden de arranque: db (shim 00-auth-shim.sql) → GoTrue migra auth →
+# schema-loader aplica schema.sql → PostgREST listo para el seed.
+#
+# .env para la app y el seed:
+#   PUBLIC_SUPABASE_URL=http://localhost:8000
+#   PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0
+#   SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU
+# ============================================================================
+
+services:
+  db:
+    image: postgres:15-alpine
+    restart: unless-stopped
+    # El contenedor corre como el usuario `postgres` (uid 70 en Alpine), nunca como root.
+    user: postgres
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    environment:
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "54322:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./supabase/auth-shim.sql:/docker-entrypoint-initdb.d/00-auth-shim.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  auth:
+    image: supabase/gotrue:v2.190.0
+    restart: unless-stopped
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      PORT: "9999"
+      API_EXTERNAL_URL: http://localhost:8000
+      GOTRUE_SITE_URL: http://localhost:4321
+      GOTRUE_URI_ALLOW_LIST: "http://localhost:4321,http://localhost:8000"
+      GOTRUE_JWT_SECRET: super-secret-jwt-token-with-at-least-32-characters-long
+      GOTRUE_JWT_EXP: "3600"
+      GOTRUE_JWT_AUD: authenticated
+      GOTRUE_JWT_ADMIN_ROLES: service_role
+      GOTRUE_DB_DRIVER: postgres
+      GOTRUE_DB_DATABASE_URL: postgres://supabase_auth_admin:postgres@db:5432/postgres
+      GOTRUE_EXTERNAL_EMAIL_ENABLED: "true"
+      GOTRUE_MAILER_AUTOCONFIRM: "true"
+      GOTRUE_SMTP_ADMIN_EMAIL: admin@example.com
+      GOTRUE_SMTP_HOST: localhost
+      GOTRUE_SMTP_PORT: "2500"
+      GOTRUE_SMTP_SENDER_NAME: DMH Test
+      GOTRUE_DISABLE_SIGNUP: "false"
+      GOTRUE_LOG_LEVEL: info
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://localhost:9999/health"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+
+  rest:
+    image: postgrest/postgrest:v12.2.3
+    restart: unless-stopped
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    depends_on:
+      schema-loader:
+        condition: service_completed_successfully
+    environment:
+      PGRST_DB_URI: postgres://authenticator:postgres@db:5432/postgres
+      PGRST_DB_SCHEMAS: public
+      PGRST_DB_ANON_ROLE: anon
+      PGRST_JWT_SECRET: super-secret-jwt-token-with-at-least-32-characters-long
+      PGRST_DB_USE_LEGACY_GUCS: "false"
+      PGRST_SERVER_PORT: 3000
+
+  gateway:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    depends_on:
+      - auth
+      - rest
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./supabase/Caddyfile.test:/etc/caddy/Caddyfile:ro
+
+  schema-loader:
+    image: postgres:15-alpine
+    user: postgres
+    depends_on:
+      db:
+        condition: service_healthy
+      auth:
+        condition: service_healthy
+    environment:
+      PGPASSWORD: postgres
+    volumes:
+      - ./supabase/schema.sql:/schema.sql:ro
+    entrypoint: ["sh", "-c"]
+    command:
+      - >
+        until psql -h db -U postgres -d postgres -tAc
+        "SELECT 1 FROM pg_tables WHERE schemaname = 'auth' AND tablename = 'users'" | grep -q 1; do
+          echo "schema-loader: esperando auth.users..."; sleep 2;
+        done;
+        psql -h db -U postgres -d postgres -v ON_ERROR_STOP=1 -f /schema.sql
+        && echo "schema-loader: schema.sql aplicado"
+
+# "Volumen" respaldado por tmpfs (RAM): no persiste nada en disco ni entre
+# runs. uid/gid 70 = usuario postgres del Alpine, para que initdb pueda
+# inicializar sin root.
+volumes:
+  pgdata:
+    driver: local
+    driver_opts:
+      type: tmpfs
+      device: tmpfs
+      o: size=512m,uid=70,gid=70,mode=0700
