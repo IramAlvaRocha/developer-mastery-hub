@@ -100,6 +100,14 @@ export const COURSE_DEFINITIONS: readonly CourseDefinition[] = [
     icon: "📚",
     color: "sky",
   },
+  {
+    key: "python",
+    group: "Python",
+    name: "Python: camino a Django",
+    description: "De la sintaxis y la resolución de problemas a las bases de backend necesarias para comenzar con Django.",
+    icon: "🐍",
+    color: "emerald",
+  },
 ] as const;
 
 const COURSE_KEY_BY_GROUP = new Map(

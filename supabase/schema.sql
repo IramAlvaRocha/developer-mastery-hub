@@ -66,6 +66,7 @@ WITH grouped_modules AS (
       WHEN 'Testing & Calidad' THEN 'testing-quality'
       WHEN 'TypeScript' THEN 'typescript'
       WHEN 'TS Arrays' THEN 'typescript-arrays'
+      WHEN 'Python' THEN 'python'
       ELSE 'course-' || substr(md5(COALESCE("group", 'Otros')), 1, 12)
     END AS course_key
   FROM public.modules
@@ -96,6 +97,7 @@ SET course_key = CASE COALESCE("group", 'Otros')
   WHEN 'Testing & Calidad' THEN 'testing-quality'
   WHEN 'TypeScript' THEN 'typescript'
   WHEN 'TS Arrays' THEN 'typescript-arrays'
+  WHEN 'Python' THEN 'python'
   ELSE 'course-' || substr(md5(COALESCE("group", 'Otros')), 1, 12)
 END
 WHERE course_key IS NULL;

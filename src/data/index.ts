@@ -47,6 +47,7 @@ import { VUETIFY_EXERCISES } from "./modules/vuetify";
 import { GCP_EXERCISES } from "./modules/gcp";
 import { GIT_ADVANCED_EXERCISES } from "./modules/git-advanced";
 import { BASH_EXERCISES } from "./modules/bash";
+import { PYTHON_BASIC_EXERCISES, PYTHON_INTERMEDIATE_EXERCISES, PYTHON_ADVANCED_EXERCISES } from "./modules/python";
 import { CODE_QUALITY_EXERCISES } from "./modules/code-quality";
 import { DOCKER_EXERCISES } from "./modules/docker";
 import { EF_CORE_PERFORMANCE } from "./modules/ef-core-performance";
@@ -72,6 +73,40 @@ import {
 } from "./enrichment";
 
 export const ALL_MODULES: Module[] = [
+  // ─── PYTHON (ruta progresiva hacia Django) ───────────────────────────────
+  {
+    key: "python-basic",
+    name: "Python: Fundamentos",
+    icon: "🐣",
+    badge: "Básico",
+    color: "emerald",
+    group: "Python",
+    desc: "Sintaxis, tipos, control de flujo, colecciones y funciones para resolver problemas con Python.",
+    topics: ["Variables", "Condicionales", "Bucles", "Listas", "Diccionarios", "Funciones"],
+    exercises: PYTHON_BASIC_EXERCISES,
+  },
+  {
+    key: "python-intermediate",
+    name: "Python: Intermedio",
+    icon: "🧩",
+    badge: "Intermedio",
+    color: "teal",
+    group: "Python",
+    desc: "Código mantenible con módulos, excepciones, clases, archivos, JSON, iteradores y pruebas.",
+    topics: ["Módulos", "Excepciones", "POO", "JSON", "Iteradores", "pytest"],
+    exercises: PYTHON_INTERMEDIATE_EXERCISES,
+  },
+  {
+    key: "python-advanced",
+    name: "Python: Backend listo para Django",
+    icon: "🚀",
+    badge: "Avanzado",
+    color: "blue",
+    group: "Python",
+    desc: "Puente hacia Django: entornos, tipado, SQL, HTTP, seguridad, asincronía y diseño de servicios.",
+    topics: ["venv", "Type hints", "SQL", "HTTP", "Seguridad", "Arquitectura"],
+    exercises: PYTHON_ADVANCED_EXERCISES,
+  },
   // ─── AWS (grupo propio dentro de Cloud) ────────────────────────────────────
   {
     key: "aws-iam",
