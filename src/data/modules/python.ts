@@ -33,8 +33,7 @@ export const PYTHON_BASIC_EXERCISES: Exercise[] = [
 export const PYTHON_INTERMEDIATE_EXERCISES: Exercise[] = [
   legacy(1, "Divide en módulos", "MÓDULOS", "Reconoce la forma de importar una función desde otro archivo.", "Separar responsabilidades en archivos reutilizables", "# math_utils.py contiene add\nfrom math_utils import [INPUT_1]", { INPUT_1: "add" }, "from math_utils import add", ["import", "paquetes"]),
   legacy(2, "Maneja errores de entrada", "EXCEPCIONES", "Evita que una entrada no numérica derribe el programa.", "Capturar una excepción específica", "try:\n    age = int(input())\nexcept [INPUT_1]:\n    print(\"Edad inválida\")", { INPUT_1: "ValueError" }, "try:\n    age = int(input())\nexcept ValueError:\n    print(\"Edad inválida\")", ["try", "except"], 2),
-  legacy(3, "Lee y escribe JSON", "ARCHIVOS", "Serializa un diccionario para intercambiar datos con una API.", "Usar JSON como formato estructurado", "import json\ndata = {\"active\": True}\ntext = json.[INPUT_1](data)
-", { INPUT_1: "dumps" }, "import json\ndata = {\"active\": True}\ntext = json.dumps(data)", ["json", "APIs"]),
+  legacy(3, "Lee y escribe JSON", "ARCHIVOS", "Serializa un diccionario para intercambiar datos con una API.", "Usar JSON como formato estructurado", "import json\ndata = {\"active\": True}\ntext = json.[INPUT_1](data)", { INPUT_1: "dumps" }, "import json\ndata = {\"active\": True}\ntext = json.dumps(data)", ["json", "APIs"]),
   pick(4, "Valida sin efectos ocultos", "¿Qué función valida una contraseña sin modificar el valor recibido?", [
     { id: "pure", label: "Función pura", code: "def valid(password):\n    return len(password) >= 8", description: "Solo calcula y devuelve." },
     { id: "mutate", label: "Mutación", code: "def valid(password):\n    password += \"123\"\n    return True", description: "Cambia la referencia local y oculta la regla." },
