@@ -51,6 +51,13 @@ const META_BY_GROUP: Record<string, Omit<CourseMeta, "key" | "position">> = {
     icon: "[]",
     color: "sky",
   },
+  Python: {
+    name: "Python: camino a Django",
+    description:
+      "Ruta progresiva de Python: fundamentos, diseño con clases, archivos, pruebas y conceptos web para dar el salto a Django.",
+    icon: "🐍",
+    color: "emerald",
+  },
   Frontend: {
     name: "Frontend moderno",
     description:
