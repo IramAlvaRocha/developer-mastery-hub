@@ -81,8 +81,8 @@ export const ALL_MODULES: Module[] = [
     badge: "Básico",
     color: "emerald",
     group: "Python",
-    desc: "Sintaxis, tipos, control de flujo, colecciones y funciones para resolver problemas con Python.",
-    topics: ["Variables", "Condicionales", "Bucles", "Listas", "Diccionarios", "Funciones"],
+    desc: "Sintaxis, tipos de datos, propiedades, métodos, colecciones y funciones para resolver problemas con Python.",
+    topics: ["Tipos de datos", "Strings", "Listas", "Diccionarios", "Sets", "Funciones", "Métodos", "Bucles"],
     exercises: PYTHON_BASIC_EXERCISES,
   },
   {
