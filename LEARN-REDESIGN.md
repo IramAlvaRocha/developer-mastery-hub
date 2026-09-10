@@ -369,3 +369,146 @@ Regla: nada se amontona; el viewport se ensancha con el contenido (clamp), no co
 | Motion (20%) | Entradas stagger, tab slider, transición de paneles, celebración; reduced-motion en todo |
 | A11y (15%) | focus-visible, tabs semánticos, toasts live, drawers accesibles, un h1, contraste |
 | Craft (15%) | Radios unificados, tokens, `ModuleCard` y `SettingsModal` en uso, hover/active/focus, copy coherente |
+
+---
+
+## 12. Incremento: Ficha del módulo — patrón lector (referencia capibaratraductor)
+
+> Pedido: al entrar a un módulo, la vista que muestra TODOS sus ejercicios debe
+> funcionar como la ficha de un manga (https://capibaratraductor.com/senshimanga/manga/mikadono-sanshimai-wa-angai-choroi):
+> navegar a cualquier ejercicio sin fricción, info del tema y recomendaciones.
+> Autoridad visual: landing + tokens (DESIGN.md). La ficha es un **nuevo estado**
+> entre el catálogo y el workspace; no se pule la sidebar actual, se añade la ficha.
+
+### 12.1 Anatomía del patrón de referencia (traducido al dominio)
+
+| Manga | DMH |
+|---|---|
+| Cover grande con portada | Tile "cover" del módulo (icono + gradiente radial del color del módulo) |
+| Estado / géneros | Badge del curso · difficulty range ★min–★max · topics como géneros |
+| "Empezar a leer" / "IR AL PRIMER/ÚLTIMO CAPÍTULO" | CTAs: Empezar (ej. 1) · Continuar donde lo dejaste · Último ejercicio |
+| Sinopsis + autor | `module.desc` + breadcrumb grupo/curso |
+| "Capítulos N publicados" | "N ejercicios" + contador de completados |
+| Grid de capítulos con miniatura, nº, fecha, título del capítulo, acciones | Grid de cards de ejercicio: nº/paso, estrellas, título, preview (description 2 líneas), estado ✓/●/○ |
+| Paginación por rangos 1-10 / 11-20 … | Chips de salto por rango de 10 que hacen scroll a la sección del rango |
+| Comentarios | (no aplica) → sección **Recomendaciones**: otros módulos del mismo curso/grupo |
+
+### 12.2 Máquina de estados (MasteryHub)
+
+- Estado nuevo: `activeExerciseId: number | null`. `currentSubject !== "menu" && activeExerciseId === null` → **ficha**; con id → **workspace**.
+- URL (ya soportada por `urlLocation.ts`): ficha `?m=key`, workspace `?m=key&e=id`. Deep-link `?e=` abre el workspace directo (comportamiento actual, no romper).
+- Navegación:
+  - Catálogo/dashboard → card de módulo (`onStart` sin índice) → **ficha**.
+  - "Continuar" del dashboard (`onResume(key, index)`) → **workspace** en ese índice (su función es retomar).
+  - Ficha → card de ejercicio → workspace. "Empezar" → índice 0. "Último ejercicio" → índice N-1.
+  - Workspace → header "← Ficha" (antes "← Menú") → ficha (y de la ficha → "← Menú").
+  - Breadcrumb: `Mis cursos / {grupo} / {módulo}` en ficha; `… / {módulo} / Ejercicio {n}` en workspace; los segmentos módulo/grupo vuelven a la ficha.
+- La `ExerciseSidebar` **solo** existe en el workspace (se conserva intacta).
+- Al volver de workspace a ficha: restaurar foco al card del ejercicio que estaba activo (`data-active-exercise`).
+
+### 12.3 Componente nuevo — `src/components/ModuleReader.tsx`
+
+Props: `module: Module`, `progress: number`, `completedCount: number`,
+`isCompleted: (id:number)=>boolean`, `activeExerciseId: number | null`,
+`lastVisitedIndex: number | null`, `recommended: Module[]`,
+`onSelectExercise: (index:number)=>void`, `onOpenModule: (key:string)=>void`,
+`onBack: ()=>void`, `getPercent: (key:string,total:number)=>number`.
+
+Render (orden y ritmo vertical):
+
+1. **Hero ficha** — `<section data-reveal>` `relative overflow-hidden rounded-card border mod-border-40 bg-surface p-6 sm:p-8` con `style={moduleColorStyle(color)}`:
+   - Glow: blob `mod-glow` con radial-gradient del `--module-rgb` (patrón ResumeCard).
+   - Layout `flex flex-col gap-6 sm:flex-row sm:gap-8`:
+     - **Cover**: `mx-auto sm:mx-0 w-36 sm:w-44 shrink-0 rounded-[28px] border border-line-soft` con fondo gradiente radial del color del módulo + icono `text-6xl` centrado + pestaña inferior con `mod-badge` (badge del curso) y pill de dificultad `★{min}–{max}` (butter). Entrada GSAP propia (`scale 0.94→1`, back.out).
+     - **Info** (`min-w-0 flex-1`):
+       - Breadcrumb pills mini: `{grupo} · {course}` `text-[11px] text-faint`.
+       - Eyebrow `{ Módulo }` (`section-eyebrow text-cream`).
+       - `h1` nombre: `text-[clamp(1.9rem,4.5vw,3rem)] font-semibold tracking-tight text-cream`.
+       - Sinopsis: `module.desc` `mt-3 max-w-2xl text-[15px] leading-relaxed text-muted`.
+       - Chips meta `mt-4 flex flex-wrap gap-2`: `pill-chip border-line bg-canvas/60 text-muted` — "{N} ejercicios", "{done} completados", "★{min}–{max}", topics `#{t}` (máx. 5 + "+{resto}"), si hay formatos interactivos: pill peach "N interactivos".
+       - CTAs `mt-6 flex flex-wrap gap-3`:
+         - `btn-filled-soft` → "Empezar desde el inicio →" (índice 0)
+         - si `0 < progress < 100` y `lastVisitedIndex != null`: `btn-primary` → "Continuar: {Paso N|Ejercicio N}"
+         - `btn-secondary` → "Último ejercicio"
+       - Progreso `mt-6 max-w-md`: fila `text-[11px] font-semibold` ("{done} de {N} completados" / `mod-text {progress}%`) + barra `h-2 rounded-full bg-surface-2` con `.mod-progress`.
+
+2. **Lista de ejercicios** — `<section aria-labelledby="reader-list-title" class="mt-10 sm:mt-14">`:
+   - Header: `h2 id="reader-list-title"` `{N} ejercicios` (`text-xl sm:text-2xl font-semibold text-cream`) + sub `text-sm text-muted` "Salta a cualquier ejercicio o retoma donde lo dejaste."
+   - Controles `mt-4 flex flex-wrap items-center gap-2`: chips filtro `Todos / ★1..★5` (lógica idéntica a ExerciseSidebar: `starFilter`) y botón sort (default/asc/desc, `aria-pressed` no aplica, usar `title` + label). Ocultar el filtro si hay <2 niveles de dificultad.
+   - **Chips de rango** `<nav aria-label="Saltar a rango de ejercicios">` `mt-5 flex flex-wrap gap-2`: botones `pill-chip border border-line bg-canvas/40 text-muted hover:text-cream` "1–10", "11–20", … (chunk 10; solo si N > 10). Click → `document.getElementById("ex-range-{n}")?.scrollIntoView({ behavior: prefersReducedMotion() ? "auto" : "smooth", block: "start" })`. Ocultar chips del rango actual si está visible (opcional, no requerido).
+   - **Rangos**: `{ranges.map(...)}` → `<section id={`ex-range-${n}`} class="mt-6 scroll-mt-24" aria-label={`Ejercicios ${from}–${to}`}>` con subheader `text-[11px] font-bold uppercase tracking-wider text-faint` ("{from}–{to}") y `div class="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-3"`.
+
+3. **Card de ejercicio** (dentro del rango) — `<button type="button" class="ex-card ...">`:
+   - Clases: `group relative flex flex-col gap-2 rounded-[20px] border bg-canvas/60 p-4 text-left transition-all duration-150 hover:-translate-y-0.5 motion-safe-transition` + `style={moduleColorStyle(color)}`.
+   - Estado: completado `border-brand/40`; activo (`activeExerciseId === ex.id`) `mod-sidebar-item-active` + `ring-2 ring-sky/30`; pendiente `border-line hover:mod-border-40`.
+   - Contenido:
+     - Fila 1: número `Ejercicio {n}` o `Paso {step}` (`font-mono text-[11px] font-bold mod-text`) + estrellas butter `★`·`☆` + estado (✓ pill brand si done; dot sky si activo; `aria-hidden`).
+     - `h3` título: `text-[15px] font-semibold text-cream leading-snug line-clamp-1 group-hover:text-brand-strong` (transición).
+     - Preview: `ex.description` `text-[13px] leading-relaxed text-muted line-clamp-2`.
+     - Fila footer: chip categoría (pill tiny `text-[10px] text-faint border-line-soft`) + tag de formato interactivo si existe (peach `N interactivo`) + flecha `→` `ml-auto opacity-0 group-hover:opacity-100 text-faint`.
+   - A11y: `aria-label={`Ejercicio ${n}: ${title}${done ? " (completado)" : ""}`}`, `aria-current={active ? "true" : undefined}`.
+   - **Sin bloqueos**: cualquier card navega (pedido explícito del usuario).
+
+4. **Recomendaciones** — `<section class="mt-12 sm:mt-16" aria-labelledby="reader-recs-title">`:
+   - `h2 id="reader-recs-title"` `section-eyebrow text-cream` `{ Sigue aprendiendo }` + `p mt-1 text-sm text-muted` "Otros módulos de la misma ruta para continuar tu práctica."
+   - Grid `mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-3` con `ModuleCard` (reutilizar tal cual: `progress`, `onStart={() => onOpenModule(m.key)}`, sin enroll). Máx. 3, excluyendo el módulo actual; preferencia: mismo `group`, luego mismo `courseKey`, luego cualquier otro con progreso > 0; si no queda nada, ocultar la sección entera.
+   - `onOpenModule` → abre la ficha de ese módulo (no el workspace).
+
+5. **Empty state**: si `module.exercises.length === 0`, reutilizar el patrón de `ExerciseFilterEmpty` (ya existe en MasteryHub).
+
+### 12.4 Cambios en `MasteryHub.tsx`
+
+- Estado: `const [activeExerciseId, setActiveExerciseId] = useState<number | null>(null)`.
+- `activeIndex` para el workspace = `activeExerciseId ?? 0` (mantener clamp con `filteredExercises.length`).
+- `startSubject(key, index?: number)`: `setActiveExerciseId(index ?? null)` — sin índice → ficha. `onResume` del dashboard pasa índice (workspace); `onStart`/`onOpenModule` de cards pasa sin índice (ficha).
+- `selectExercise(index)` (sidebar) y `goNext/goPrev`: siguen seteando `activeExerciseId`.
+- `goBackToFicha()`: `setActiveExerciseId(null)` (mantiene `currentSubject`); `goBackToMenu()` como hoy.
+- Header: `inModule` → si `activeExerciseId === null` mostrar "← Menú" (a menu) y breadcrumb sin "Ejercicio n"; si hay ejercicio → "← Ficha" (a ficha) y breadcrumb con segmento "Ejercicio {n}".
+- URL effect: `exerciseId: activeExercise?.id ?? null` — cuando `activeExerciseId === null` NO escribir `e=` (solo `m=`); `readUrlLocation` con `exerciseId null` → ficha.
+- Deep-link `?e=id` sigue abriendo el workspace directo (set `activeExerciseId = index`).
+- Al montar ficha, si `detailLoadedKeys` no incluye el módulo NO es bloqueante: la ficha usa la lista ligera (id/title/stars/category/step/description — ya vienen en el catálogo ligero). El detalle se carga en paralelo (efecto existente) para que al entrar al workspace no haya skeleton.
+- `ExerciseSidebar` y `ExerciseWorkspace` se montan solo con ejercicio activo; `ModuleReader` solo en ficha.
+
+### 12.5 Plan de motion (adiciones al §5)
+
+| Momento | Técnica | Dur/curve |
+|---|---|---|
+| Ficha: entrada hero | `gsap.from("[data-reveal]", { y: 28, opacity: 0, stagger: 0.08 })` | 0.6s `power3.out` |
+| Ficha: cover pop | `gsap.from("[data-cover]", { scale: 0.94, opacity: 0 })` | 0.5s `back.out(1.6)` |
+| Ficha: cards por rango | `gsap.from(".ex-card", { y: 20, opacity: 0, stagger: 0.045 })` (una vez al montar; re-correr al cambiar filtro/sort) | 0.45s `power2.out` |
+| Chips rango → sección | `scrollIntoView` smooth (guard reduced-motion → `auto`) | nativo |
+| Card hover | `hover:-translate-y-0.5` + border `mod-border-40` | 150ms CSS |
+| Ficha ↔ workspace | `runViewTransition` (ya existe) | — |
+
+Todo con guard `prefersReducedMotion()` y `clearProps: "all"` en cleanup (patrón §5).
+
+### 12.6 Accesibilidad específica de la ficha
+
+1. Un único `h1` (nombre del módulo); secciones con `h2`.
+2. Cards de ejercicio: `<button>` con `aria-label` completo y `aria-current` en el activo.
+3. Chips de rango: `aria-label="Ir a ejercicios {from}–{to}"`; secciones de rango con `aria-label`.
+4. `scroll-mt-24` en las secciones de rango (el header es sticky).
+5. Foco: al volver del workspace a la ficha, foco al card del ejercicio activo; al entrar al workspace desde ficha, el `aria-live` existente anuncia el ejercicio.
+6. Reducir motion: sin scroll suave, sin staggers, transiciones instantáneas.
+
+### 12.7 Responsive
+
+| Breakpoint | Ficha |
+|---|---|
+| <640 | Cover centrada y más pequeña (`w-36`); CTAs full-width apilados (`flex-col`); cards 1 col; chips rango con `overflow-x-auto`; padding `px-4 py-8` |
+| 640–1024 | Hero en fila; cards 2 col; CTAs en línea |
+| ≥1024 | Cover `w-44`; cards 3 col; contenedor `max-w-[1100px]` |
+
+### 12.8 Checklist de implementación (para dev-executor)
+
+- [ ] F1. Crear `src/components/ModuleReader.tsx` según §12.3 (hero, controles, rangos, cards, recomendaciones, empty).
+- [ ] F2. `MasteryHub.tsx`: estado `activeExerciseId`, wiring de navegación, header/breadcrumb, URL, deep-link, mount condicional de `ModuleReader`.
+- [ ] F3. Reutilizar `ModuleCard` en recomendaciones; reutilizar lógica de filtro/sort de `ExerciseSidebar` (puede extraerse a un helper o duplicarse de forma limpia y tipada).
+- [ ] F4. Motion §12.5 con guards reduced-motion; `data-reveal`, `data-cover`, `.ex-card`.
+- [ ] F5. `bun run build` sin errores; `bun run test` verde.
+- [ ] F6. Verificar en dev: catálogo → ficha → ejercicio → ficha (foco y scroll), deep-link `?e=`, share URL, completar ejercicio y ver estado en ficha.
+- [ ] F7. Detector impeccable sobre los archivos tocados; corregir hallazgos de identidad.
+
+### 12.9 Nota de calificación
+
+La rúbrica §11 aplica igual; se suma: fidelidad al patrón lector (hero tipo ficha, grid de "capítulos", salto por rangos, recomendaciones), navegación sin fricción a cualquier ejercicio, y que el workspace/sidebar actuales sigan funcionando sin regresiones.

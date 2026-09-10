@@ -1,3 +1,55 @@
 #!/bin/sh
-# Native Git Pre-Commit Hook (Zero external dependencies)
-bun scripts/security-check.js
+
+echo "[INFO] Verificando cambios antes del commit..."
+
+# 1. Obtener archivos modificados que estan en el "stage" (listos para commit)
+# Filtramos para que revise archivos de frontend (js, ts, etc.) y backend (.cs)
+FILES=$(git diff --cached --name-only --diff-filter=ACM | grep -E '\.(js|jsx|ts|tsx|vue|cs)$')
+
+if [ -n "$FILES" ]; then
+
+  # Escanea solo las lineas AGREGADAS (prefijo +) del diff y reporta
+  # archivo y contenido de cada violacion, con prefijo CONSOLA| o SECRETO|
+  # para separarlas despues.
+  VIOLACIONES=$(git diff --cached $FILES | awk '
+    /^\+\+\+ b\// { archivo = substr($0, 7); next }
+    /^\+/ {
+      linea = substr($0, 2);
+      if (linea ~ /console[.][a-zA-Z]+|Console[.][a-zA-Z]+|Debug[.][a-zA-Z]+/)
+        print "CONSOLA|" archivo " -> " linea;
+      l = tolower(linea);
+      if (l ~ /(^|[^[:alnum:]_])(password|passwd|secret|api_key|apikey|token)[[:space:]]*=|stacktrace/)
+        print "SECRETO|" archivo " -> " linea;
+    }
+  ')
+
+  if [ -n "$VIOLACIONES" ]; then
+
+    CONSOLA_COUNT=$(echo "$VIOLACIONES" | grep -c '^CONSOLA|')
+    SECRETO_COUNT=$(echo "$VIOLACIONES" | grep -c '^SECRETO|')
+
+    echo "[ERROR] ==========================================================="
+    echo "[ERROR] COMMIT RECHAZADO. Se encontraron los siguientes problemas:"
+
+    if [ "$CONSOLA_COUNT" -gt 0 ]; then
+      echo "[ERROR]"
+      echo "[ERROR] VALIDACION 1 - Uso de consola detectado ($CONSOLA_COUNT):"
+      echo "$VIOLACIONES" | grep '^CONSOLA|' | sed 's/^CONSOLA|/[ERROR]   /'
+      echo "[ERROR] Eliminalos o usa un framework de logging."
+    fi
+
+    if [ "$SECRETO_COUNT" -gt 0 ]; then
+      echo "[ERROR]"
+      echo "[ERROR] VALIDACION 2 - Fuga de informacion sensible ($SECRETO_COUNT):"
+      echo "$VIOLACIONES" | grep '^SECRETO|' | sed 's/^SECRETO|/[ERROR]   /'
+      echo "[ERROR] Mueve las credenciales a variables de entorno y maneja las excepciones de forma segura."
+    fi
+
+    echo "[ERROR] ==========================================================="
+    exit 1
+  fi
+
+fi
+
+echo "[SUCCESS] Codigo limpio. Procediendo con el commit..."
+exit 0

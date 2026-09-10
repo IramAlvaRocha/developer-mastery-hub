@@ -11,7 +11,9 @@ import {
   type UrlLocation,
 } from "@/lib/urlLocation";
 import { courseKeyForModule } from "@/lib/courseCatalog";
+import type { Module } from "@/lib/types";
 import LearningDashboard from "./LearningDashboard";
+import ModuleReader from "./ModuleReader";
 import ExerciseSidebar from "./ExerciseSidebar";
 import ExerciseWorkspace from "./ExerciseWorkspace";
 import Toasts from "./Toasts";
@@ -47,7 +49,10 @@ export default function MasteryHub() {
   );
 
   const [currentSubject, setCurrentSubject] = useState<string>("menu");
-  const [activeIndex, setActiveIndex] = useState(0);
+  // null = ficha del módulo; un número = workspace en ese índice de ejercicios.
+  const [activeExerciseId, setActiveExerciseId] = useState<number | null>(null);
+  // Id a resaltar/enfocar en la ficha al volver del workspace.
+  const [fichaFocusId, setFichaFocusId] = useState<number | null>(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
@@ -111,10 +116,45 @@ export default function MasteryHub() {
 
   const exercises = currentModule?.exercises ?? [];
   const filteredExercises = exercises;
+  // Índice del workspace derivado del estado nuevo (clampado a la lista).
+  const activeIndex = Math.min(
+    Math.max(activeExerciseId ?? 0, 0),
+    Math.max(filteredExercises.length - 1, 0),
+  );
   const activeExercise = filteredExercises[activeIndex] ?? filteredExercises[0];
   const color = currentModule?.color ?? "blue";
 
-  function startSubject(key: string, index = 0) {
+  const completedCount = useMemo(
+    () =>
+      exercises.filter((ex) => isCompleted(currentSubject, ex.id)).length,
+    [exercises, isCompleted, currentSubject],
+  );
+
+  // Recomendaciones de la ficha: mismo grupo → mismo curso → con progreso.
+  const recommendedModules = useMemo(() => {
+    if (!currentModule) return [];
+    const currentCourseKey = courseKeyForModule(currentModule);
+    const rank = (m: Module) => {
+      if (m.group === currentModule.group) return 0;
+      if (courseKeyForModule(m) === currentCourseKey) return 1;
+      return 2;
+    };
+    return modules
+      .filter(
+        (m) =>
+          m.key !== currentModule.key &&
+          m.exercises.length > 0 &&
+          enrolledKeys.includes(courseKeyForModule(m)) &&
+          (m.group === currentModule.group ||
+            courseKeyForModule(m) === currentCourseKey ||
+            getPercent(m.key, m.exercises.length) > 0),
+      )
+      .sort((a, b) => rank(a) - rank(b))
+      .slice(0, 3);
+  }, [modules, enrolledKeys, currentModule, getPercent]);
+
+  // Sin índice → ficha del módulo; con índice → workspace en ese ejercicio.
+  function startSubject(key: string, index?: number) {
     const target = modules.find((module) => module.key === key);
     if (!target) return;
     const courseKey = courseKeyForModule(target);
@@ -124,7 +164,8 @@ export default function MasteryHub() {
     }
     runViewTransition(() => {
       setCurrentSubject(key);
-      setActiveIndex(index);
+      setActiveExerciseId(index ?? null);
+      setFichaFocusId(null);
       setIsMobileMenuOpen(false);
     });
   }
@@ -132,32 +173,50 @@ export default function MasteryHub() {
   function goBackToMenu() {
     runViewTransition(() => {
       setCurrentSubject("menu");
+      setActiveExerciseId(null);
+      setFichaFocusId(null);
+      setIsMobileMenuOpen(false);
+    });
+  }
+
+  function goBackToFicha() {
+    // Ya en la ficha: nada que navegar (evita resaltar el ejercicio derivado).
+    if (activeExerciseId === null) return;
+    const lastId = activeExercise?.id ?? null;
+    runViewTransition(() => {
+      setActiveExerciseId(null);
+      setFichaFocusId(lastId);
       setIsMobileMenuOpen(false);
     });
   }
 
   function selectExercise(index: number) {
-    setActiveIndex(index);
+    setActiveExerciseId(index);
     setIsMobileMenuOpen(false);
   }
 
   const goNext = useCallback(() => {
-    setActiveIndex((i) => Math.min(i + 1, filteredExercises.length - 1));
+    setActiveExerciseId((id) =>
+      Math.min((id ?? 0) + 1, filteredExercises.length - 1),
+    );
   }, [filteredExercises.length]);
 
   const goPrev = useCallback(() => {
-    setActiveIndex((i) => Math.max(i - 1, 0));
+    setActiveExerciseId((id) => Math.max((id ?? 0) - 1, 0));
   }, []);
 
   // Recalcula (clamp) el índice si la lista filtrada queda fuera de rango.
   useEffect(() => {
-    setActiveIndex((prev) => {
+    setActiveExerciseId((prev) => {
+      if (prev == null) return prev;
       if (prev < filteredExercises.length) return prev;
       return Math.max(0, filteredExercises.length - 1);
     });
   }, [filteredExercises.length]);
 
   const inModule = currentSubject !== "menu" && !!currentModule;
+  const isWorkspace = inModule && activeExerciseId !== null;
+  const isFicha = inModule && !isWorkspace;
 
   // Carga bajo demanda del detalle completo del módulo activo (Fase 2).
   // El catálogo ligero solo trae metadatos; el workspace necesita teoría,
@@ -174,6 +233,14 @@ export default function MasteryHub() {
 
   useEffect(() => {
     if (currentSubject !== "menu" && currentModule) {
+      // Marca el curso como reciente en "Mis Cursos" (solo si está suscrito).
+      const courseKey = courseKeyForModule(currentModule);
+      if (enrolledKeys.includes(courseKey)) {
+        void touchLastOpened(courseKey);
+      }
+      // "Continuar donde lo dejaste" solo avanza mientras se practica
+      // (workspace); abrir la ficha no debe pisar la posición guardada.
+      if (activeExerciseId === null) return;
       const current = filteredExercises[activeIndex];
       if (!current) return;
       // Guarda la posición en el array COMPLETO del módulo (no el filtrado),
@@ -185,15 +252,11 @@ export default function MasteryHub() {
         currentModule.key,
         realIndex >= 0 ? realIndex : activeIndex,
       );
-      // Marca el curso como reciente en "Mis Cursos" (solo si está suscrito).
-      const courseKey = courseKeyForModule(currentModule);
-      if (enrolledKeys.includes(courseKey)) {
-        void touchLastOpened(courseKey);
-      }
     }
   }, [
     currentSubject,
     activeIndex,
+    activeExerciseId,
     currentModule,
     filteredExercises,
     setLastVisited,
@@ -206,7 +269,8 @@ export default function MasteryHub() {
     const mod = module ? modules.find((m) => m.key === module) : undefined;
     if (!mod) {
       setCurrentSubject("menu");
-      setActiveIndex(0);
+      setActiveExerciseId(null);
+      setFichaFocusId(null);
       return;
     }
     const courseKey = courseKeyForModule(mod);
@@ -214,13 +278,14 @@ export default function MasteryHub() {
       window.location.assign(`/cursos/${courseKey}`);
       return;
     }
-    let index = 0;
+    let index: number | null = null;
     if (exerciseId != null) {
       const found = mod.exercises.findIndex((ex) => ex.id === exerciseId);
       if (found >= 0) index = found;
     }
     setCurrentSubject(mod.key);
-    setActiveIndex(index);
+    setActiveExerciseId(index);
+    setFichaFocusId(null);
   }, [modules, enrolledKeys]);
 
   useEffect(() => {
@@ -238,7 +303,11 @@ export default function MasteryHub() {
     const loc: UrlLocation =
       currentSubject === "menu"
         ? { module: null, exerciseId: null }
-        : { module: currentSubject, exerciseId: activeExercise?.id ?? null };
+        : {
+            module: currentSubject,
+            exerciseId:
+              activeExerciseId === null ? null : activeExercise?.id ?? null,
+          };
     const nextSearch = buildSearch(loc);
     if (nextSearch !== window.location.search) {
       window.history.pushState(
@@ -247,21 +316,27 @@ export default function MasteryHub() {
         `${window.location.pathname}${nextSearch}`,
       );
     }
-  }, [currentSubject, activeExercise?.id]);
+  }, [currentSubject, activeExerciseId, activeExercise?.id]);
 
   const shareCurrent = useCallback(async () => {
-    if (!currentModule || !activeExercise) return;
+    if (!currentModule) return;
     const url = buildShareUrl({
       module: currentModule.key,
-      exerciseId: activeExercise.id,
+      exerciseId:
+        activeExerciseId === null ? null : activeExercise?.id ?? null,
     });
     try {
       await navigator.clipboard.writeText(url);
-      showToast("success", "Enlace del ejercicio copiado");
+      showToast(
+        "success",
+        activeExerciseId === null
+          ? "Enlace del módulo copiado"
+          : "Enlace del ejercicio copiado",
+      );
     } catch {
       showToast("info", url);
     }
-  }, [currentModule, activeExercise, showToast]);
+  }, [currentModule, activeExercise, activeExerciseId, showToast]);
 
   return (
     <div className="relative flex h-full flex-col overflow-hidden">
@@ -286,7 +361,10 @@ export default function MasteryHub() {
 
         <div className="hidden min-w-0 flex-1 items-center justify-center md:flex">
           {inModule ? (
-            <nav className="flex max-w-full items-center gap-2 rounded-full border border-line bg-canvas/50 px-4 py-2 text-xs">
+            <nav
+              aria-label="Ruta de navegación"
+              className="flex max-w-full items-center gap-2 rounded-full border border-line bg-canvas/50 px-4 py-2 text-xs"
+            >
               <button
                 onClick={goBackToMenu}
                 className="shrink-0 text-brand transition-colors hover:text-brand-strong"
@@ -294,11 +372,33 @@ export default function MasteryHub() {
                 Mis cursos
               </button>
               <span className="text-faint">/</span>
-              <span className="truncate text-muted">{currentModule.group}</span>
+              <button
+                onClick={goBackToFicha}
+                className="shrink-0 text-muted transition-colors hover:text-cream"
+              >
+                {currentModule.group}
+              </button>
               <span className="text-faint">/</span>
-              <span className="truncate font-semibold text-cream">
-                {currentModule.name}
-              </span>
+              {isFicha ? (
+                <span className="truncate font-semibold text-cream">
+                  {currentModule.name}
+                </span>
+              ) : (
+                <button
+                  onClick={goBackToFicha}
+                  className="shrink-0 truncate font-semibold text-cream transition-colors hover:text-brand-strong"
+                >
+                  {currentModule.name}
+                </button>
+              )}
+              {isWorkspace && (
+                <>
+                  <span className="text-faint">/</span>
+                  <span className="shrink-0 font-semibold text-cream">
+                    Ejercicio {activeIndex + 1}
+                  </span>
+                </>
+              )}
             </nav>
           ) : (
             <p className="rounded-full border border-line bg-canvas/60 px-4 py-2 text-sm text-cream">
@@ -315,16 +415,22 @@ export default function MasteryHub() {
           )}
           {inModule && (
             <button
-              onClick={goBackToMenu}
+              onClick={isWorkspace ? goBackToFicha : goBackToMenu}
               className="btn-secondary !min-h-10 !px-0 !text-sm max-sm:h-11 max-sm:w-11 sm:!px-5"
-              aria-label="Volver al menú"
-              title="Volver al menú"
+              aria-label={
+                isWorkspace ? "Volver a la ficha del módulo" : "Volver al menú"
+              }
+              title={
+                isWorkspace ? "Volver a la ficha del módulo" : "Volver al menú"
+              }
             >
               ←
-              <span className="hidden sm:inline"> Menú</span>
+              <span className="hidden sm:inline">
+                {isWorkspace ? " Ficha" : " Menú"}
+              </span>
             </button>
           )}
-          {inModule && sidebarCollapsed && (
+          {isWorkspace && sidebarCollapsed && (
             <button
               onClick={() => setSidebarCollapsed(false)}
               className="icon-btn hidden border border-line md:inline-flex"
@@ -336,7 +442,7 @@ export default function MasteryHub() {
             </button>
           )}
           <UserMenu />
-          {inModule && (
+          {isWorkspace && (
             <button
               ref={mobileMenuButtonRef}
               onClick={() => setIsMobileMenuOpen((v) => !v)}
@@ -365,6 +471,25 @@ export default function MasteryHub() {
               loading={loading || enrollmentsLoading}
             />
           )
+        ) : isFicha ? (
+          <ModuleReader
+            key={currentModule.key}
+            module={currentModule}
+            progress={getPercent(currentModule.key, exercises.length)}
+            completedCount={completedCount}
+            isCompleted={(id) => isCompleted(currentModule.key, id)}
+            activeExerciseId={fichaFocusId}
+            lastVisitedIndex={
+              lastVisited && lastVisited.key === currentModule.key
+                ? lastVisited.index
+                : null
+            }
+            recommended={recommendedModules}
+            onSelectExercise={(index) => startSubject(currentModule.key, index)}
+            onOpenModule={(key) => startSubject(key)}
+            onBack={goBackToMenu}
+            getPercent={getPercent}
+          />
         ) : (
           <>
             <ExerciseSidebar

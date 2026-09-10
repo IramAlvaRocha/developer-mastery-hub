@@ -107,6 +107,14 @@
   }
 }
 
+/* Hover del borde de las cards de ejercicio de la ficha del módulo
+   (equivalente a `hover:mod-border-40`; ver ModuleReader). */
+@utility ex-card-hover {
+  &:hover {
+    border-color: rgb(var(--module-rgb) / 0.4);
+  }
+}
+
 html,
 body {
   height: 100%;
